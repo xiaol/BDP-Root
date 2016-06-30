@@ -8,6 +8,7 @@ import scala.concurrent.duration._
 import akka.pattern.ask
 import akka.util.Timeout
 import akka.actor.Props
+import akka.event.Logging
 import commons.models.community._
 import commons.models.news.NewsRow
 import org.joda.time.LocalDateTime
@@ -20,15 +21,18 @@ import org.joda.time.LocalDateTime
 class PersistanceServer extends Actor {
 
   import context.dispatcher
+  val logger = Logging(context.system, this)
 
   val persistanceRoutees: ActorRef = context.actorOf(FromConfig.props(), "PersistanceRoutees")
-  //context.system.scheduler.schedule(0.seconds, 10.seconds, self, "STORE")
-  //context.system.scheduler.schedule(0.seconds, 20.seconds, self, ASearchRows(List(ASearchRow(None, LocalDateTime.now(), "url", ASearch("url", "title", "from", 1, "pname", LocalDateTime.now(), None, None)))))
 
   override def receive = {
     case newRow: NewsRow =>
       val superior = sender()
-      (persistanceRoutees ? newRow)(15.seconds).recover { case _ => None }.map {
+      (persistanceRoutees ? newRow)(15.seconds).recover {
+        case err =>
+          logger.error(s"PersistanceServer.insertNewsRow err: ${err.getMessage}")
+          None
+      }.map {
         case reply => superior ! reply
       }
     case aSearchRows: ASearchRows =>
