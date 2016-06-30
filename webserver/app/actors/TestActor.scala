@@ -13,9 +13,9 @@ class TestActor extends Actor {
 
   override def receive = {
     case HelloActor(msg) => sender ! s"Get $msg"
-    case msg: String     =>
+    case msg: String =>
       println(s"UnKnownMsg: $msg"); sender ! s"UnKnownMsg: $msg"
-    case _               => sender ! "UnKnownMsg"
+    case _ => sender ! "UnKnownMsg"
   }
 
 }

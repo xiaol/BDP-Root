@@ -33,7 +33,7 @@ class NewsEsService @Inject() extends INewsElasticSearchService with ElasticDsl 
           .should(QueryBuilders.termQuery("tags", key)))
         .sourceInclude("nid", "docid", "title", "ptime", "pname", "purl", "channel", "collect", "concern", "comment", "style", "imgs", "province", "city", "district")
         .start((page - 1) * count).limit(count)
-        .sort2(SortBuilders.fieldSort("ptime").order(SortOrder.DESC), SortBuilders.fieldSort("_score").order(SortOrder.DESC))
+        .sort2(SortBuilders.fieldSort("_score").order(SortOrder.DESC))
         .highlighting(highlight("title").preTag("<font color='#0091fa' >").postTag("</font>"))
     }.map(_.as[NewsFeedResponse].toSeq).recover {
       case NonFatal(e) =>
