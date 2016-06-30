@@ -1,0 +1,117 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# User Test
+GET     /v2/listuser                controllers.Application.listUser()
+
+POST    /v2/au/sin/g                controllers.UserController.signupGuest()
+POST    /v2/au/lin/g                controllers.UserController.loginGuest()
+POST    /v2/au/sin/s                controllers.UserController.signupSocial()
+
+GET     /v2/au/alin                 controllers.UserController.afterLogin()
+GET     /v2/au/alou                 controllers.UserController.afterLogout()
+
+# Test User Role
+GET     /v2/au/admin                controllers.Application.listUser()
+GET     /v2/au/guest                controllers.Application.listGuest()
+GET     /v2/au/regist               controllers.Application.listSocial()
+POST    /v2/au/regist               controllers.Application.listSocial()
+GET     /v2/au/common               controllers.Application.listCommon()
+
+# News
+GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1)
+GET     /v2/ns/srcs                 controllers.NewsController.listSource(p:Long ?= 1, c:Long ?= 20)
+
+GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long)
+GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long)
+#GET     /v2/ns/con/com              ???
+GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
+#GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
+
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+
+GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
+GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
+
+GET     /v2/ns/src/r                controllers.NewsController.refreshSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+
+# News from Elasticsearch
+GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, p:Int ?= 1, c:Int ?= 20)
+
+# Base64.encode(did)
+GET     /v2/ns/coms/c               controllers.NewsController.listCommentCommon(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 20)
+GET     /v2/ns/coms/h               controllers.NewsController.listCommentHot(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 5)
+POST    /v2/ns/coms                 controllers.UserProfileController.addComment()
+
+POST    /v2/ns/coms/up              controllers.UserProfileController.addCommends(cid:Long,uid:Long)
+DELETE  /v2/ns/coms/up              controllers.UserProfileController.remCommends(cid:Long,uid:Long)
+
+POST    /v2/ns/cols                 controllers.UserProfileController.addCollects(nid:Long,uid:Long)
+DELETE  /v2/ns/cols                 controllers.UserProfileController.remCollects(nid:Long,uid:Long)
+
+POST    /v2/ns/cocs                 controllers.UserProfileController.addConcerns(nid:Long,uid:Long)
+DELETE  /v2/ns/cocs                 controllers.UserProfileController.remConcerns(nid:Long,uid:Long)
+
+
+GET     /v2/ns/au/chs/:uid          controllers.UserProfileController.listUserChannels(uid:Long)
+POST    /v2/ns/au/chs/:uid          controllers.UserProfileController.updateUserChannels(uid:Long)
+
+GET     /v2/ns/au/coms              controllers.UserProfileController.listComments(uid:Long,p:Long ?= 1, c:Long ?= 20)
+DELETE  /v2/ns/au/coms              controllers.UserProfileController.remComment(uid:Long,did:String)
+
+GET     /v2/ns/au/cols              controllers.UserProfileController.listCollects(uid:Long,p:Long ?= 1, c:Long ?= 20)
+GET     /v2/ns/au/cocs              controllers.UserProfileController.listConcerns(uid:Long,p:Long ?= 1, c:Long ?= 20)
+
+# Spiders queues
+GET     /v2/sps/qs                  controllers.SpiderController.listQueue(p:Long ?= 1, c:Long ?= 20)
+POST    /v2/sps/qs                  controllers.SpiderController.createQueue()
+PUT     /v2/sps/qs                  controllers.SpiderController.updateQueue(q:String)
+DELETE  /v2/sps/qs                  controllers.SpiderController.deleteQueue(q:String)
+
+#GET     /v2/sps/queues/status
+#POST    /v2/sps/queues/pop        queue
+#DELETE  /v2/sps/queues/flush      queue
+
+# Spiders sources
+GET     /v2/sps/srcs                controllers.SpiderController.listSource(sa:Int ?= 1,su:Int ?= 1,p:Long ?= 1, c:Long ?= 20)
+GET     /v2/sps/srcs/q              controllers.SpiderController.listSourceByQueue(q:String, p:Long ?= 1, c:Long ?= 20)
+
+POST    /v2/sps/srcs                controllers.SpiderController.createSource()
+PUT     /v2/sps/srcs                controllers.SpiderController.updateSource(sid:Long)
+DELETE  /v2/sps/srcs                controllers.SpiderController.deleteSource(sid:Long)
+
+# Spiders dispatcher
+GET     /v2/sps/dp/test/:msg        controllers.SpiderDispatcherController.testDispatcher(msg:String)
+
+POST    /v2/sps/dp/start/all        controllers.SpiderDispatcherController.startAll()
+POST    /v2/sps/dp/close/all        controllers.SpiderDispatcherController.closeAll()
+POST    /v2/sps/dp/reload/all       controllers.SpiderDispatcherController.reloadAll()
+
+POST    /v2/sps/dp/start/:sid       controllers.SpiderDispatcherController.startOne(sid:Long)
+POST    /v2/sps/dp/close/:sid       controllers.SpiderDispatcherController.closeOne(sid:Long)
+POST    /v2/sps/dp/reload/:sid      controllers.SpiderDispatcherController.reloadOne(sid:Long)
+
+POST    /v2/sps/dp/push/:sid        controllers.SpiderDispatcherController.pushSource(sid:Long)
+
+
+# Spiders pipeline
+POST    /v2/sps/ns/test/:msg        controllers.SpiderPipelineController.newsPipelineTest(msg:String)
+# base64.encode(msg)
+POST    /v2/sps/ns/:task            controllers.SpiderPipelineController.newsPipeline(task:String)
+POST    /v2/sps/coms                controllers.SpiderPipelineController.createComments()
+
+POST    /v2/sps/nsr                 controllers.SpiderPipelineController.createNews()
+POST    /v2/sps/asc                 controllers.SpiderPipelineController.createSearchItems()
+
+# Excavtors
+#POST    /v2/excs                 ???
+#GET     /v2/excs                 ???
+#GET     /v2/excs/:task            ???
+
+# Test Akka
+#GET     /v2/actor/:msg                      controllers.ActorController.sayHello(msg:String)
+GET     /v2/persist/:msg                     controllers.PersistanceController.testPersistance(msg:String)
+

@@ -1,0 +1,32 @@
+#*.iml
+*.ipr
+*.iws
+.idea/
+.idea_modules/
+
+.project
+
+# OS X
+Icon
+Thumbs.db
+.DS_Store
+
+# SASS
+*.sass-cache
+
+# Gradle
+build/
+.gradle/
+out/
+history
+woas.spec
+
+log
+logs
+test
+test-2.11
+java
+scala-2.11
+app-2.11
+target
+images
