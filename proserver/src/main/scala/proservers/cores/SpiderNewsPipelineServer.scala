@@ -48,7 +48,9 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
               logger.error(s"SpiderNewsPipelineServer.verifyNewsUnique($task): ${err.getMessage}")
               superior ! s"CacheUniqueErr: $task, ${err.getMessage}"
           }
-        case Success(Left(verifyErrMsg)) => superior ! verifyErrMsg
+        case Success(Left(verifyErrMsg)) =>
+          superior ! verifyErrMsg
+          logger.error(s"SpiderNewsPipelineServer.verifyNewsTemp($task): $verifyErrMsg")
         case Failure(err) =>
           logger.error(s"SpiderNewsPipelineServer.verifyNewsTemp($task): ${err.getMessage}")
           superior ! s"CacheVerifyErr: $task, ${err.getMessage}"
