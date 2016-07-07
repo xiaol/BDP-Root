@@ -53,6 +53,10 @@ class SourceDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvide
     db.run(sourceList.filter(_.state === state).filter(_.status === status).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
+  def listByState(state: Int, offset: Long, limit: Long): Future[Seq[SourceRow]] = {
+    db.run(sourceList.filter(_.state === state).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  }
+
   def listByQueue(queue: String, offset: Long, limit: Long): Future[Seq[SourceRow]] = {
     db.run(sourceList.sortBy(_.queue.asc).drop(offset).take(limit).result)
   }

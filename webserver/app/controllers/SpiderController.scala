@@ -2,13 +2,9 @@ package controllers
 
 import javax.inject.Inject
 
-import jp.t2v.lab.play2.auth.AuthElement
 import play.api.mvc.Controller
 import play.api.mvc.Action
-import security.auth.AuthConfigImpl
-import services.news._
 import services.spiders.{ QueueService, SourceService }
-import services.users.UserService
 import commons.models.spiders.SourceRow
 import commons.models.spiders.QueueRow
 import utils.Response._

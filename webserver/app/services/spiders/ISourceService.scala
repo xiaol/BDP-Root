@@ -21,7 +21,7 @@ trait ISourceService {
   def list(page: Long, count: Long): Future[Seq[SourceRow]]
   def listAll(): Future[Seq[SourceRow]]
   def listByState(state: Int = 1, status: Int = 1, page: Long, count: Long): Future[Seq[SourceRow]]
-  def listByOnline(state: Int, status: Int, page: Long, count: Long): Future[Seq[SourceResponse]]
+  def listByOnline(state: Int, page: Long, count: Long): Future[Seq[SourceResponse]]
   def listByQueue(queue: String, page: Long, count: Long): Future[Seq[SourceRow]]
   def findById(id: Long): Future[Option[SourceRow]]
   def update(id: Long, sourceRow: SourceRow): Future[Option[SourceRow]]
@@ -56,11 +56,10 @@ class SourceService @Inject() (val sourceDAO: SourceDAO) extends ISourceService 
     }
   }
 
-  // TODO: state=1 && status=1
-  def listByOnline(state: Int = 0, status: Int = 1, page: Long, count: Long): Future[Seq[SourceResponse]] = {
-    sourceDAO.listByStateAndStatus(state, status, (page - 1) * count, count).map { case s => s.map(SourceResponse.from) }.recover {
+  def listByOnline(state: Int = 1, page: Long, count: Long): Future[Seq[SourceResponse]] = {
+    sourceDAO.listByState(state, (page - 1) * count, count).map { case s => s.map(SourceResponse.from) }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within SourceService.listByOnline($status, $status, $page, $count): ${e.getMessage}")
+        Logger.error(s"Within SourceService.listByOnline($state, $page, $count): ${e.getMessage}")
         Seq[SourceResponse]()
     }
   }
