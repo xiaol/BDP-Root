@@ -13,6 +13,6 @@ import play.filters.hosts.AllowedHostsFilter
 
 class CustomHttpFilters @Inject() (allowedHostsFilter: AllowedHostsFilter, cors: CORSFilter, csrf: CSRFFilter) extends HttpFilters { //(log: LoggingFilter, csrf: CSRFFilter)
 
-  def filters = Seq(allowedHostsFilter, cors, csrf)
+  def filters = Seq(allowedHostsFilter, cors) //, csrf
 
 }
