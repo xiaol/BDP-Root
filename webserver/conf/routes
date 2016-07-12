@@ -40,6 +40,8 @@ GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(si
 
 # News from Elasticsearch
 GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, p:Int ?= 1, c:Int ?= 20)
+GET     /v2/ns/ar                   controllers.NewsSearchController.addRecommend(nid: Long, score: Double)
+GET     /v2/ns/re                   controllers.NewsSearchController.recommend(uid: Long, c:Int ?= 20)
 
 # Base64.encode(did)
 GET     /v2/ns/coms/c               controllers.NewsController.listCommentCommon(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 20)
