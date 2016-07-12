@@ -5,9 +5,9 @@
 # User Test
 GET     /v2/listuser                controllers.Application.listUser()
 
-POST    /v2/au/sin/g                controllers.UserController.signupGuest()
-POST    /v2/au/lin/g                controllers.UserController.loginGuest()
-POST    /v2/au/sin/s                controllers.UserController.signupSocial()
+POST    /v2/au/sin/g                controllers.UserController.signupGuest(token:Int ?= 0)
+POST    /v2/au/lin/g                controllers.UserController.loginGuest(token:Int ?= 0)
+POST    /v2/au/sin/s                controllers.UserController.signupSocial(token:Int ?= 0)
 
 GET     /v2/au/alin                 controllers.UserController.afterLogin()
 GET     /v2/au/alou                 controllers.UserController.afterLogout()

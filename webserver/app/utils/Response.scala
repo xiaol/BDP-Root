@@ -1,5 +1,6 @@
 package utils
 
+import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes._
 import play.api.libs.json._
 import play.api.libs.json.JsError
@@ -11,15 +12,21 @@ import play.api.mvc.Result
  *
  */
 
-case class Response[T](code: Int, data: T)
+case class Response[T](code: Int, data: T, token: Option[String] = None)
 
 object Response {
-  implicit def ResponseWrites[T: Writes] = new Writes[Response[T]] {
-    def writes(rep: Response[T]) = Json.obj(
-      "code" -> rep.code,
-      "data" -> rep.data
-    )
-  }
+
+  implicit def ResponseWrites[T: Writes]: Writes[Response[T]] = (
+    (JsPath \ "code").write[Int] ~
+    (JsPath \ "data").write[T] ~
+    (JsPath \ "token").writeNullable[String]
+  )(unlift(Response.unapply[T]))
+
+  implicit def ResponseReads[T: Reads]: Reads[Response[T]] = (
+    (JsPath \ "code").read[Int] ~
+    (JsPath \ "data").read[T] ~
+    (JsPath \ "token").readNullable[String]
+  )(Response.apply[T] _)
 
   private final val SERVER_SUCCED_CODE = 2000
   private final val SERVER_ERROR_CODE = 2001
@@ -31,8 +38,8 @@ object Response {
   private final val JSON_INVALID_CODE = 4002
   private final val AUTH_VERIFY_CODE = 4003
 
-  def ServerSucced[T](data: T)(implicit writes: Writes[T]): Result = {
-    Ok(Json.toJson(Response(SERVER_SUCCED_CODE, data)))
+  def ServerSucced[T](data: T, token: Option[String] = None)(implicit writes: Writes[T]): Result = {
+    Ok(Json.toJson(Response(SERVER_SUCCED_CODE, data, token)))
   }
 
   def ServerError(data: String): Result = {
