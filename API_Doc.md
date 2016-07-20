@@ -1528,3 +1528,235 @@ Content-Type: application/json
 }
 ```
 
+----
+### <span id="新闻搜索">新闻搜索</span>
+
+
+#### <span id="查询">查询</span>
+_Request_
+
+Request
+
+GET /v2/ns/es/s
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key        | 参数类型      |   是否必须    | 参数解释  |
+| ---------- |:------------- | :------------ | :-------- |
+| keywords   | String        | 是            | 搜索关键字      |
+| p          | Long        | 否(默认 1)    | 页数      |
+| c          | Long        | 否(默认 20)   | 条数      |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东"
+    },
+    …
+  ]
+}
+
+
+
+
+----
+### <span id="新闻推荐">新闻推荐</span>
+
+
+#### <span id="查询">查询</span>
+_Request_
+
+Request
+
+GET /v2/ns/re
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key        | 参数类型      |   是否必须    | 参数解释  |
+| ---------- |:-------------| :------------| :--------|
+| uid        | String       | 是           | 用户id    |
+| c          | Long         | 否(默认 20)   | 条数      |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东"
+    },
+    …
+  ]
+}
+
+### <span id="人工新闻推荐">人工新闻推荐</span>
+
+#### <span id="推荐/取消推荐">推荐/取消推荐 新闻</span>
+_Request_
+
+GET /v2/nsr/o
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key        | 参数类型      |   是否必须     | 参数解释   |
+| ---------- |:-------------| :------------ | :-------- |
+| nid        | Long         | 是            | 新闻id     |
+| m          | String       | 是            | 方法名称:添加删除(insert/delete)   |
+| l          | Double       | 是            | 推荐等级   |
+| b          | Int          | 否            | 大图为第几张   |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": Long
+}
+
+
+#### <span id="展示新闻列表">展示新闻列表</span>
+_Request_
+
+
+GET /v2/nsr/l
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key        | 参数类型      |   是否必须    | 参数解释  |
+| ---------- |:-------------| :------------| :--------|
+| ch         | Long         | 是           | 频道      |
+| ifr        | Int          | 是(1/0)      | 已推荐/未推荐|
+| p          | Long         | 否(默认 1)    | 页数      |
+| c          | Long         | 否(默认 20)   | 条数      |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "rtime":  "2016-05-22 01:20:46",                        - 推荐时间
+      "level":  2,                                            - 推荐等级
+      "bigimg": 1                                             - 第几张为大图
+      "status": 1                                             - 推荐状态1为已推荐
+    },
+    …
+  ]
+  "total": 2000,                                              - 总条数
+}
+
+
+
+#### <span id="搜索新闻">搜索新闻</span>
+_Request_
+
+GET /v2/nsr/es/l
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key        | 参数类型      |   是否必须    | 参数解释  |
+| ---------- |:-------------| :------------| :--------|
+| keywords   | String       | 是           | 搜索关键字 |
+| pn         | String       | 否           | 新闻来源  |
+| ch         | Long         | 否           | 频道      |
+| p          | Long         | 否(默认 1)    | 页数      |
+| c          | Long         | 否(默认 20)   | 条数      |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "rtime":  "2016-05-22 01:20:46",                        - 推荐时间
+      "level":  2,                                            - 推荐等级
+      "bigimg": 1                                             - 第几张为大图
+      "status": 1                                             - 推荐状态1为已推荐
+    },
+    …
+  ]
+  "total": 2000,                                              - 总条数
+}
