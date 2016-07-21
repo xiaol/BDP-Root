@@ -23,8 +23,8 @@ GET     /v2/au/common               controllers.Application.listCommon()
 GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1)
 GET     /v2/ns/srcs                 controllers.NewsController.listSource(p:Long ?= 1, c:Long ?= 20)
 
-GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long)
-GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long)
+GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long])
+GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long, uid:Option[Long])
 #GET     /v2/ns/con/com              ???
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
@@ -55,15 +55,21 @@ DELETE  /v2/ns/cols                 controllers.UserProfileController.remCollect
 POST    /v2/ns/cocs                 controllers.UserProfileController.addConcerns(nid:Long,uid:Long)
 DELETE  /v2/ns/cocs                 controllers.UserProfileController.remConcerns(nid:Long,uid:Long)
 
-
-GET     /v2/ns/au/chs/:uid          controllers.UserProfileController.listUserChannels(uid:Long)
-POST    /v2/ns/au/chs/:uid          controllers.UserProfileController.updateUserChannels(uid:Long)
-
 GET     /v2/ns/au/coms              controllers.UserProfileController.listComments(uid:Long,p:Long ?= 1, c:Long ?= 20)
 DELETE  /v2/ns/au/coms              controllers.UserProfileController.remComment(uid:Long,did:String)
 
 GET     /v2/ns/au/cols              controllers.UserProfileController.listCollects(uid:Long,p:Long ?= 1, c:Long ?= 20)
 GET     /v2/ns/au/cocs              controllers.UserProfileController.listConcerns(uid:Long,p:Long ?= 1, c:Long ?= 20)
+
+GET     /v2/ns/au/chs/:uid          controllers.UserProfileController.listUserChannels(uid:Long)
+POST    /v2/ns/au/chs/:uid          controllers.UserProfileController.updateUserChannels(uid:Long)
+
+POST    /v2/ns/pbs/cocs             controllers.UserConcernPublisherController.addConcernPublisher(uid:Long, pname:String)
+DELETE  /v2/ns/pbs/cocs             controllers.UserConcernPublisherController.remConcernPublisher(uid:Long, pname:String)
+GET     /v2/ns/pbs/cocs             controllers.UserConcernPublisherController.listConcernPublisher(uid:Long, p:Long ?= 1, c:Long ?= 20)
+
+GET     /v2/ns/pbs/cocs/r           controllers.UserConcernPublisherController.refreshNewsByConcernedPublishers(uid:Long, p:Long ?= 1, c:Long ?= 20,tcr: Long)
+GET     /v2/ns/pbs/cocs/l           controllers.UserConcernPublisherController.loadNewsByConcernedPublishers(uid:Long, p:Long ?= 1, c:Long ?= 20,tcr: Long)
 
 # Spiders queues
 GET     /v2/sps/qs                  controllers.SpiderController.listQueue(p:Long ?= 1, c:Long ?= 20)
@@ -95,7 +101,6 @@ POST    /v2/sps/dp/close/:sid       controllers.SpiderDispatcherController.close
 POST    /v2/sps/dp/reload/:sid      controllers.SpiderDispatcherController.reloadOne(sid:Long)
 
 POST    /v2/sps/dp/push/:sid        controllers.SpiderDispatcherController.pushSource(sid:Long)
-
 
 # Spiders pipeline
 POST    /v2/sps/ns/test/:msg        controllers.SpiderPipelineController.newsPipelineTest(msg:String)

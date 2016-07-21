@@ -102,7 +102,10 @@ case class NewsDetailsResponse(
   content: JsValue,
   collect: Int,
   concern: Int,
-  comment: Int)
+  comment: Int,
+  colFlag: Option[Int],
+  conFlag: Option[Int],
+  conPubFlag: Option[Int])
 
 object NewsDetailsResponse {
   implicit val NewsDetailsResponseWrites: Writes[NewsDetailsResponse] = (
@@ -119,7 +122,10 @@ object NewsDetailsResponse {
     (JsPath \ "content").write[JsValue] ~
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
-    (JsPath \ "comment").write[Int]
+    (JsPath \ "comment").write[Int] ~
+    (JsPath \ "colflag").writeNullable[Int] ~
+    (JsPath \ "conflag").writeNullable[Int] ~
+    (JsPath \ "conpubflag").writeNullable[Int]
   )(unlift(NewsDetailsResponse.unapply))
 
   implicit val NewsDetailsResponseReads: Reads[NewsDetailsResponse] = (
@@ -136,13 +142,16 @@ object NewsDetailsResponse {
     (JsPath \ "content").read[JsValue] ~
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
-    (JsPath \ "comment").read[Int]
+    (JsPath \ "comment").read[Int] ~
+    (JsPath \ "colflag").readNullable[Int] ~
+    (JsPath \ "conflag").readNullable[Int] ~
+    (JsPath \ "conpubflag").readNullable[Int]
   )(NewsDetailsResponse.apply _)
 
-  def from(newsRow: NewsRow): NewsDetailsResponse = {
+  def from(newsRow: NewsRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.channel, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment)
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.channel, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment, colFlag, conFlag, conPubFlag)
   }
 }

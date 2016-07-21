@@ -10,6 +10,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import play.api.libs.json.JsValue
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
+import dao.userprofiles._
 
 /**
  * Created by zhange on 2016-05-10.
@@ -70,15 +71,33 @@ object NewsDAO {
 }
 
 @Singleton
-class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with CollectTable with ConcernTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
   import NewsDAO._
 
-  val newsList = TableQuery[NewsTable]
   type NewsTableQuery = Query[NewsTable, NewsTable#TableElementType, Seq]
+
+  val newsList = TableQuery[NewsTable]
+  val collectList = TableQuery[CollectTable]
+  val concernList = TableQuery[ConcernTable]
+  val concernPublisherList = TableQuery[ConcernPublisherTable]
 
   def findByNid(nid: Long): Future[Option[NewsRow]] = {
     db.run(newsList.filter(_.nid === nid).result.headOption)
+  }
+
+  def findByNidWithProfile(nid: Long, uid: Long): Future[Option[(NewsRow, Int, Int, Int)]] = {
+    val joinQuery = (for {
+      (((news, collects), concerns), conpubs) <- newsList.filter(_.nid === nid)
+        .joinLeft(collectList.filter(_.uid === uid)).on(_.nid === _.nid)
+        .joinLeft(concernList.filter(_.uid === uid)).on(_._1.nid === _.nid)
+        .joinLeft(concernPublisherList.filter(_.uid === uid)).on(_._1._1.pname === _.pname)
+    } yield (news, collects.map(_.id), concerns.map(_.id), conpubs.map(_.id))).groupBy(_._1).map {
+      case (n, joins) =>
+        (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
+    }
+
+    db.run(joinQuery.result.headOption)
   }
 
   def findByDocid(docid: String): Future[Option[NewsRow]] = {

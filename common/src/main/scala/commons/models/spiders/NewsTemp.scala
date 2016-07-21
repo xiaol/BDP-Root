@@ -22,6 +22,8 @@ case class NewsTemp(
     ptime: LocalDateTime,
     pname: Option[String],
     purl: Option[String],
+    picon: Option[String],
+    pdescr: Option[String],
     html: String,
     synopsis: Option[String],
     province: Option[String],
@@ -64,6 +66,8 @@ object NewsTemp {
     (JsPath \ "ptime").write[LocalDateTime] ~
     (JsPath \ "pname").writeNullable[String] ~
     (JsPath \ "purl").writeNullable[String] ~
+    (JsPath \ "picon").writeNullable[String] ~
+    (JsPath \ "pdescr").writeNullable[String] ~
     (JsPath \ "html").write[String] ~
     (JsPath \ "synopsis").writeNullable[String] ~
     (JsPath \ "province").writeNullable[String] ~
@@ -87,6 +91,8 @@ object NewsTemp {
     (JsPath \ "ptime").read[LocalDateTime] ~
     (JsPath \ "pname").readNullable[String](minLength[String](1)) ~
     (JsPath \ "purl").readNullable[String](minLength[String](1)) ~
+    (JsPath \ "picon").readNullable[String](minLength[String](1)) ~
+    (JsPath \ "pdescr").readNullable[String](minLength[String](1)) ~
     (JsPath \ "html").read[String](minLength[String](1)) ~
     (JsPath \ "synopsis").readNullable[String](minLength[String](1)) ~
     (JsPath \ "province").readNullable[String](minLength[String](1)) ~

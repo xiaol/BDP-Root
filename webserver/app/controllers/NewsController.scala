@@ -46,8 +46,8 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def getDetails(nid: Long) = Action.async { implicit request =>
-    newsService.findDetailsByNid(nid).map {
+  def getDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
+    newsService.findDetailsWithProfileByNid(nid, uid).map {
       case Some(news) => ServerSucced(news)
       case _          => DataEmptyError(s"$nid")
     }

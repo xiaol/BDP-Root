@@ -1,5 +1,6 @@
 package utils
 
+import commons.utils.{ NotFound, _ }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes._
 import play.api.libs.json._
@@ -40,6 +41,13 @@ object Response {
 
   def ServerSucced[T](data: T, token: Option[String] = None)(implicit writes: Writes[T]): Result = {
     Ok(Json.toJson(Response(SERVER_SUCCED_CODE, data, token)))
+  }
+
+  def ServerFailure(message: ExceptionMessage): Result = message match {
+    case notFound: NotFound           => Ok(Json.toJson(Response(SERVER_EMPTY_CODE, s"NotFoundError: ${notFound.toString}")))
+    case alreadyExist: AlreadyExist   => Ok(Json.toJson(Response(SERVER_CREATE_CODE, s"CreateDataError: ${alreadyExist.toString}")))
+    case executionFail: ExecutionFail => Ok(Json.toJson(Response(SERVER_ERROR_CODE, s"InternalServerError: ${executionFail.toString}")))
+    case msg @ _                      => Ok(Json.toJson(Response(SERVER_ERROR_CODE, s"InternalServerError: $msg")))
   }
 
   def ServerError(data: String): Result = {

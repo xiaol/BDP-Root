@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.5
+# 数据平台接口文档_V2.6
 
 ## 目录
 
@@ -8,7 +8,21 @@
 ----
 ## 更新日志
 
+*V2.6:*
+
+1. 客户端（新增）
+   1. 用户添加新闻发布源
+   2. 用户删除新闻发布源
+   3. 查看用户关注源列表
+   4. 用户已关注发布源相关的新闻列表刷新(作为两个单独的接口，不与原有列表接口混用)
+   5. 用户已关注发布源相关的新闻列表加载
+2. 客户端（修改）
+   1. 详情页接口响应数据，新增字段(需要提供 UID，可选，即当用户为正式注册用户时提供 UID 以获得如下数据)：colflag(是否已收藏该新闻)、conflag(是否已关心该新闻)、conpubflag(是否已关心该新闻的发布源)
+3. 爬虫
+   1. 新闻缓存提交部分，新增字段：pub_icon(发布源图表)、pub_descr(发布源描述)
+
 _V2.5：_
+
 1. 列表页响应增加 `descr` (摘要)字段
 
 _V2.4：_
@@ -511,9 +525,10 @@ GET /v2/ns/con
 Host: bdp.deeporiginalx.com
 ```
 
-| Key  | 参数类型   | 是否必须 | 参数解释 |
-| ---- | :----- | :--- | :--- |
-| nid  | String | 是    | 新闻ID |
+| Key  | 参数类型   | 是否必须          | 参数解释 |
+| ---- | :----- | :------------ | :--- |
+| nid  | String | 是             | 新闻ID |
+| uid  | String | 否(非正式注册用户不提供) | 用户ID |
 
 _Response_
 
@@ -550,7 +565,10 @@ Content-Type: application/json
     ],
     "collect": 1,
     "concern": 1,
-    "comment": 0
+    "comment": 0,
+	"colflag":1,		- 是(1)否(0)已收藏
+	"conflag":1,		- 是(1)否(0)已关心
+	"conpubflag":1		- 是(1)否(0)已关心该新闻对应的发布源
   }
 }
 ```
@@ -969,6 +987,141 @@ Host: bdp.deeporiginalx.com
 **Response：新闻列表页数据格式**
 
 ----
+#### 新闻发布源关心
+
+----
+
+##### 添加新闻发布源关心
+
+*Request*
+
+```
+POST /v2/ns/pbs/cocs
+Authorization: Basic MmFhOXhrZTlxbGVmM3luOCc2M3kwanFwcChjeHBmczM1ZDRjYip4cyoycjdobG51ZWd5eXFmOGZiaHRrcTVrcw
+X-Requested-With: *
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+```
+
+| Key   | 参数列表   | 是否必须 | 参数解释  |
+| ----- | ------ | ---- | ----- |
+| uid   | String | 是    | 用户ID  |
+| pname | String | 是    | 发布源名称 |
+
+*Response*
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code":2000,
+  "data":122			- 更新后，该发布源的关心数
+}
+```
+
+##### 取消新闻发布源关心
+
+*Request*
+
+```
+DELETE /v2/ns/pbs/cocs
+Authorization: Basic MmFhOXhrZTlxbGVmM3luOCc2M3kwanFwcChjeHBmczM1ZDRjYip4cyoycjdobG51ZWd5eXFmOGZiaHRrcTVrcw
+X-Requested-With: *
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+```
+
+| Key   | 参数列表   | 是否必须 | 参数解释  |
+| ----- | ------ | ---- | ----- |
+| uid   | String | 是    | 用户ID  |
+| pname | String | 是    | 发布源名称 |
+
+*Response*
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code":2000,
+  "data":122			- 更新后，该发布源的关心数
+}
+```
+
+##### 已关心发布源列表
+
+*Request*
+
+```
+GET /v2/ns/pbs/cocs?uid=112011 HTTP/1.1
+Authorization: Basic MmFhOXhrZTlxbGVmM3luOCc2M3kwanFwcChjeHBmczM1ZDRjYip4cyoycjdobG51ZWd5eXFmOGZiaHRrcTVrcw
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数列表   | 是否必须 | 参数解释 |
+| ---- | ------ | ---- | ---- |
+| uid  | String | 是    | 用户ID |
+
+*Response*
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code":2000,
+  "data":[
+    {
+      "id":6,
+      "ctime":"2016-07-18 22:09:19",
+      "name":"深圳吃货",
+      "icon":"http://some.png",
+      "descr":"深圳美食",
+      "concern":1
+    }
+  ]
+}
+```
+
+##### 已关心发布源的新闻列表刷新
+
+*Request*
+
+```
+GET /v2/ns/pbs/cocs/r
+Authorization: Basic MmFhOXhrZTlxbGVmM3luOCc2M3kwanFwcChjeHBmczM1ZDRjYip4cyoycjdobG51ZWd5eXFmOGZiaHRrcTVrcw
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释        |
+| ---- | ------ | -------- | ----------- |
+| uid  | String | 是        | 用户ID        |
+| tcr  | String | 是        | 起始时间，13位时间戳 |
+| p    | String | 否(默认 1)  | 页数          |
+| c    | String | 否(默认 20) | 条数          |
+
+**Response：新闻列表页数据格式**
+
+##### 已关心发布源的新闻列表加载
+
+*Request*
+
+```
+GET /v2/ns/pbs/cocs/l
+Authorization: Basic MmFhOXhrZTlxbGVmM3luOCc2M3kwanFwcChjeHBmczM1ZDRjYip4cyoycjdobG51ZWd5eXFmOGZiaHRrcTVrcw
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释        |
+| ---- | ------ | -------- | ----------- |
+| uid  | String | 是        | 用户ID        |
+| tcr  | String | 是        | 起始时间，13位时间戳 |
+| p    | String | 否(默认 1)  | 页数          |
+| c    | String | 否(默认 20) | 条数          |
+
+**Response：新闻列表页数据格式**
+
 ### 日志上报
 
 _Request_
@@ -1460,6 +1613,8 @@ Host: bdp.deeporiginalx.com
   "pub_time": "2016-04-15 12:57:00",                         - 发布时间,格式为"yyyy-MM-dd HH:mm:ss":String NULL NOT ""
   "pub_name": "新华网",                                      - 发布媒体名,String NULL NOT ""
   "pub_url": "http://www.xinhua.com/asads.html",             - 发布URL:String NULL
+  "pub_icon": "http://some.png",							- 发布源图标:String NULL NOT ""
+  "pub_descr": "新华网新闻...",								- 发布源描述:String NULL NOT ""
   "content_html": "<html>...</html>",                        - 抓取网页源码:String NOT (NULL & "")
   "synopsis": "简介",                                        - 简介:String NULL NOT ""
   "province": "北京市",                                      - 省:String NULL NOT ""

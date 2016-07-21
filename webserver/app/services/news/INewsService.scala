@@ -49,6 +49,24 @@ class NewsService @Inject() (val newsDAO: NewsDAO) extends INewsService {
     }
   }
 
+  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
+    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+      case None => newsDAO.findByNid(nid).map {
+        case Some(row) => Some(NewsDetailsResponse.from(row))
+        case _         => None
+      }
+      case Some(uid) => newsDAO.findByNidWithProfile(nid, uid).map {
+        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
+        case _                       => None
+      }
+    }
+    result.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.findDetailsByUrl($nid, $uidOpt): ${e.getMessage}")
+        None
+    }
+  }
+
   def loadFeedByRecommends(page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
       val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
