@@ -7,8 +7,8 @@ import akka.util.Timeout
 
 import scala.concurrent.duration._
 import services.community.ASearchService
-import services.news.{ NewsEsService, NewsService }
-import commons.models.news.NewsRow
+import services.news._
+import commons.models.news.{ NewsPublisherRow, NewsRow }
 import commons.models.community.ASearchRows
 
 /**
@@ -16,7 +16,7 @@ import commons.models.community.ASearchRows
  *
  */
 
-class PersistanceServer(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService) extends Actor {
+class PersistanceServer(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService) extends Actor {
 
   import context.dispatcher
   val logger = Logging(context.system, this)
@@ -37,6 +37,11 @@ class PersistanceServer(aSearchService: ASearchService, newsService: NewsService
       aSearchService.insertMulti(aSearchRows).map {
         case reply => superior ! reply.size
       }
+    case newsPublisherRow: NewsPublisherRow =>
+      val superior = sender()
+      newsPublisherService.insertOrDiscard(newsPublisherRow).map {
+        case reply => superior ! reply
+      }
     case msg: String =>
       logger.info(s"CatchMsg: $msg"); sender ! s"CatchMsg: $msg"
     case _ =>
@@ -44,6 +49,6 @@ class PersistanceServer(aSearchService: ASearchService, newsService: NewsService
 }
 
 object PersistanceServer {
-  def props(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService): Props =
-    Props(new PersistanceServer(aSearchService, newsService, newsEsService))
+  def props(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService): Props =
+    Props(new PersistanceServer(aSearchService, newsService, newsEsService, newsPublisherService))
 }
