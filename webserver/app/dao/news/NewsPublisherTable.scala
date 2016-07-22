@@ -58,28 +58,26 @@ class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     })
   }
 
-  def listNewsByPublisher(pname: String, offset: Long, limit: Long): Future[Seq[NewsRow]] = {
-    val timeCourse = timeWindow(0)
-    val timeWindows = timeWindow(-30)
-    db.run(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCourse).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def listNewsByPublisher(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    val timeWindows = timeWindow(timeCursor, -30)
+    db.run(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def listNewsByPublisherWithPubInfo(pname: String, offset: Long, limit: Long): Future[(NewsPublisherRow, Seq[NewsRow])] = {
-    val timeCourse = timeWindow(0)
-    val timeWindows = timeWindow(-30)
+  def listNewsByPublisherWithPubInfo(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[(NewsPublisherRow, Seq[NewsRow])] = {
+    val timeWindows = timeWindow(timeCursor, -30)
     val queryAction = for {
       (pub, news) <- publisherList.filter(_.name === pname)
-        .joinLeft(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCourse)).on(_.name === _.pname).sortBy(_._2.map(_.ctime).desc).drop(offset).take(limit)
+        .joinLeft(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor)).on(_.name === _.pname).sortBy(_._2.map(_.ctime).desc).drop(offset).take(limit)
     } yield (pub, news)
 
     db.run(queryAction.result).map {
       case pairs: Seq[(NewsPublisherRow, Option[NewsRow])] =>
         val result = pairs.groupBy(_._1).map { case (p, nOptSeq) => (p, nOptSeq.map(_._2).collect { case nOpt if nOpt.isDefined => nOpt.get }) }.headOption
-        if (result.isDefined) result.get    // && result.get._2.nonEmpty
+        if (result.isDefined) result.get // && result.get._2.nonEmpty
         else throw PGDBException(NotFound("publisherList or newslist", ("pname", pname)))
     }
   }
 
-  final private val timeWindow = (days: Int) => LocalDateTime.now().withMillisOfSecond(0).plusDays(days)
+  final private val timeWindow = (timeCursor: LocalDateTime, days: Int) => timeCursor.plusDays(days)
 }
 

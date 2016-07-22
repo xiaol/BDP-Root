@@ -7,6 +7,7 @@ import commons.models.news._
 import commons.utils._
 import dao.news.NewsPublisherDAO
 import play.api.Logger
+import commons.utils.JodaUtils._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -33,13 +34,13 @@ class NewsPublisherService @Inject() (val newsPublisherDAO: NewsPublisherDAO) ex
     }
   }
 
-  def listNewsByPublisher(pname: String, page: Long, count: Long, infoFlag: Int): Future[Either[DBExceptionMessage, NewsFeedWithPublisherInfoResponse]] = {
+  def listNewsByPublisher(pname: String, page: Long, count: Long, tcursor: Long, infoFlag: Int): Future[Either[DBExceptionMessage, NewsFeedWithPublisherInfoResponse]] = {
     val result = infoFlag match {
-      case 0 => newsPublisherDAO.listNewsByPublisher(pname, (page - 1) * count, count).map {
+      case 0 => newsPublisherDAO.listNewsByPublisher(pname, (page - 1) * count, count, msecondsToDatetime(tcursor)).map {
         case newsSeq: Seq[NewsRow] =>
           Right(NewsFeedWithPublisherInfoResponse(newsSeq.map(NewsFeedResponse.from)))
       }
-      case _ => newsPublisherDAO.listNewsByPublisherWithPubInfo(pname, (page - 1) * count, count).map {
+      case _ => newsPublisherDAO.listNewsByPublisherWithPubInfo(pname, (page - 1) * count, count, msecondsToDatetime(tcursor)).map {
         case (publisher, newsSeq) =>
           Right(NewsFeedWithPublisherInfoResponse(Some(publisher), newsSeq.map(NewsFeedResponse.from)))
       }

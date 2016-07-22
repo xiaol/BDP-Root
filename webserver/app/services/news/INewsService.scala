@@ -9,7 +9,6 @@ import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import org.joda.time.LocalDateTime
 import play.api.Logger
-import scala.util.Random
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

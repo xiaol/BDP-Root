@@ -158,8 +158,8 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def listNewsByPublisher(pname: String, page: Long, count: Long, infoFlag: Int) = Action.async { implicit request =>
-    newsPublisherService.listNewsByPublisher(pname, page, count, infoFlag).map {
+  def listNewsByPublisher(pname: String, page: Long, count: Long, infoFlag: Int, tcursor: Long) = Action.async { implicit request =>
+    newsPublisherService.listNewsByPublisher(pname, page, count, tcursor, infoFlag).map {
       case Right(newsFeedWithPublisherResponse) => ServerSucced(newsFeedWithPublisherResponse)
       case Left(exceptionMessage)               => ServerFailure(exceptionMessage)
     }
