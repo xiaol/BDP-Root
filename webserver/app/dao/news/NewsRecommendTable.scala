@@ -56,7 +56,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
 
   private def newsFilternewsRecommend(channel: ConstColumn[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
     for {
-      news <- newsList.filter(_.channel === channel).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit)
+      news <- newsList.filter(_.channel === channel).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit)
     } yield news
   }
 
@@ -93,7 +93,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     if (ifrecommend == 1) {
       db.run(newsList.filter(_.channel === channel).join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).length.result)
     } else {
-      db.run(newsList.filter(_.channel === channel).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).length.result)
+      db.run(newsList.filter(_.channel === channel).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).length.result)
     }
   }
 
