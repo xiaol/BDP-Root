@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.6
+# 数据平台接口文档_V2.6.1
 
 ## 目录
 
@@ -7,6 +7,12 @@
 
 ----
 ## 更新日志
+
+*V2.6.1:*
+
+客户端（新增）：
+
+1. 指定新闻发布源的新闻列表（翻页加载，无需登录）
 
 *V2.6:*
 
@@ -1122,6 +1128,59 @@ Host: bdp.deeporiginalx.com
 
 **Response：新闻列表页数据格式**
 
+##### 指定新闻发布源新闻列表
+
+*Request*
+
+```
+GET /v2/ns/pbs
+Host: bdp.deeporiginalx.com
+```
+
+| Key   | 参数类型   | 是否必须    |                     |
+| ----- | ------ | ------- | ------------------- |
+| pname | String | 是       | 发布源名称               |
+| info  | String | 否(默认 0) | 是(1)否(0)同时获得改发布源的详情 |
+
+*Response*
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code":2000,
+  "data":{
+    "info":{							- 该发布源详情
+      "id":4,
+      "ctime":"2016-07-15 18:23:05",
+      "name":"环球网",
+      "concern":1,
+      "icon":"http://some.png",
+      "descr":"环球网新闻"
+    },
+  	"news":[
+      {
+       "nid":5212751,					- 通用列表页结构
+       "docid":"http://m.huanqiu...",
+       "title":" “十二金衩”+“彩蛋”:盛大游戏Showgirl制霸2016CJ",
+       "ptime":"2016-07-22 13:47:45",
+       "pname":"环球网",
+       "purl":"http://m.huanqiu....",
+       "channel":22,
+       "collect":0,
+       "concern":0,
+       "comment":0,
+       "style":3,
+       "imgs":["http://bdp-pic.deeporiginalx.com/...",
+               "http://bdp-pic.deeporiginalx.com/..."
+              ]
+      },
+      ...
+    ]
+  }
+```
+
 ### 日志上报
 
 _Request_
@@ -1696,11 +1755,11 @@ GET /v2/ns/es/s
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
 
-| Key        | 参数类型      |   是否必须    | 参数解释  |
-| ---------- |:------------- | :------------ | :-------- |
-| keywords   | String        | 是            | 搜索关键字      |
-| p          | Long        | 否(默认 1)    | 页数      |
-| c          | Long        | 否(默认 20)   | 条数      |
+| Key      | 参数类型   | 是否必须     | 参数解释  |
+| -------- | :----- | :------- | :---- |
+| keywords | String | 是        | 搜索关键字 |
+| p        | Long   | 否(默认 1)  | 页数    |
+| c        | Long   | 否(默认 20) | 条数    |
 
 _Response_
 
@@ -1735,7 +1794,6 @@ Content-Type: application/json
 
 
 
-
 ----
 ### <span id="新闻推荐">新闻推荐</span>
 
@@ -1749,10 +1807,10 @@ GET /v2/ns/re
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
 
-| Key        | 参数类型      |   是否必须    | 参数解释  |
-| ---------- |:-------------| :------------| :--------|
-| uid        | String       | 是           | 用户id    |
-| c          | Long         | 否(默认 20)   | 条数      |
+| Key  | 参数类型   | 是否必须     | 参数解释 |
+| ---- | :----- | :------- | :--- |
+| uid  | String | 是        | 用户id |
+| c    | Long   | 否(默认 20) | 条数   |
 
 _Response_
 
@@ -1794,12 +1852,12 @@ GET /v2/nsr/o
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
 
-| Key        | 参数类型      |   是否必须     | 参数解释   |
-| ---------- |:-------------| :------------ | :-------- |
-| nid        | Long         | 是            | 新闻id     |
-| m          | String       | 是            | 方法名称:添加删除(insert/delete)   |
-| l          | Double       | 是            | 推荐等级   |
-| b          | Int          | 否            | 大图为第几张   |
+| Key  | 参数类型   | 是否必须 | 参数解释                     |
+| ---- | :----- | :--- | :----------------------- |
+| nid  | Long   | 是    | 新闻id                     |
+| m    | String | 是    | 方法名称:添加删除(insert/delete) |
+| l    | Double | 是    | 推荐等级                     |
+| b    | Int    | 否    | 大图为第几张                   |
 
 _Response_
 
@@ -1820,12 +1878,12 @@ GET /v2/nsr/l
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
 
-| Key        | 参数类型      |   是否必须    | 参数解释  |
-| ---------- |:-------------| :------------| :--------|
-| ch         | Long         | 是           | 频道      |
-| ifr        | Int          | 是(1/0)      | 已推荐/未推荐|
-| p          | Long         | 否(默认 1)    | 页数      |
-| c          | Long         | 否(默认 20)   | 条数      |
+| Key  | 参数类型 | 是否必须     | 参数解释    |
+| ---- | :--- | :------- | :------ |
+| ch   | Long | 是        | 频道      |
+| ifr  | Int  | 是(1/0)   | 已推荐/未推荐 |
+| p    | Long | 否(默认 1)  | 页数      |
+| c    | Long | 否(默认 20) | 条数      |
 
 _Response_
 
@@ -1872,13 +1930,13 @@ GET /v2/nsr/es/l
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
 
-| Key        | 参数类型      |   是否必须    | 参数解释  |
-| ---------- |:-------------| :------------| :--------|
-| keywords   | String       | 是           | 搜索关键字 |
-| pn         | String       | 否           | 新闻来源  |
-| ch         | Long         | 否           | 频道      |
-| p          | Long         | 否(默认 1)    | 页数      |
-| c          | Long         | 否(默认 20)   | 条数      |
+| Key      | 参数类型   | 是否必须     | 参数解释  |
+| -------- | :----- | :------- | :---- |
+| keywords | String | 是        | 搜索关键字 |
+| pn       | String | 否        | 新闻来源  |
+| ch       | Long   | 否        | 频道    |
+| p        | Long   | 否(默认 1)  | 页数    |
+| c        | Long   | 否(默认 20) | 条数    |
 
 _Response_
 

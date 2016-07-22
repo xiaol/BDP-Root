@@ -32,4 +32,23 @@ class NewsPublisherService @Inject() (val newsPublisherDAO: NewsPublisherDAO) ex
         Left(ExecutionFail(e.getMessage))
     }
   }
+
+  def listNewsByPublisher(pname: String, page: Long, count: Long, infoFlag: Int): Future[Either[DBExceptionMessage, NewsFeedWithPublisherInfoResponse]] = {
+    val result = infoFlag match {
+      case 0 => newsPublisherDAO.listNewsByPublisher(pname, (page - 1) * count, count).map {
+        case newsSeq: Seq[NewsRow] =>
+          Right(NewsFeedWithPublisherInfoResponse(newsSeq.map(NewsFeedResponse.from)))
+      }
+      case _ => newsPublisherDAO.listNewsByPublisherWithPubInfo(pname, (page - 1) * count, count).map {
+        case (publisher, newsSeq) =>
+          Right(NewsFeedWithPublisherInfoResponse(Some(publisher), newsSeq.map(NewsFeedResponse.from)))
+      }
+    }
+    result.recover {
+      case e: PGDBException => Left(e.getErrorEntity)
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsPublisherService.listNewsByPublisher(${pname.toString}): ${e.getMessage}")
+        Left(ExecutionFail(e.getMessage))
+    }
+  }
 }
