@@ -10,7 +10,7 @@ import akka.util.Timeout
 import akka.actor.Props
 import akka.event.Logging
 import commons.models.community._
-import commons.models.news.NewsRow
+import commons.models.news.{ NewsPublisherRow, NewsRow }
 import org.joda.time.LocalDateTime
 
 /**
@@ -38,6 +38,11 @@ class PersistanceServer extends Actor {
     case aSearchRows: ASearchRows =>
       val superior = sender()
       (persistanceRoutees ? aSearchRows)(15.seconds).recover { case _ => 0 }.map {
+        case reply => // superior ! reply
+      }
+    case newsPublisherRow: NewsPublisherRow =>
+      val superior = sender()
+      (persistanceRoutees ? newsPublisherRow)(15.seconds).recover { case _ => 0 }.map {
         case reply => // superior ! reply
       }
     case msg: String => (persistanceRoutees ? msg)(15.seconds).map {

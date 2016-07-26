@@ -105,6 +105,9 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
               }
               if (searchTemp.isDefined && searchTemp.get.nonEmpty)
                 persistanceServer ! ASearchRows(searchTemp.get.map(ASearchRow(None, LocalDateTime.now().withMillisOfSecond(0), nid.toString, _)))
+              if (temp.pname.isDefined) {
+                persistanceServer ! NewsPublisherRow(None, LocalDateTime.now().withMillisOfSecond(0), temp.pname.get, temp.picon, temp.pdescr, concern = 0)
+              }
               shutdown()
             case None => shutdown()
           }
@@ -146,6 +149,8 @@ object SpiderNewsPipelineServer {
             ptime = dateTimeStr2DateTime(cache.get("pub_time").get),
             pname = cache.get("pub_name"),
             purl = cache.get("pub_url"),
+            picon = cache.get("pub_icon"),
+            pdescr = cache.get("pub_descr"),
             html = cache.get("content_html").get,
             synopsis = cache.get("synopsis"),
             province = cache.get("province"),

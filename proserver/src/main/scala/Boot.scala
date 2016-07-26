@@ -21,9 +21,9 @@ object Boot extends App {
   // persistance server
   val persistanceServer: ActorRef = system.actorOf(PersistanceServer.props, "PersistanceServer")
 
-  val imageProcessor: ActorRef = system.actorOf(ImageProcessor.props, "ImageProcessor")
+  val imageProcessServer: ActorRef = system.actorOf(ImageProcessServer.props, "ImageProcessServer")
 
-  val imageServer: ActorRef = system.actorOf(ImagePipelineServer.props(imageProcessor), "ImagePipelineServer")
+  val imageServer: ActorRef = system.actorOf(ImagePipelineServer.props(imageProcessServer), "ImagePipelineServer")
 
   // news pipeline server
   val newsPipelineServer: ActorRef = system.actorOf(SpiderNewsPipelineServer.props(persistanceServer, imageServer), "SpiderNewsPipelineServer")

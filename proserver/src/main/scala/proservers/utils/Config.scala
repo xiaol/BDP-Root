@@ -21,4 +21,13 @@ trait Config {
   val asearchURI = serviceConfig.getString("URI-ASearch")
   val asearchDBURI = serviceConfig.getString("DB-ASearch")
   val newsDBURI = serviceConfig.getString("DB-News")
+
+  val imageTempPath = config.getString("image-temp-path")
+
+  val ossConfig = config.getConfig("oss")
+  val endpoint = ossConfig.getString("endpoint")
+  val accessKeyId = ossConfig.getString("key")
+  val accessKeySecret = ossConfig.getString("secret")
+  val ossPrefixUri = ossConfig.getString("prefix-uri")
+  val ossBucketName = ossConfig.getString("bucket")
 }

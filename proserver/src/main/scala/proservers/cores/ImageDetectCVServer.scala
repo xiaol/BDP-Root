@@ -12,12 +12,9 @@ import scala.util.control.NonFatal
  *
  */
 
-trait ImageDetectServer extends ImageDetectDriver with ImageUtils {
-
-  var count = 0
+trait ImageDetectCVServer extends ImageDetectDriver with ImageUtils {
 
   def imageContrast(pathA: String, pathB: String): Boolean = {
-    count += 1
     try {
       val imageA: Mat = Highgui.imread(pathA, Highgui.CV_LOAD_IMAGE_COLOR)
       val imageB: Mat = Highgui.imread(pathB, Highgui.CV_LOAD_IMAGE_COLOR)
@@ -39,7 +36,6 @@ trait ImageDetectServer extends ImageDetectDriver with ImageUtils {
       val matcher: DescriptorMatcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING)
       val matches: MatOfDMatch = new MatOfDMatch()
 
-      //descriptorsA.release(); descriptorsB.release()
       if (descriptorsB.cols() == descriptorsA.cols()) matcher.`match`(descriptorsA, descriptorsB, matches)
       matcher.clear()
 
@@ -68,11 +64,6 @@ trait ImageDetectServer extends ImageDetectDriver with ImageUtils {
       case NonFatal(e) =>
         println(s"ImageDetectServer.imageContrast: ${e.getMessage}")
         e.printStackTrace(); false
-    } finally {
-      //if(count % 200 == 0) {
-      //  Thread.sleep(5000)
-      //  System.gc()
-      //}
     }
   }
 
@@ -183,4 +174,4 @@ trait ImageDetectServer extends ImageDetectDriver with ImageUtils {
   }
 }
 
-object ImageDetectServer extends ImageDetectServer
+object ImageDetectCVServer extends ImageDetectCVServer

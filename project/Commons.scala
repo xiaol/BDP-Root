@@ -36,6 +36,7 @@ object Commons {
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       "Java.net Maven2 Repository" at "http://download.java.net/maven/2/",
       "softprops-maven" at "http://dl.bintray.com/content/softprops/maven",
+      "OpenIMAJ maven releases repository" at "http://maven.openimaj.org",
       "Sonatype OSS Snapshots" at "https://oss.sonatype.org/content/repositories/snapshots",
       "Eclipse repositories" at "https://repo.eclipse.org/service/local/repositories/egit-releases/content/"
     )
@@ -51,6 +52,9 @@ object Commons {
     case PathList("javax", "xml", xs @ _*)                  => MergeStrategy.first
     case PathList("edu", "stanford", xs @ _*)               => MergeStrategy.first
     case PathList("org", "cyberneko", xs @ _*)              => MergeStrategy.first
+    case PathList("org", "xmlpull", xs @ _*)              => MergeStrategy.first
+    case PathList("org", "objenesis", xs @ _*)              => MergeStrategy.first
+    case PathList("com", "esotericsoftware", xs @ _*)        => MergeStrategy.first
     case PathList(ps @ _*) if ps.last endsWith ".dic"       => MergeStrategy.first
     case PathList(ps @ _*) if ps.last endsWith ".data"      => MergeStrategy.first
     //  case "application.conf"                             => MergeStrategy.concat
