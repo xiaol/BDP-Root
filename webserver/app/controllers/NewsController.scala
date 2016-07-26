@@ -30,7 +30,7 @@ import scala.util.Random
  */
 
 class NewsController @Inject() (val userService: UserService, val channelService: ChannelService, val newsService: NewsService,
-                                val sourceService: SourceService, val commentService: CommentService, val aSearchService: ASearchService)(implicit ec: ExecutionContext)
+                                val sourceService: SourceService, val commentService: CommentService, val aSearchService: ASearchService, val newsPublisherService: NewsPublisherService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
   def listChannel(state: Int) = Action.async { implicit request =>
@@ -190,6 +190,13 @@ class NewsController @Inject() (val userService: UserService, val channelService
         case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(cs)
         case _                                       => DataEmptyError(s"$did, $uid, $page, $count")
       }
+    }
+  }
+
+  def listNewsByPublisher(pname: String, page: Long, count: Long, infoFlag: Int, tcursor: Long) = Action.async { implicit request =>
+    newsPublisherService.listNewsByPublisher(pname, page, count, tcursor, infoFlag).map {
+      case Right(newsFeedWithPublisherResponse) => ServerSucced(newsFeedWithPublisherResponse)
+      case Left(exceptionMessage)               => ServerFailure(exceptionMessage)
     }
   }
 }

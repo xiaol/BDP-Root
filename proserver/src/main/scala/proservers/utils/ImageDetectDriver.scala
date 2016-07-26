@@ -11,5 +11,5 @@ import org.opencv.objdetect.CascadeClassifier
 trait ImageDetectDriver {
   System.loadLibrary(Core.NATIVE_LIBRARY_NAME)
   val faceDetector: CascadeClassifier = new CascadeClassifier(getClass.getResource("/lbpcascade_frontalface.xml").getPath)
-  println("Initializing FaceDetector...")
+  println("Initializing ImageDetectDriver...")
 }

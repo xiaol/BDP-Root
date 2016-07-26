@@ -2,7 +2,7 @@ package dao.news
 
 import javax.inject.{ Inject, Singleton }
 
-import commons.models.news.NewsPublisherRow
+import commons.models.news.{ NewsPublisherRow, NewsRow }
 import commons.utils._
 import org.joda.time.LocalDateTime
 import play.api.db.slick._
@@ -31,10 +31,11 @@ trait NewsPublisherTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 @Singleton
-class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsPublisherTable with NewsTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
 
   val publisherList = TableQuery[NewsPublisherTable]
+  val newsList = TableQuery[NewsTable]
 
   def findByName(name: String): Future[Option[NewsPublisherRow]] =
     db.run(publisherList.filter(_.name === name).result.headOption)
@@ -56,5 +57,27 @@ class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
       case _ => Some(npid)
     })
   }
+
+  def listNewsByPublisher(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    val timeWindows = timeWindow(timeCursor, -30)
+    db.run(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  def listNewsByPublisherWithPubInfo(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[(NewsPublisherRow, Seq[NewsRow])] = {
+    val timeWindows = timeWindow(timeCursor, -30)
+    val queryAction = for {
+      (pub, news) <- publisherList.filter(_.name === pname)
+        .joinLeft(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor)).on(_.name === _.pname).sortBy(_._2.map(_.ctime).desc).drop(offset).take(limit)
+    } yield (pub, news)
+
+    db.run(queryAction.result).map {
+      case pairs: Seq[(NewsPublisherRow, Option[NewsRow])] =>
+        val result = pairs.groupBy(_._1).map { case (p, nOptSeq) => (p, nOptSeq.map(_._2).collect { case nOpt if nOpt.isDefined => nOpt.get }) }.headOption
+        if (result.isDefined) result.get // && result.get._2.nonEmpty
+        else throw PGDBException(NotFound("publisherList or newslist", ("pname", pname)))
+    }
+  }
+
+  final private val timeWindow = (timeCursor: LocalDateTime, days: Int) => timeCursor.plusDays(days)
 }
 

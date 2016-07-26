@@ -81,6 +81,8 @@ GET     /v2/ns/pbs/cocs             controllers.UserConcernPublisherController.l
 GET     /v2/ns/pbs/cocs/r           controllers.UserConcernPublisherController.refreshNewsByConcernedPublishers(uid:Long, p:Long ?= 1, c:Long ?= 20,tcr: Long)
 GET     /v2/ns/pbs/cocs/l           controllers.UserConcernPublisherController.loadNewsByConcernedPublishers(uid:Long, p:Long ?= 1, c:Long ?= 20,tcr: Long)
 
+GET     /v2/ns/pbs                  controllers.NewsController.listNewsByPublisher(pname:String,p:Long ?= 1, c:Long ?= 20, info:Int ?= 0, tcr: Long)
+
 # Spiders queues
 GET     /v2/sps/qs                  controllers.SpiderController.listQueue(p:Long ?= 1, c:Long ?= 20)
 POST    /v2/sps/qs                  controllers.SpiderController.createQueue()

@@ -7,11 +7,7 @@ import com.aliyun.oss.OSSClient
  *
  */
 
-trait OssDriver {
-  val endpoint = "oss-cn-hangzhou.aliyuncs.com"
-  val accessKeyId = "QK8FahuiSCpzlWG8"
-  val accessKeySecret = "TGXhTCwUoEU4yNEGsfZSDvp0dNqw2p"
-  val bucketName = "bdp-images"
+trait OssDriver extends Config {
   val client: OSSClient = new OSSClient(endpoint, accessKeyId, accessKeySecret)
 }
 

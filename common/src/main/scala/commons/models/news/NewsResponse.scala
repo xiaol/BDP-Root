@@ -155,3 +155,14 @@ object NewsDetailsResponse {
     NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.channel, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment, colFlag, conFlag, conPubFlag)
   }
 }
+
+case class NewsFeedWithPublisherInfoResponse(info: Option[NewsPublisherRow] = None, news: Seq[NewsFeedResponse])
+
+object NewsFeedWithPublisherInfoResponse {
+  implicit val NewsFeedWithPublisherInfoResponseWrites: Writes[NewsFeedWithPublisherInfoResponse] = (
+    (JsPath \ "info").writeNullable[NewsPublisherRow] ~
+    (JsPath \ "news").write[Seq[NewsFeedResponse]]
+  )(unlift(NewsFeedWithPublisherInfoResponse.unapply))
+
+  def apply(news: Seq[NewsFeedResponse]): NewsFeedWithPublisherInfoResponse = new NewsFeedWithPublisherInfoResponse(None, news)
+}
