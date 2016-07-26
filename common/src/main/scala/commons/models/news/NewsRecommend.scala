@@ -113,3 +113,22 @@ object NewsRecommendResponse {
     NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district, newsRecommend.rtime, newsRecommend.level, newsRecommend.bigimg, newsRecommend.status)
   }
 }
+
+case class NewsRecommendRead(
+  uid: Long,
+  nid: Long,
+  readtime: LocalDateTime)
+
+object NewsRecommendRead {
+  implicit val NewsRecommendReadWrites: Writes[NewsRecommendRead] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "readtime").write[LocalDateTime]
+  )(unlift(NewsRecommendRead.unapply))
+
+  implicit val NewsRecommendReadReads: Reads[NewsRecommendRead] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "readtime").read[LocalDateTime]
+  )(NewsRecommendRead.apply _)
+}

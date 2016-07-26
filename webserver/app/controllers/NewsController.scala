@@ -15,11 +15,12 @@ import scala.concurrent.{ ExecutionContext, Future }
 import commons.utils.Base64Utils.decodeBase64
 import commons.models.channels.ChannelRow
 import commons.models.community.ASearchRow
-import commons.models.news.NewsFeedResponse
+import commons.models.news.{ NewsFeedResponse, NewsRecommendResponse }
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
 import commons.models.users._
 import org.joda.time.LocalDateTime
+import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _, _ }
 
 import scala.util.Random
 
@@ -75,11 +76,37 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
+  def loadFeedNew(cid: Long, page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+    cid match {
+      case 1L => newsService.loadFeedByRecommendsNew(uid, page, count, tcursor).map {
+        case news: Seq[NewsRecommendResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTimeNew(news) else news)
+        case _                                                 => DataEmptyError(s"$cid, $page, $count, $tcursor")
+      }
+      case _ => newsService.loadFeedByChannel(cid, page, count, tcursor).map {
+        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+      }
+    }
+  }
+
   def refreshFeed(cid: Long, page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
     cid match {
       case 1L => newsService.refreshFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+      }
+      case _ => newsService.refreshFeedByChannel(cid, page, count, tcursor).map {
+        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+      }
+    }
+  }
+
+  def refreshFeedNew(cid: Long, page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+    cid match {
+      case 1L => newsService.refreshFeedByRecommendsNew(uid, page, count, tcursor).map {
+        case news: Seq[NewsRecommendResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTimeNew(news) else news)
+        case _                                                 => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
       case _ => newsService.refreshFeedByChannel(cid, page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -127,6 +154,14 @@ class NewsController @Inject() (val userService: UserService, val channelService
     news.map {
       case n: NewsFeedResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
       case n: NewsFeedResponse                                         => n
+    }
+  }
+
+  final private def mockRealTimeNew(news: Seq[NewsRecommendResponse]): Seq[NewsRecommendResponse] = {
+    val mockIndexs = Random.shuffle((1 to news.length - 2).toList).slice(0, news.length / 4)
+    news.map {
+      case n: NewsRecommendResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
+      case n: NewsRecommendResponse                                         => n
     }
   }
 

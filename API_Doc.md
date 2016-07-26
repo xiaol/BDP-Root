@@ -421,6 +421,26 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | c    | String | 否(默认 20) | 条数                                  |
 
 ----
+#### 列表页刷新(新接口)
+
+_Request_
+
+```json
+GET /v2/ns/fed/rn
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
+
+----
 #### 列表页加载
 
 _Request_
@@ -438,6 +458,25 @@ Host: bdp.deeporiginalx.com
 | tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
+----
+#### 列表页加载(新接口)
+
+_Request_
+
+```json
+GET /v2/ns/fed/ln
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
 
 ----
 #### 行政区划-列表页刷新

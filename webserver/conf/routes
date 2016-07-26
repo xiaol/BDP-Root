@@ -32,6 +32,10 @@ GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:L
 GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
 GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
 
+GET     /v2/ns/fed/rn               controllers.NewsController.refreshFeedNew(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long)
+GET     /v2/ns/fed/ln               controllers.NewsController.loadFeedNew(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long)
+
+
 GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
 GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
 
