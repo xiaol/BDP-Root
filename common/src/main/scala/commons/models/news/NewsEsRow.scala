@@ -86,3 +86,48 @@ object NewsEsRow {
     NewsEsRow(base.nid, base.docid, base.title, base.tags, base.descr, base.province, base.city, base.district, base.ptime, base.pname, base.purl, syst.channel, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, incr.compress, incr.ners, syst.ctime)
   }
 }
+
+//搜索新闻带上订阅号
+case class NewsFeedWithPublisherWithUserInfoResponse(news: Seq[NewsFeedResponse], total: Long, publisher: Seq[NewsPublisherWithUserResponse], s: Option[String])
+
+object NewsFeedWithPublisherWithUserInfoResponse {
+  implicit val NewsFeedWithPublisherWithUserInfoResponseWrites: Writes[NewsFeedWithPublisherWithUserInfoResponse] = (
+    (JsPath \ "news").write[Seq[NewsFeedResponse]] ~
+    (JsPath \ "total").write[Long] ~
+    (JsPath \ "publisher").write[Seq[NewsPublisherWithUserResponse]] ~
+    (JsPath \ "s").writeNullable[String]
+  )(unlift(NewsFeedWithPublisherWithUserInfoResponse.unapply))
+
+  def apply(news: Seq[NewsFeedResponse], t: Long, p: Seq[NewsPublisherWithUserResponse]): NewsFeedWithPublisherWithUserInfoResponse = new NewsFeedWithPublisherWithUserInfoResponse(news, t, p, None)
+}
+
+//订阅号信息及用户是否关注该订阅号
+case class NewsPublisherWithUserResponse(id: Option[Long] = None,
+                                         ctime: LocalDateTime,
+                                         name: String,
+                                         icon: Option[String] = None,
+                                         descr: Option[String] = None,
+                                         concern: Int = 0,
+                                         flag: Long)
+
+object NewsPublisherWithUserResponse {
+  implicit val NewsPublisherRowWrites: Writes[NewsPublisherWithUserResponse] = (
+    (JsPath \ "id").writeNullable[Long] ~
+    (JsPath \ "ctime").write[LocalDateTime] ~
+    (JsPath \ "name").write[String] ~
+    (JsPath \ "icon").writeNullable[String] ~
+    (JsPath \ "descr").writeNullable[String] ~
+    (JsPath \ "concern").write[Int] ~
+    (JsPath \ "flag").write[Long]
+  )(unlift(NewsPublisherWithUserResponse.unapply))
+
+  implicit val NewsPublisherRowReads: Reads[NewsPublisherWithUserResponse] = (
+    (JsPath \ "id").readNullable[Long] ~
+    (JsPath \ "ctime").read[LocalDateTime] ~
+    (JsPath \ "name").read[String] ~
+    (JsPath \ "icon").readNullable[String] ~
+    (JsPath \ "descr").readNullable[String] ~
+    (JsPath \ "concern").read[Int] ~
+    (JsPath \ "flag").read[Long]
+  )(NewsPublisherWithUserResponse.apply _)
+}

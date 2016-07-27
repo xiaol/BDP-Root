@@ -2,14 +2,13 @@ package dao.news
 
 import javax.inject.{ Inject, Singleton }
 
+import commons.models.news._
+import dao.userprofiles.ConcernPublisherTable
 import org.joda.time._
 import play.api.db.slick._
 import utils.MyPostgresDriver
 
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.json.JsValue
-import commons.models.news._
-import commons.utils.JodaOderingImplicits
 
 /**
  * Created by zhangshl on 16/7/15.
@@ -54,14 +53,16 @@ object NewsRecommendDAO {
 }
 
 @Singleton
-class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with HasDatabaseConfigProvider[MyPostgresDriver] {
-  import driver.api._
+class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with ConcernPublisherTable with NewsPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import NewsRecommendDAO._
+  import driver.api._
 
   val newsRecommendList = TableQuery[NewsRecommendTable]
   val newsRecommendAPPList = TableQuery[NewsRecommendAPPTable]
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
   val newsList = TableQuery[NewsTable]
+  val concernPubList = TableQuery[ConcernPublisherTable]
+  val publisherList = TableQuery[NewsPublisherTable]
 
   def insert(newsRecommend: NewsRecommend): Future[Long] = {
     db.run(newsRecommendList returning newsRecommendList.map(_.nid) += newsRecommend)
@@ -143,6 +144,29 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     }
 
     db.run(joinQuery.result)
+  }
+
+  //根据关键字搜索所有订阅号及该用户是否订阅
+  def listPublisherWithFlag(uid: Option[Long], keywords: String): Future[Seq[(NewsPublisherRow, Long)]] = {
+    //有uid,则查询用用户是否关联了订阅号
+    if (uid.isDefined) {
+      val joinQuery = (for {
+        (np, cp) <- publisherList.filter(_.name like "%" + keywords + "%").joinLeft(concernPubList.filter(_.uid === uid).filter(_.pname like "%" + keywords + "%")).on(_.name === _.pname).sortBy(_._1.concern.desc)
+      } yield (np, cp.map(_.id))).map {
+        case (np, cp) =>
+          (np, cp.getOrElse(0L))
+      }
+      db.run(joinQuery.result)
+    } else {
+      val joinQuery = (for {
+        np <- publisherList.filter(_.name like "%" + keywords + "%")
+      } yield (np)).map {
+        case (np) =>
+          (np, 0L)
+      }
+      db.run(joinQuery.result)
+    }
+
   }
 
 }

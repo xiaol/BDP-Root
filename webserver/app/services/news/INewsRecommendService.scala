@@ -7,7 +7,7 @@ import com.google.inject.ImplementedBy
 import commons.models.news.{ NewsRecommendResponse, _ }
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
-import dao.news.NewsRecommendDAO
+import dao.news.{ NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
@@ -24,9 +24,17 @@ trait INewsRecommendService {
   def operate(nid: Long, method: String, level: Option[Double], bigimg: Option[Int]): Future[Option[Long]]
   def insert(newsRecommend: NewsRecommend): Future[Option[Long]]
   def delete(nid: Long): Future[Option[Long]]
+  def listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)]
+  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]]
+  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int]
+  def listNewsBySearch(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int): Future[(Seq[NewsRecommendResponse], Long)]
+  def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def listPublisherWithFlag(uid: Option[Long], keywords: String): Future[Seq[(NewsPublisherRow, Long)]]
 }
 
-class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, val newsEsService: NewsEsService) extends INewsRecommendService {
+class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, val newsEsService: NewsEsService,
+                                      val newsDAO: NewsDAO, val newsRecommendReadDAO: NewsRecommendReadDAO) extends INewsRecommendService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -121,6 +129,75 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       }
     }
     Future(result)
+  }
+
+  final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {
+    val reqTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
+    val oldTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(-12))
+    if (reqTimeCursor.isBefore(oldTimeCursor)) oldTimeCursor else reqTimeCursor
+  }
+
+  def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+    {
+      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
+      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
+      //人工推荐新闻,每个推荐等级依次一条条显示
+      val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
+      //取一条大图新闻,作为头条
+      val loadBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
+      val r: Future[Seq[NewsFeedResponse]] = for {
+        hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        colds <- lostColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
+        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+      } yield {
+        bigimg ++: recommends ++: hots ++: colds
+      }
+      val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      result
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsRecommendService.loadFeedByRecommendsNew($timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+    {
+      val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
+      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 2, newTimeCursor)
+      val refreshColdFO: Future[Seq[NewsRow]] = newsDAO.refreshByCold((page - 1) * count, count / 2, newTimeCursor)
+      val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
+      val refreshBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
+      val r: Future[Seq[NewsFeedResponse]] = for {
+        hots <- refreshHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        colds <- refreshColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
+        bigimg <- refreshBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+      } yield {
+        bigimg ++: recommends ++: hots ++: colds
+      }
+      val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      result
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsRecommendService.refreshFeedByRecommendsNew($timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def listPublisherWithFlag(uid: Option[Long], keywords: String): Future[Seq[(NewsPublisherRow, Long)]] = {
+    newsRecommendDAO.listPublisherWithFlag(uid, keywords).recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsRecommendService.listPublisherWithFlag($uid, $keywords): ${e.getMessage}")
+        Seq[(NewsPublisherRow, Long)]()
+    }
   }
 
 }
