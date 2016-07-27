@@ -53,7 +53,10 @@ object NewsRecommendDAO {
 }
 
 @Singleton
-class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with ConcernPublisherTable with NewsPublisherTable
+    with HasDatabaseConfigProvider[MyPostgresDriver] {
+
   import driver.api._
   import NewsRecommendDAO._
 
@@ -145,7 +148,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
 
     db.run(joinQuery.result)
   }
-  
+
   //根据关键字搜索所有订阅号及该用户是否订阅
   def listPublisherWithFlag(uid: Option[Long], keywords: String): Future[Seq[(NewsPublisherRow, Long)]] = {
     //有uid,则查询用用户是否关联了订阅号

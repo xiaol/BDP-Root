@@ -1873,10 +1873,70 @@ Content-Type: application/json
       "district": "山东"
     },
     …
-  ]
-  "total": 2000,                                              - 总条数
+  ],
+  "total": 2000                                               - 总条数
 }
 
+#### <span id="查询新闻及订阅号">查询新闻及订阅号</span>
+_Request_
+
+Request
+
+GET /v2/ns/es/snp
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+
+| Key      | 参数类型   | 是否必须     | 参数解释  |
+| -------- | :----- | :------- | :---- |
+| keywords | String | 是        | 搜索关键字 |
+| p        | Long   | 否(默认 1)  | 页数    |
+| c        | Long   | 否(默认 20) | 条数    |
+| uid      | Long   | 否         | 用户id  |
+
+_Response_
+
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 
+  {
+            "news": [
+                {
+                  "nid": 6695,                                            - 新闻ID
+                  "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+                  "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+                  "ptime": "2016-05-22 01:20:46",
+                  "pname": "参考消息",
+                  "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+                  "channel": 9,
+                  "collect": 0,                                           - 收藏数
+                  "concern": 0,                                           - 关心数
+                  "comment": 4,                                           - 评论数
+                  "style": 1,                                             - 列表图格式，0、1、2、3
+                  "imgs": [                                               - 该字段会有对应style数值的图片
+                    "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+                  ],
+                  "province": "山东",
+                  "city": "青岛",
+                  "district": "山东"
+                },
+                …
+              ],
+              "total": 2000,                                              - 总条数
+              "publisher": [
+                  {
+                    "id": 6695,                                            - 订阅号ID
+                    "ctime": "2016-05-22 01:20:46",                        - 创建时间
+                    "name": "安卓中国",                                     -  订阅号名称
+                    "concern": 0,                                           - 关注数
+                    "flag": 0,                                             - 0未关注, >0已关注
+                  },
+                  …
+                ]
+  }
+}
 
 
 ----
