@@ -13,13 +13,14 @@ import services.community.ASearchService
 
 import scala.concurrent.{ ExecutionContext, Future }
 import commons.utils.Base64Utils.decodeBase64
-import commons.models.channels.ChannelRow
+import commons.models.channels.{ ChannelResponse, ChannelRow }
 import commons.models.community.ASearchRow
-import commons.models.news.NewsFeedResponse
+import commons.models.news.{ NewsFeedResponse, NewsRecommendResponse }
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
 import commons.models.users._
 import org.joda.time.LocalDateTime
+import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _, _ }
 
 import scala.util.Random
 
@@ -32,10 +33,10 @@ class NewsController @Inject() (val userService: UserService, val channelService
                                 val sourceService: SourceService, val commentService: CommentService, val aSearchService: ASearchService, val newsPublisherService: NewsPublisherService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
-  def listChannel(state: Int) = Action.async { implicit request =>
-    channelService.list(state).map {
-      case channels: Seq[ChannelRow] if channels.nonEmpty => ServerSucced(channels)
-      case _                                              => DataEmptyError(s"$state")
+  def listChannel(state: Int, sech: Int) = Action.async { implicit request =>
+    channelService.listWithSeChannel(state, sech).map {
+      case channels: Seq[ChannelResponse] if channels.nonEmpty => ServerSucced(channels)
+      case _                                                   => DataEmptyError(s"$state")
     }
   }
 
@@ -60,30 +61,28 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  // def getRelated(nid: String) = ???
-
-  def loadFeed(cid: Long, page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
-    cid match {
+  def loadFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+    chid match {
       case 1L => newsService.loadFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
-      case _ => newsService.loadFeedByChannel(cid, page, count, tcursor).map {
+      case _ => newsService.loadFeedByChannel(chid, sechidOpt, page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
     }
   }
 
-  def refreshFeed(cid: Long, page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
-    cid match {
+  def refreshFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+    chid match {
       case 1L => newsService.refreshFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
-      case _ => newsService.refreshFeedByChannel(cid, page, count, tcursor).map {
+      case _ => newsService.refreshFeedByChannel(chid, sechidOpt, page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
     }
   }

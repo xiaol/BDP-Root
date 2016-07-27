@@ -102,9 +102,10 @@ object NewsRowIncr {
 case class NewsRowSyst(
   state: Int,
   ctime: LocalDateTime,
-  channel: Long,
-  source: Long,
-  sstate: Int,
+  chid: Long,
+  sechid: Option[Long],
+  srid: Long,
+  srstate: Int,
   pconf: Option[JsValue] = None,
   plog: Option[JsValue] = None)
 
@@ -112,9 +113,10 @@ object NewsRowSyst {
   implicit val NewsRowSystWrites: Writes[NewsRowSyst] = (
     (JsPath \ "state").write[Int] ~
     (JsPath \ "ctime").write[LocalDateTime] ~
-    (JsPath \ "channel").write[Long] ~
-    (JsPath \ "source").write[Long] ~
-    (JsPath \ "sstate").write[Int] ~
+    (JsPath \ "chid").write[Long] ~
+    (JsPath \ "sechid").writeNullable[Long] ~
+    (JsPath \ "srid").write[Long] ~
+    (JsPath \ "srstate").write[Int] ~
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "plog").writeNullable[JsValue]
   )(unlift(NewsRowSyst.unapply))
@@ -122,9 +124,10 @@ object NewsRowSyst {
   implicit val NewsRowSystReads: Reads[NewsRowSyst] = (
     (JsPath \ "state").read[Int] ~
     (JsPath \ "ctime").read[LocalDateTime] ~
-    (JsPath \ "channel").read[Long] ~
-    (JsPath \ "source").read[Long] ~
-    (JsPath \ "sstate").read[Int] ~
+    (JsPath \ "chid").read[Long] ~
+    (JsPath \ "sechid").readNullable[Long] ~
+    (JsPath \ "srid").read[Long] ~
+    (JsPath \ "srstate").read[Int] ~
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "plog").readNullable[JsValue]
   )(NewsRowSyst.apply _)

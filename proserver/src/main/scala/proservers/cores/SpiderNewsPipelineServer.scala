@@ -18,7 +18,7 @@ import proservers.utils.RedisDriver.cache
 import commons.messages.pipeline._
 import commons.models.community._
 import commons.models.news.NewsBodyBlock
-import commons.models.spiders.NewsTemp
+import commons.models.spiders._
 import commons.utils.Md5Utils.md5Hash
 import proservers.webservices.ASearchClient
 
@@ -40,7 +40,7 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
       val superior = sender()
       verifyNewsTemp(task).onComplete {
         case Success(Right(newsTemp)) =>
-          verifyNewsUnique(newsTemp.url, newsTemp.title, newsTemp.docid).onComplete {
+          verifyNewsUnique(newsTemp.base.url, newsTemp.base.title, newsTemp.base.docid).onComplete {
             case Success(true) =>
               processNewsPipeline(task, newsTemp); superior ! NewsPipelineTask(task)
             case Success(false) => superior ! s"CacheUniqueErr: $task"
@@ -62,12 +62,12 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
   def processNewsPipeline(task: String, temp: NewsTemp): Unit = {
     context.actorOf(Props(new Actor() {
 
-      val imageNumber: Int = temp.content.collect { case ImageBlock(_) => 1 }.sum
+      val imageNumber: Int = temp.base.content.collect { case ImageBlock(_) => 1 }.sum
       val processPeriod = ImageTask.assessProcessPeriod(imageNumber, 200)
       val timer: Cancellable = context.system.scheduler.scheduleOnce(processPeriod.seconds, self, ReceiveTimeout)
       // val checker: Cancellable = context.system.scheduler.schedule(30.seconds, 30.seconds, self, ChcekReadyInTime)
 
-      setUniqueLock(temp.url, temp.title, temp.docid, PROCE_LOCK, processPeriod)
+      setUniqueLock(temp.base.url, temp.base.title, temp.base.docid, PROCE_LOCK, processPeriod)
 
       var searchTemp: Option[List[ASearch]] = None
       var feedOSSTemp: Option[List[String]] = None
@@ -83,13 +83,13 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
         case msg @ _ => logger.error(s"UnCatchMsg: $msg")
       }
 
-      temp.content.collect { case ImageBlock(src) if src.startsWith("http") => src } match {
+      temp.base.content.collect { case ImageBlock(src) if src.startsWith("http") => src } match {
         case srcs: List[String] if srcs.nonEmpty => imageServer ! DetailTasks(srcs)
         case srcs: List[String] =>
           detailOSSTemp = Some(List[Oss]()); feedOSSTemp = Some(List[String]())
       }
 
-      ASearchClient().getASearchs(temp.title).onComplete {
+      ASearchClient().getASearchs(temp.base.title).onComplete {
         case Success(Some(aSearchs)) => searchTemp = Some(aSearchs.aSearchs)
         case _                       => searchTemp = Some(List[ASearch]())
       }
@@ -99,14 +99,14 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
           case None => shutdown()
           case Some(row) => (persistanceServer ? row)(15.seconds).recover { case _ => None }.map {
             case Some(nid) =>
-              setUniqueLock(temp.url, temp.title, temp.docid, CACHE_LOCK, CACHE_LIMITED)
-              if (temp.comment_queue.isDefined && temp.comment_task.isDefined) {
-                cache.lpush(temp.comment_queue.get, temp.comment_task.get)
+              setUniqueLock(temp.base.url, temp.base.title, temp.base.docid, CACHE_LOCK, CACHE_LIMITED)
+              if (temp.syst.comment_queue.isDefined && temp.syst.comment_task.isDefined) {
+                cache.lpush(temp.syst.comment_queue.get, temp.syst.comment_task.get)
               }
               if (searchTemp.isDefined && searchTemp.get.nonEmpty)
                 persistanceServer ! ASearchRows(searchTemp.get.map(ASearchRow(None, LocalDateTime.now().withMillisOfSecond(0), nid.toString, _)))
-              if (temp.pname.isDefined) {
-                persistanceServer ! NewsPublisherRow(None, LocalDateTime.now().withMillisOfSecond(0), temp.pname.get, temp.picon, temp.pdescr, concern = 0)
+              if (temp.base.pname.isDefined) {
+                persistanceServer ! NewsPublisherRow(None, LocalDateTime.now().withMillisOfSecond(0), temp.base.pname.get, temp.base.picon, temp.base.pdescr, concern = 0)
               }
               shutdown()
             case None => shutdown()
@@ -142,28 +142,33 @@ object SpiderNewsPipelineServer {
       case cache: Map[String, String] =>
         try {
           Right(NewsTemp(
-            url = cache.get("url").get,
-            title = cache.get("title").get,
-            tags = cache.get("keywords"),
-            author = cache.get("author"),
-            ptime = dateTimeStr2DateTime(cache.get("pub_time").get),
-            pname = cache.get("pub_name"),
-            purl = cache.get("pub_url"),
-            picon = cache.get("pub_icon"),
-            pdescr = cache.get("pub_descr"),
-            html = cache.get("content_html").get,
-            synopsis = cache.get("synopsis"),
-            province = cache.get("province"),
-            city = cache.get("city"),
-            district = cache.get("district"),
-            docid = cache.get("docid").get,
-            content = Json.parse(cache.get("content").get).as[List[NewsBodyBlock]],
-            channel = cache.get("channel_id").get.toLong,
-            source = cache.get("source_id").get.toLong,
-            sstate = cache.get("source_online").get.toInt,
-            pconf = cache.get("task_conf").map { conf => Json.parse(conf).as[JsValue] },
-            comment_queue = cache.get("comment_queue"),
-            comment_task = cache.get("comment_task")))
+            base = BaseTemp(
+              url = cache.get("url").get,
+              title = cache.get("title").get,
+              tags = cache.get("keywords"),
+              author = cache.get("author"),
+              ptime = dateTimeStr2DateTime(cache.get("pub_time").get),
+              pname = cache.get("pub_name"),
+              purl = cache.get("pub_url"),
+              picon = cache.get("pub_icon"),
+              pdescr = cache.get("pub_descr"),
+              html = cache.get("content_html").get,
+              synopsis = cache.get("synopsis"),
+              province = cache.get("province"),
+              city = cache.get("city"),
+              district = cache.get("district"),
+              docid = cache.get("docid").get,
+              content = Json.parse(cache.get("content").get).as[List[NewsBodyBlock]]
+            ),
+            syst = SystTemp(
+              chid = cache.get("channel_id").get.toLong,
+              sechid = cache.get("se_channel_id").map(_.toLong),
+              srid = cache.get("source_id").get.toLong,
+              srstate = cache.get("source_online").get.toInt,
+              pconf = cache.get("task_conf").map { conf => Json.parse(conf).as[JsValue] },
+              comment_queue = cache.get("comment_queue"),
+              comment_task = cache.get("comment_task")
+            )))
         } catch {
           case NonFatal(e) => Left(s"CacheVerifyErr: ${e.getMessage}, $task")
         }
@@ -174,13 +179,14 @@ object SpiderNewsPipelineServer {
 
   def formatNewsRow(newsTemp: NewsTemp, feedOSSTemp: Option[List[String]], detailOSSTemp: Option[List[Oss]]): Option[NewsRow] = {
     try {
-      val imageNumber: Int = newsTemp.content.collect { case ImageBlock(_) => 1 }.sum
+      val (baseTemp: BaseTemp, systTemp: SystTemp) = (newsTemp.base, newsTemp.syst)
+      val imageNumber: Int = baseTemp.content.collect { case ImageBlock(_) => 1 }.sum
 
       val content: JsValue = {
         val ossTemp: Map[String, String] = if (detailOSSTemp.isDefined) {
           detailOSSTemp.get.map { case Oss(ori, oss) => ori -> oss }.toMap[String, String]
         } else Map.empty
-        val blocks: List[NewsBodyBlock] = newsTemp.content.collect {
+        val blocks: List[NewsBodyBlock] = baseTemp.content.collect {
           case ImageBlock(src) if ossTemp.get(src).isDefined =>
             ImageBlock(ossTemp(src))
           case block @ TextBlock(_)  => block
@@ -198,34 +204,35 @@ object SpiderNewsPipelineServer {
 
       val base: NewsRowBase = NewsRowBase(
         nid = None,
-        url = newsTemp.url,
-        docid = newsTemp.docid,
-        title = newsTemp.title,
+        url = baseTemp.url,
+        docid = baseTemp.docid,
+        title = baseTemp.title,
         content = content,
-        html = newsTemp.html,
-        author = newsTemp.author,
-        ptime = newsTemp.ptime,
-        pname = newsTemp.pname,
-        purl = newsTemp.purl,
-        descr = newsTemp.synopsis,
-        tags = if (newsTemp.tags.isDefined) Some(newsTemp.tags.get.split(",").toList) else None,
-        province = newsTemp.province,
-        city = newsTemp.city,
-        district = newsTemp.district)
+        html = baseTemp.html,
+        author = baseTemp.author,
+        ptime = baseTemp.ptime,
+        pname = baseTemp.pname,
+        purl = baseTemp.purl,
+        descr = baseTemp.synopsis,
+        tags = if (baseTemp.tags.isDefined && baseTemp.tags.nonEmpty) Some(baseTemp.tags.get.trim.split(",").toList.filter(_.nonEmpty).map(_.trim)) else None,
+        province = baseTemp.province,
+        city = baseTemp.city,
+        district = baseTemp.district)
 
       val incr: NewsRowIncr = NewsRowIncr(collect = 0, concern = 0, comment = 0, inum = imageNumber, style = style, imgs = imgs, compress = None, ners = None)
 
       val syst: NewsRowSyst = NewsRowSyst(state = 0,
         ctime = LocalDateTime.now().withMillisOfSecond(0),
-        channel = newsTemp.channel,
-        source = newsTemp.source, sstate = newsTemp.sstate,
+        chid = systTemp.chid,
+        sechid = systTemp.sechid,
+        srid = systTemp.srid, srstate = systTemp.srstate,
         pconf = None,
         plog = None)
 
       Some(NewsRow(base, incr, syst))
     } catch {
       case NonFatal(e) =>
-        println(s"SpiderNewsPipelineServer.formatNewsRow(${newsTemp.url}): ${e.getMessage}")
+        println(s"SpiderNewsPipelineServer.formatNewsRow(${newsTemp.base.url}): ${e.getMessage}")
         None
     }
   }

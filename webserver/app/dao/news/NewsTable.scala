@@ -22,8 +22,6 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
   class NewsTable(tag: Tag) extends Table[NewsRow](tag, "newslist_v2") {
 
-    import commons.models.news._
-
     def nid = column[Long]("nid", O.PrimaryKey, O.AutoInc)
     def url = column[String]("url")
     def docid = column[String]("docid")
@@ -51,15 +49,16 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
     def state = column[Int]("state")
     def ctime = column[LocalDateTime]("ctime")
-    def channel = column[Long]("channel")
-    def source = column[Long]("source")
-    def sstate = column[Int]("sstate")
+    def chid = column[Long]("chid")
+    def srid = column[Long]("srid")
+    def srstate = column[Int]("srstate")
     def pconf = column[Option[JsValue]]("pconf")
     def plog = column[Option[JsValue]]("plog")
+    def sechid = column[Option[Long]]("sechid")
 
     def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
-    def syst = (state, ctime, channel, source, sstate, pconf, plog) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
+    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsRow.apply _).tupled, NewsRow.unapply)
   }
 }
@@ -86,6 +85,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(newsList.filter(_.nid === nid).result.headOption)
   }
 
+  // TODO: join newspublisherlist
   def findByNidWithProfile(nid: Long, uid: Long): Future[Option[(NewsRow, Int, Int, Int)]] = {
     val joinQuery = (for {
       (((news, collects), concerns), conpubs) <- newsList.filter(_.nid === nid)
@@ -123,25 +123,33 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   }
 
   def loadByHot(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel =!= shieldedCid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment > 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment > 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
   def loadByCold(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel =!= shieldedCid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment === 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment === 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   def refreshByHot(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.comment > 0).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.comment > 0).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
   def refreshByCold(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.comment === 0).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.comment === 0).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
-  def loadByChannel(channel: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel === channel).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def loadByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def refreshByChannel(channel: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.channel === channel).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  def refreshByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  }
+
+  def loadBySeChannel(chid: Long, sechid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.sechid === sechid).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  def refreshBySeChannel(chid: Long, sechid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.sechid === sechid).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   def loadByLocation(offset: Long, limit: Long, timeCursor: LocalDateTime, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsRow]] = {
@@ -154,12 +162,12 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
     db.run(newsListWithLocation.filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
-  def loadBySource(source: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.source === source).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def loadBySource(srid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.srid === srid).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def refreshBySource(source: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.source === source).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  def refreshBySource(srid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.srid === srid).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   private def newsListWithOptionalLocation(province: Option[String], city: Option[String], district: Option[String]) = {

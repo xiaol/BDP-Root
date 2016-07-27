@@ -3,7 +3,7 @@ package services.news
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.channels.ChannelRow
+import commons.models.channels._
 import dao.news.ChannelDAO
 import dao.users.UserDAO
 
@@ -35,6 +35,19 @@ class ChannelService @Inject() (val channelDAO: ChannelDAO, val userDAO: UserDAO
       case NonFatal(e) =>
         Logger.error(s"Within ChannelService.list($state): ${e.getMessage}")
         Seq[ChannelRow]()
+    }
+  }
+
+  def listWithSeChannel(state: Int, sech: Int): Future[Seq[ChannelResponse]] = {
+    val result: Future[Seq[ChannelResponse]] = sech match {
+      case 0 => channelDAO.list(state).map { case chs => chs.map(ChannelResponse.from(_)) }
+      case _ => channelDAO.listWithSeChannel(state)
+        .map { case chPairs: Seq[(ChannelRow, Option[Seq[SeChannelRow]])] => chPairs.map { case (ch, schs) => ChannelResponse.from(ch, schs) } }
+    }
+    result.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within ChannelService.listWithSeChannel($state, $sech): ${e.getMessage}")
+        Seq[ChannelResponse]()
     }
   }
 

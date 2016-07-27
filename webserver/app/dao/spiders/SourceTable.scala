@@ -30,8 +30,9 @@ trait SourceTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def cid = column[Long]("cid")
     def pconf = column[Option[JsValue]]("pconf")
     def state = column[Int]("state")
+    def scid = column[Option[Long]]("scid")
 
-    def * = (id.?, ctime, surl, sname, descr, queue, rate, status, cname, cid, pconf, state) <> ((SourceRow.apply _).tupled, SourceRow.unapply)
+    def * = (id.?, ctime, surl, sname, descr, queue, rate, status, cname, cid, scid, pconf, state) <> ((SourceRow.apply _).tupled, SourceRow.unapply)
   }
 }
 

@@ -14,7 +14,7 @@ import commons.utils.Joda4PlayJsonImplicits._
 
 // TODO: JSON implicits, conditions virify like `require(url.nonEmpty)` and so on...
 
-case class NewsTemp(
+case class BaseTemp(
     url: String,
     title: String,
     tags: Option[String],
@@ -30,13 +30,7 @@ case class NewsTemp(
     city: Option[String],
     district: Option[String],
     docid: String,
-    content: List[NewsBodyBlock],
-    channel: Long,
-    source: Long,
-    sstate: Int,
-    pconf: Option[JsValue],
-    comment_queue: Option[String],
-    comment_task: Option[String]) {
+    content: List[NewsBodyBlock]) {
 
   /**
    * Requirements for validity check.
@@ -57,54 +51,13 @@ case class NewsTemp(
   require(content.nonEmpty, "content must be non empty.")
 }
 
-object NewsTemp {
-  implicit val NewsTempWrites: Writes[NewsTemp] = (
-    (JsPath \ "url").write[String] ~
-    (JsPath \ "title").write[String] ~
-    (JsPath \ "tags").writeNullable[String] ~
-    (JsPath \ "author").writeNullable[String] ~
-    (JsPath \ "ptime").write[LocalDateTime] ~
-    (JsPath \ "pname").writeNullable[String] ~
-    (JsPath \ "purl").writeNullable[String] ~
-    (JsPath \ "picon").writeNullable[String] ~
-    (JsPath \ "pdescr").writeNullable[String] ~
-    (JsPath \ "html").write[String] ~
-    (JsPath \ "synopsis").writeNullable[String] ~
-    (JsPath \ "province").writeNullable[String] ~
-    (JsPath \ "city").writeNullable[String] ~
-    (JsPath \ "district").writeNullable[String] ~
-    (JsPath \ "docid").write[String] ~
-    (JsPath \ "content").write[List[NewsBodyBlock]] ~
-    (JsPath \ "channel").write[Long] ~
-    (JsPath \ "source").write[Long] ~
-    (JsPath \ "sstate").write[Int] ~
-    (JsPath \ "pconf").writeNullable[JsValue] ~
-    (JsPath \ "comment_queue").writeNullable[String] ~
-    (JsPath \ "comment_task").writeNullable[String]
-  )(unlift(NewsTemp.unapply))
+case class SystTemp(
+  chid: Long,
+  sechid: Option[Long],
+  srid: Long,
+  srstate: Int,
+  pconf: Option[JsValue],
+  comment_queue: Option[String],
+  comment_task: Option[String])
 
-  implicit val NewsTempReads: Reads[NewsTemp] = (
-    (JsPath \ "url").read[String](minLength[String](1)) ~
-    (JsPath \ "title").read[String](minLength[String](1)) ~
-    (JsPath \ "tags").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "author").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "ptime").read[LocalDateTime] ~
-    (JsPath \ "pname").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "purl").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "picon").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "pdescr").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "html").read[String](minLength[String](1)) ~
-    (JsPath \ "synopsis").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "province").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "city").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "district").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "docid").read[String](minLength[String](1)) ~
-    (JsPath \ "content").read[List[NewsBodyBlock]] ~
-    (JsPath \ "channel").read[Long] ~
-    (JsPath \ "source").read[Long] ~
-    (JsPath \ "sstate").read[Int] ~
-    (JsPath \ "pconf").readNullable[JsValue] ~
-    (JsPath \ "comment_queue").readNullable[String](minLength[String](1)) ~
-    (JsPath \ "comment_task").readNullable[String](minLength[String](1))
-  )(NewsTemp.apply _)
-}
+case class NewsTemp(base: BaseTemp, syst: SystTemp)

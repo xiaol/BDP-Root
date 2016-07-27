@@ -25,6 +25,7 @@ case class NewsFeedResponse(
   comment: Int,
   style: Int,
   imgs: Option[List[String]] = None,
+  tags: Option[List[String]] = None, // new field
   province: Option[String] = None,
   city: Option[String] = None,
   district: Option[String] = None)
@@ -56,6 +57,7 @@ object NewsFeedResponse {
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "style").write[Int] ~
     (JsPath \ "imgs").writeNullable[List[String]] ~
+    (JsPath \ "tags").writeNullable[List[String]] ~
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "district").writeNullable[String]
@@ -75,6 +77,7 @@ object NewsFeedResponse {
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "style").read[Int] ~
     (JsPath \ "imgs").readNullable[List[String]] ~
+    (JsPath \ "tags").readNullable[List[String]] ~
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "district").readNullable[String]
@@ -84,7 +87,7 @@ object NewsFeedResponse {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.channel, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.province, base.city, base.district)
+    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.tags, base.province, base.city, base.district)
   }
 }
 
@@ -152,7 +155,7 @@ object NewsDetailsResponse {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.channel, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment, colFlag, conFlag, conPubFlag)
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment, colFlag, conFlag, conPubFlag)
   }
 }
 

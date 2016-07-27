@@ -20,7 +20,7 @@ POST    /v2/au/regist               controllers.Application.listSocial()
 GET     /v2/au/common               controllers.Application.listCommon()
 
 # News
-GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1)
+GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1, sech:Int ?= 0)
 GET     /v2/ns/srcs                 controllers.NewsController.listSource(p:Long ?= 1, c:Long ?= 20)
 
 GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long])
@@ -29,8 +29,8 @@ GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Lo
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
-GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
-GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
 
 GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
 GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])

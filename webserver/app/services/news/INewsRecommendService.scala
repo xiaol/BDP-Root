@@ -32,7 +32,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
   def operate(nid: Long, method: String, level: Option[Double], bigimg: Option[Int]): Future[Option[Long]] = {
     if ("insert".equals(method)) {
-      insert(NewsRecommend(nid, Some(LocalDateTime.now()), level, bigimg, Some(1)))
+      insert(NewsRecommend(nid, Some(LocalDateTime.now()), Some(level.getOrElse(1)), bigimg, Some(1)))
     } else if ("delete".equals(method)) {
       delete(nid: Long)
     } else {

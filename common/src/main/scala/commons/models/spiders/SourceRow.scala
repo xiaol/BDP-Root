@@ -22,6 +22,7 @@ case class SourceRow(
     status: Int,
     cname: String,
     cid: Long,
+    scid: Option[Long],
     pconf: Option[JsValue] = None,
     state: Int) {
 
@@ -47,6 +48,7 @@ object SourceRow {
     (JsPath \ "status").write[Int] ~
     (JsPath \ "cname").write[String] ~
     (JsPath \ "cid").write[Long] ~
+    (JsPath \ "scid").writeNullable[Long] ~
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "state").write[Int]
   )(unlift(SourceRow.unapply))
@@ -62,6 +64,7 @@ object SourceRow {
     (JsPath \ "status").read[Int](min(0) keepAnd max(1)) ~
     (JsPath \ "cname").read[String](minLength[String](1)) ~
     (JsPath \ "cid").read[Long](min(2L)) ~
+    (JsPath \ "scid").readNullable[Long](min(2L)) ~
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "state").read[Int](min(0) keepAnd max(1))
   )(SourceRow.apply _)

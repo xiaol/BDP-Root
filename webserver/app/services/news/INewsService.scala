@@ -3,7 +3,7 @@ package services.news
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import dao.news.NewsDAO
+import dao.news.{ NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
@@ -22,8 +22,8 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[NewsService])
 trait INewsService {
   def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]]
-  def loadFeedByChannel(channel: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
-  def refreshFeedByChannel(channel: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
   def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
   def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
   def insert(newsRow: NewsRow): Future[Option[Long]]
@@ -33,7 +33,7 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDAO: NewsDAO) extends INewsService {
+class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO) extends INewsService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -105,23 +105,34 @@ class NewsService @Inject() (val newsDAO: NewsDAO) extends INewsService {
     }
   }
 
-  def loadFeedByChannel(channel: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
-    newsDAO.loadByChannel(channel, (page - 1) * count, count, msecondsToDatetime(timeCursor)).map {
+  def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+    val result: Future[Seq[NewsRow]] = sechidOpt match {
+      case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+      case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+    }
+
+    result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.loadFeedByChannel($channel, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsService.loadFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
 
-  def refreshFeedByChannel(channel: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-    newsDAO.refreshByChannel(channel, (page - 1) * count, count, newTimeCursor).map {
+
+    val result: Future[Seq[NewsRow]] = sechidOpt match {
+      case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor)
+      case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
+    }
+
+    result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByChannel($channel, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }

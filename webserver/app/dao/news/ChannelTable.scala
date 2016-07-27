@@ -2,7 +2,7 @@ package dao.news
 
 import javax.inject.{ Inject, Singleton }
 
-import commons.models.channels.ChannelRow
+import commons.models.channels.{ ChannelRow, SeChannelRow }
 import play.api.db.slick._
 import utils.MyPostgresDriver
 
@@ -29,13 +29,33 @@ trait ChannelTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 @Singleton
-class ChannelDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends ChannelTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class ChannelDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
+    extends ChannelTable with SeChannelTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
 
   val channelList = TableQuery[ChannelTable]
+  val seChannelList = TableQuery[SeChannelTable]
 
   def list(state: Int): Future[Seq[ChannelRow]] = {
     db.run(channelList.filter(_.state === state).sortBy(_.id.asc).result)
+  }
+
+  def listWithSeChannel(state: Int): Future[Seq[(ChannelRow, Option[Seq[SeChannelRow]])]] = {
+    val queryAction = for {
+      (chs, schs) <- channelList.filter(_.state === state)
+        .joinLeft(seChannelList.filter(_.state === state)).on(_.id === _.chid)
+    } yield (chs, schs)
+
+    db.run(queryAction.result).map {
+      case js: Seq[(ChannelRow, Option[SeChannelRow])] =>
+        js.groupBy(_._1)
+          .map {
+            case (ch, schOptSeq) => (ch, schOptSeq.map(_._2).
+              collect { case schOpt if schOpt.isDefined => schOpt.get })
+          }
+          .map { case (ch, schs) => (ch, if (schs.nonEmpty) Some(schs) else None) }
+          .toList.sortBy(_._1.id)
+    }
   }
 
   def listByNames(names: List[String]): Future[Seq[ChannelRow]] = {

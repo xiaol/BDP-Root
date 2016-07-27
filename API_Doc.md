@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.6.1
+# 数据平台接口文档_V2.7
 
 ## 目录
 
@@ -7,6 +7,18 @@
 
 ----
 ## 更新日志
+
+*V2.7:*
+
+客户端（修改）：
+
+1. 频道列表接口：新增请求参数`sech`，是(1)否(0)同时获取对应频道的二级频道列表
+2. 新闻频道列表（“按频道”列表页刷新、加载，除“频道 ID 为 1 之外的频道”），如果同时提供二级频道 ID，将会按该二级获取新闻列表
+3. 所有新闻列表页(feed)返回的数据结构，新增`tags`字段，即“关键字”
+
+爬虫（修改）：
+
+1. 新闻缓存提交，数据格式增加`se_channel_id`字段，即该新闻对应的二级频道 ID，来自`sourcelist_v2`表，数字类型，可为空，不能为空字符串("")
 
 *V2.6.1:*
 
@@ -239,9 +251,10 @@ GET /v2/ns/chs
 Host: bdp.deeporiginalx.com
 ```
 
-| Key  | 参数类型   | 是否必须    | 参数解释       |
-| ---- | :----- | :------ | :--------- |
-| s    | String | 否(默认 1) | 上线状态，0 或 1 |
+| Key  | 参数类型   | 是否必须    | 参数解释                  |
+| ---- | :----- | :------ | :-------------------- |
+| s    | String | 否(默认 1) | 上线状态，0 或 1            |
+| sech | String | 否(默认 0) | 是否同时获得每个一级频道对应的二级频道列表 |
 
 _Response_
 
@@ -253,9 +266,15 @@ Content-Type: application/json
   "code": 2000,
   "data": [
     {
-      "id": 1,
+      "id": 11,
       "cname": "热点",
       "state": 1
+      "schs": [				- 如果提供了 sech 参数，并且该一级频道拥有二级频道
+  		"id":1,				- 二级频道 ID
+      	"cname":"评测",
+      	"chid":11,			- 对应的一级频道 ID
+      	"state":1
+	  ]
     }
   ]
 }
@@ -389,7 +408,8 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
       "ptime": "2016-05-22 01:20:46",
       "pname": "参考消息",
       "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
-      "descr": "俄天然气外交走向终结...",                     - 新闻内容摘要
+      "descr": "俄天然气外交走向终结...",                        - 新闻内容摘要
+      "tags": ["欧洲", "多元化"]								  - 关键字
       "channel": 9,
       "collect": 0,                                           - 收藏数
       "concern": 0,                                           - 关心数
@@ -425,6 +445,27 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
+| scid | String | 否        | 二级频道 ID，该二级频(scid)道必须是一级频道(cid)的子频道 |
+
+----
+#### 列表页刷新(新接口)
+
+_Request_
+
+```json
+GET /v2/ns/fed/rn
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
 
 ----
 #### 列表页加载
@@ -444,6 +485,25 @@ Host: bdp.deeporiginalx.com
 | tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
+----
+#### 列表页加载(新接口)
+
+_Request_
+
+```json
+GET /v2/ns/fed/ln
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
 
 ----
 #### 行政区划-列表页刷新
@@ -1688,6 +1748,7 @@ Host: bdp.deeporiginalx.com
       {"txt": "\u6dc5\u5ddd\u4eba\u6c11\u6cea\u522b\u5bb6\u56ed\uff08\u4f59\u7acb\u65b0\u6444\uff09"}
     ],                                                       - 现在支持的格式有：txt，img，vid，不能是其他键
   "channel_id": "12",                                        - 频道ID:String NOT (NULL & "")
+  "se_channel_id": "23"										 - 二级频道 ID，String  NULL NOT ""
   "source_id": "23",                                         - 抓取源ID:String NOT (NULL & "")
   "source_online": "1",                                      - 抓取源上线标志位:String NOT (NULL & "")
   "task_conf": {                                             - 数据处理配置，Json转字符串:String NULL  NOT ""
