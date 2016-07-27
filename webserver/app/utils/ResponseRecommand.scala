@@ -9,20 +9,22 @@ import play.api.mvc.Results._
  * Created by zhangshl on 16/7/20.
  */
 
-case class ResponseRecommand[T](code: Int, data: T, total: Option[Long] = None)
+case class ResponseRecommand[T](code: Int, data: T, total: Option[Long] = None, data2: Option[T] = None)
 
 object ResponseRecommand {
 
   implicit def ResponseRecommandWrites[T: Writes]: Writes[ResponseRecommand[T]] = (
     (JsPath \ "code").write[Int] ~
     (JsPath \ "data").write[T] ~
-    (JsPath \ "total").writeNullable[Long]
+    (JsPath \ "total").writeNullable[Long] ~
+    (JsPath \ "publish").writeNullable[T]
   )(unlift(ResponseRecommand.unapply[T]))
 
   implicit def ResponseRecommandReads[T: Reads]: Reads[ResponseRecommand[T]] = (
     (JsPath \ "code").read[Int] ~
     (JsPath \ "data").read[T] ~
-    (JsPath \ "total").readNullable[Long]
+    (JsPath \ "total").readNullable[Long] ~
+    (JsPath \ "publish").readNullable[T]
   )(ResponseRecommand.apply[T] _)
 
   private final val SERVER_SUCCED_CODE = 2000
@@ -35,8 +37,8 @@ object ResponseRecommand {
   private final val JSON_INVALID_CODE = 4002
   private final val AUTH_VERIFY_CODE = 4003
 
-  def ServerSucced[T](data: T, total: Option[Long] = None)(implicit writes: Writes[T]): Result = {
-    Ok(Json.toJson(ResponseRecommand(SERVER_SUCCED_CODE, data, total)))
+  def ServerSucced[T](data: T, total: Option[Long] = None, data2: Option[T] = None)(implicit writes: Writes[T]): Result = {
+    Ok(Json.toJson(ResponseRecommand(SERVER_SUCCED_CODE, data, total, data2)))
   }
 
   def ServerError(data: String): Result = {

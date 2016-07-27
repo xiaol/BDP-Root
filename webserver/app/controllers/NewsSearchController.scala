@@ -2,20 +2,39 @@ package controllers
 
 import javax.inject.Inject
 
+import commons.models.news._
 import play.api.mvc._
 import services.news._
 import utils.ResponseRecommand._
 
-import scala.concurrent.ExecutionContext
-import commons.models.news.{ NewsFeedResponse, NewsRecommendResponse }
+import scala.concurrent.{ ExecutionContext, Future }
 
 class NewsSearchController @Inject() (val newsEsService: NewsEsService, val newsCacheService: NewsCacheService, val newsRecommendService: NewsRecommendService)(implicit ec: ExecutionContext)
     extends Controller {
 
+  //正常搜索新闻
   def search(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int) = Action.async { implicit request =>
     newsEsService.search(key, pname, channel, page, count).map {
       case news: (Seq[NewsFeedResponse], Long) if news._1.nonEmpty => ServerSucced(news._1, Some(news._2))
       case _                                                       => DataEmptyError(s"$key")
+    }
+  }
+
+  //搜索新闻并添加订阅号列表及用户是否关注该订阅号
+  def searchNewsWithPublisher(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int, uid: Option[Long]) = Action.async { implicit request =>
+    val news: Future[(Seq[NewsFeedResponse], Long)] = newsEsService.search(key, pname, channel, page, count)
+    val publisher: Future[Seq[(NewsPublisherRow, Long)]] = newsRecommendService.listPublisherWithFlag(uid, key)
+    val t: Future[NewsFeedWithPublisherWithUserInfoResponse] = for {
+      news <- news
+      publisher <- publisher.map { seq =>
+        seq.map { p =>
+          NewsPublisherWithUserResponse(p._1.id, p._1.ctime, p._1.name, p._1.icon, p._1.descr, p._1.concern, p._2)
+        }
+      }
+    } yield (NewsFeedWithPublisherWithUserInfoResponse(news._1, news._2, publisher))
+    t.map {
+      case r: NewsFeedWithPublisherWithUserInfoResponse if r.news.nonEmpty => ServerSucced(r)
+      case _                                                               => DataEmptyError(s"$key")
     }
   }
 
