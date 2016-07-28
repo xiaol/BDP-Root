@@ -22,10 +22,10 @@ import scala.util.Random
 class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val newsService: NewsService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
-  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = Action.async { implicit request =>
     cid match {
       case 1L => newsRecommendService.loadFeedByRecommendsNew(uid, page, count, tcursor).map {
-        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
       case _ => newsService.loadFeedByChannel(cid, sechidOpt, page, count, tcursor).map {
@@ -38,7 +38,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
     cid match {
       case 1L => newsRecommendService.refreshFeedByRecommendsNew(uid, page, count, tcursor).map {
-        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
       case _ => newsService.refreshFeedByChannel(cid, sechidOpt, page, count, tcursor).map {

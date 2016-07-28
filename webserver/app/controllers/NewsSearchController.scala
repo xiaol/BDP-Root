@@ -22,20 +22,32 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
 
   //搜索新闻并添加订阅号列表及用户是否关注该订阅号
   def searchNewsWithPublisher(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int, uid: Option[Long]) = Action.async { implicit request =>
-    val news: Future[(Seq[NewsFeedResponse], Long)] = newsEsService.search(key, pname, channel, page, count)
-    val publisher: Future[Seq[(NewsPublisherRow, Long)]] = newsRecommendService.listPublisherWithFlag(uid, key)
-    val t: Future[NewsFeedWithPublisherWithUserInfoResponse] = for {
-      news <- news
-      publisher <- publisher.map { seq =>
-        seq.map { p =>
-          NewsPublisherWithUserResponse(p._1.id, p._1.ctime, p._1.name, p._1.icon, p._1.descr, p._1.concern, p._2)
+    if (page == 1) {
+      val news: Future[(Seq[NewsFeedResponse], Long)] = newsEsService.search(key, pname, channel, page, count)
+      val publisher: Future[Seq[(NewsPublisherRow, Long)]] = newsRecommendService.listPublisherWithFlag(uid, key)
+      val t: Future[NewsFeedWithPublisherWithUserInfoResponse] = for {
+        news <- news
+        publisher <- publisher.map { seq =>
+          seq.map { p =>
+            NewsPublisherWithUserResponse(p._1.id, p._1.ctime, p._1.name, p._1.icon, p._1.descr, p._1.concern, p._2)
+          }
         }
+      } yield (NewsFeedWithPublisherWithUserInfoResponse(news._1, news._2, Some(publisher)))
+      t.map {
+        case r: NewsFeedWithPublisherWithUserInfoResponse if r.news.nonEmpty => ServerSucced(r)
+        case _                                                               => DataEmptyError(s"$key")
       }
-    } yield (NewsFeedWithPublisherWithUserInfoResponse(news._1, news._2, publisher))
-    t.map {
-      case r: NewsFeedWithPublisherWithUserInfoResponse if r.news.nonEmpty => ServerSucced(r)
-      case _                                                               => DataEmptyError(s"$key")
+    } else {
+      val news: Future[(Seq[NewsFeedResponse], Long)] = newsEsService.search(key, pname, channel, page, count)
+      val t: Future[NewsFeedWithPublisherWithUserInfoResponse] = for {
+        news <- news
+      } yield (NewsFeedWithPublisherWithUserInfoResponse(news._1, news._2, None))
+      t.map {
+        case r: NewsFeedWithPublisherWithUserInfoResponse if r.news.nonEmpty => ServerSucced(r)
+        case _                                                               => DataEmptyError(s"$key")
+      }
     }
+
   }
 
   def recommend(uid: Long, count: Int) = Action.async { implicit request =>
@@ -59,8 +71,8 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
     }
   }
 
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long) = Action.async { implicit request =>
-    newsRecommendService.listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long).map {
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long) = Action.async { implicit request =>
+    newsRecommendService.listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long).map {
       case news: (Seq[NewsRecommendResponse], Long) if news._1.nonEmpty => ServerSucced(news._1, Some(news._2))
       case _                                                            => DataEmptyError(s"$channel,$ifrecommend")
     }

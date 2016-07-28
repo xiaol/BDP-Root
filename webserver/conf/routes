@@ -48,8 +48,9 @@ GET     /v2/ns/es/snp               controllers.NewsSearchController.searchNewsW
 # News from Recommend
 GET     /v2/nsr/ar                  controllers.NewsSearchController.addRecommend(nid: Long, score: Double)
 GET     /v2/nsr/re                  controllers.NewsSearchController.recommend(uid: Long, c:Int ?= 20)
+
 GET     /v2/nsr/o                   controllers.NewsSearchController.operate(nid: Long, m: String, l:Option[Double] , b: Option[Int])
-GET     /v2/nsr/l                   controllers.NewsSearchController.listNewsByRecommand(ch: Long, ifr: Int, p:Long ?= 1, c:Long ?= 20)
+GET     /v2/nsr/l                   controllers.NewsSearchController.listNewsByRecommand(ch: Option[Long], ifr: Int, p:Long ?= 1, c:Long ?= 20)
 GET     /v2/nsr/es/l                controllers.NewsSearchController.listNewsBySearch(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20)
 
 # Base64.encode(did)

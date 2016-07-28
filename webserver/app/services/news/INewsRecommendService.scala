@@ -24,9 +24,9 @@ trait INewsRecommendService {
   def operate(nid: Long, method: String, level: Option[Double], bigimg: Option[Int]): Future[Option[Long]]
   def insert(newsRecommend: NewsRecommend): Future[Option[Long]]
   def delete(nid: Long): Future[Option[Long]]
-  def listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)]
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]]
-  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int]
+  def listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)]
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]]
+  def listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int): Future[Int]
   def listNewsBySearch(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int): Future[(Seq[NewsRecommendResponse], Long)]
   def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
   def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
@@ -64,16 +64,16 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  def listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)] = {
+  def listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)] = {
     val newsRecommendResponses: Future[Seq[NewsRecommendResponse]] = listNewsByRecommand(channel, ifrecommend, page, count)
-    val count1: Future[Int] = listNewsByRecommandCount(channel: Long, ifrecommend: Int)
+    val count1: Future[Int] = listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int)
     for {
       n <- newsRecommendResponses
       c <- count1
     } yield (n, c.toLong)
   }
 
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {
     newsRecommendDAO.listNewsByRecommand(channel, ifrecommend, (page - 1) * count, count).map {
       case pairs: Seq[NewsRecommendResponse] => pairs.sortBy(_.ptime)
     }.recover {
@@ -83,7 +83,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int] = {
+  def listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int): Future[Int] = {
     newsRecommendDAO.listNewsByRecommandCount(channel, ifrecommend).recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.listNewsByRecommandCount($channel, $ifrecommend): ${e.getMessage}")
@@ -148,10 +148,10 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val r: Future[Seq[NewsFeedResponse]] = for {
         hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         colds <- lostColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
-        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(ptime = LocalDateTime.now().plusMinutes(-5).plusSeconds(-59)) } }
+        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)).copy(ptime = LocalDateTime.now().plusMinutes(-4)) } }
       } yield {
-        bigimg ++: recommends ++: hots ++: colds
+        bigimg ++: recommends ++: (mockRealTime(hots ++: colds))
       }
       val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
@@ -165,6 +165,14 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
+  final private def mockRealTime(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
+    val mockIndexs = Random.shuffle((1 to news.length - 2).toList).slice(0, news.length / 4)
+    news.map {
+      case n: NewsFeedResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
+      case n: NewsFeedResponse                                         => n
+    }
+  }
+
   def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
@@ -175,10 +183,10 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val r: Future[Seq[NewsFeedResponse]] = for {
         hots <- refreshHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         colds <- refreshColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
-        bigimg <- refreshBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+        recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(ptime = LocalDateTime.now().plusMinutes(-5).plusSeconds(-59)) } }
+        bigimg <- refreshBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)).copy(ptime = LocalDateTime.now().plusMinutes(-4)) } }
       } yield {
-        bigimg ++: recommends ++: hots ++: colds
+        bigimg ++: recommends ++: (mockRealTime(hots ++: colds))
       }
       val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }

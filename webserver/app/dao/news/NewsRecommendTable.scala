@@ -90,20 +90,41 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
         .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).drop(offset).take(limit)
     } yield (news, nr)
   }
+
+  private def newsJoinnewsRecommendAll(offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
+    for {
+      (news, nr) <- newsList.join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).drop(offset).take(limit)
+    } yield (news, nr)
+  }
+
   private val newsJoinnewsRecommendCompiled = Compiled(newsJoinnewsRecommend _)
+  private val newsJoinnewsRecommendAllCompiled = Compiled(newsJoinnewsRecommendAll _)
   private val newsFilternewsRecommendCompiled = Compiled(newsFilternewsRecommend _)
 
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, offset: Long, limit: Long): Future[Seq[NewsRecommendResponse]] = {
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, offset: Long, limit: Long): Future[Seq[NewsRecommendResponse]] = {
     if (ifrecommend == 1) {
-      for (pairs <- db.run(newsJoinnewsRecommendCompiled(channel, offset, limit).result)) yield {
-        for (pair <- pairs) yield {
-          pair match {
-            case (newsRow, newsRecommend) => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow), newsRecommend)
+      //查询已推荐
+      if (channel.isDefined) {
+        //按频道查询已推荐
+        for (pairs <- db.run(newsJoinnewsRecommendCompiled(channel.get, offset, limit).result)) yield {
+          for (pair <- pairs) yield {
+            pair match {
+              case (newsRow, newsRecommend) => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow), newsRecommend)
+            }
+          }
+        }
+      } else {
+        //查询所有已推荐
+        for (pairs <- db.run(newsJoinnewsRecommendAllCompiled(offset, limit).result)) yield {
+          for (pair <- pairs) yield {
+            pair match {
+              case (newsRow, newsRecommend) => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow), newsRecommend)
+            }
           }
         }
       }
     } else {
-      for (newsRows <- db.run(newsFilternewsRecommendCompiled(channel, offset, limit).result)) yield {
+      for (newsRows <- db.run(newsFilternewsRecommendCompiled(channel.get, offset, limit).result)) yield {
         for (newsRow <- newsRows) yield {
           newsRow match {
             case newsRow => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow))
@@ -113,11 +134,15 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     }
   }
 
-  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int] = {
+  def listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int): Future[Int] = {
+    val newsListFilter = channel match {
+      case Some(c) => newsList.filter(_.chid === c)
+      case None    => newsList
+    }
     if (ifrecommend == 1) {
-      db.run(newsList.filter(_.chid === channel).join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).length.result)
+      db.run(newsListFilter.join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).length.result)
     } else {
-      db.run(newsList.filter(_.chid === channel).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).length.result)
+      db.run(newsListFilter.filter(_.ctime > LocalDateTime.now().plusDays(-7)).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).length.result)
     }
   }
 
