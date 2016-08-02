@@ -50,6 +50,8 @@ trait NewsRecommendAPPTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 object NewsRecommendDAO {
   final private val newstimeWindow: Int = -7 //只从近7天的新闻中取
   final private val newsrecommendtimeWindow: Int = -24 //只取近24小时推荐的新闻
+  final private val newsWindow: Int = -6 //没新闻的时候,主要是6小时内没看过的新闻都可以
+  final private val shieldedCid: Long = 28L // 本地频道
 }
 
 @Singleton
@@ -84,6 +86,12 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     } yield news
   }
 
+  private def newsFilternewsRecommendAll(offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
+    for {
+      news <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(-7)).filterNot(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit)
+    } yield news
+  }
+
   private def newsJoinnewsRecommend(channel: ConstColumn[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
     for {
       (news, nr) <- newsList.filter(_.chid === channel)
@@ -100,6 +108,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   private val newsJoinnewsRecommendCompiled = Compiled(newsJoinnewsRecommend _)
   private val newsJoinnewsRecommendAllCompiled = Compiled(newsJoinnewsRecommendAll _)
   private val newsFilternewsRecommendCompiled = Compiled(newsFilternewsRecommend _)
+  private val newsFilternewsRecommendAllCompiled = Compiled(newsFilternewsRecommendAll _)
 
   def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, offset: Long, limit: Long): Future[Seq[NewsRecommendResponse]] = {
     if (ifrecommend == 1) {
@@ -124,13 +133,24 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
         }
       }
     } else {
-      for (newsRows <- db.run(newsFilternewsRecommendCompiled(channel.get, offset, limit).result)) yield {
-        for (newsRow <- newsRows) yield {
-          newsRow match {
-            case newsRow => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow))
+      if (channel.isDefined) {
+        for (newsRows <- db.run(newsFilternewsRecommendCompiled(channel.get, offset, limit).result)) yield {
+          for (newsRow <- newsRows) yield {
+            newsRow match {
+              case newsRow => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow))
+            }
+          }
+        }
+      } else {
+        for (newsRows <- db.run(newsFilternewsRecommendAllCompiled(offset, limit).result)) yield {
+          for (newsRow <- newsRows) yield {
+            newsRow match {
+              case newsRow => NewsRecommendResponse.from(NewsFeedResponse.from(newsRow))
+            }
           }
         }
       }
+
     }
   }
 
@@ -194,6 +214,14 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
       }
       db.run(joinQuery.result)
     }
+  }
 
+  def load(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  //新闻刷到头了,用6小时以内没看过的新闻补上
+  def refresh(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusHours(newsWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 }
