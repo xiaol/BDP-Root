@@ -6,6 +6,7 @@ import javax.imageio.ImageIO
 import akka.actor.{ Actor, ActorRef, Cancellable, Props }
 import akka.event.{ Logging, LoggingAdapter }
 import akka.stream.Materializer
+import com.gif4j._
 import commons.messages.pipeline.{ Redownload, _ }
 import commons.utils.UserAgentUtils
 import proservers.utils.ImageUtils
@@ -72,10 +73,11 @@ class ImageProcessServer()(implicit val mat: Materializer) extends Actor with Us
         val reader = readers.next()
         reader.setInput(inStream, true)
 
-        val formatName = reader.getFormatName match {
-          case "gif" => ".gif"
-          case "png" => ".png"
-          case _     => ".jpg"
+        val formatName = reader.getFormatName.toLowerCase() match {
+          case "gif"          => ".gif"
+          case "png"          => ".png"
+          case "jpg" | "jpeg" => ".jpg"
+          case _              => ""
         }
         val (width, height) = (reader.getWidth(0), reader.getHeight(0))
         reader.dispose()
@@ -99,8 +101,8 @@ class ImageProcessServer()(implicit val mat: Materializer) extends Actor with Us
   def crop(path: String): Option[String] = {
     try {
       val (imageOpt: Option[String], format: String) = path match {
-        case p: String if p.endsWith(".gif") => (convertFormat(path, path.replace(".gif", ".png"), "PNG"), "png")
-        case p: String if p.endsWith(".jpg") => (Some(path), "jpg")
+        case p: String if p.endsWith(".gif") => (convertGif2Png(path, generatePath(path, ".png"), "PNG"), "png")
+        case p: String if p.endsWith(".jpg") => (convertFormat(path, generatePath(path, ".jpg"), "JPEG"), "jpg") // (Some(path), "jpg")
         case p: String if p.endsWith(".png") => (Some(path), "png")
         case _                               => (None, "unknown")
       }
@@ -115,11 +117,27 @@ class ImageProcessServer()(implicit val mat: Materializer) extends Actor with Us
     }
   }
 
+  def convertGif2Png(localPath: String, newPath: String, formatName: String): Option[String] = {
+    try {
+      val gifImage: GifImage = GifDecoder.decode(new File(localPath))
+      if (gifImage.getNumberOfFrames > 0) {
+        val frame: GifFrame = gifImage.getFrame(0)
+        val result = ImageIO.write(frame.getAsBufferedImage, formatName, new File(newPath))
+        if (result) Some(newPath) else None
+      } else None
+    } catch {
+      case NonFatal(e) =>
+        logger.error(s"convertFormatGif4j with err: ${e.getMessage}, $localPath")
+        e.printStackTrace()
+        None
+    }
+  }
+
   def convertFormat(localPath: String, newPath: String, formatName: String): Option[String] = {
     try {
-      val inputStream = new File(localPath)
-      val outputStream = new File(newPath)
-      val result: Boolean = ImageIO.write(ImageIO.read(inputStream), formatName, outputStream)
+      val inputFile = new File(localPath)
+      val outputFile = new File(newPath)
+      val result: Boolean = ImageIO.write(ImageIO.read(inputFile), formatName, outputFile)
       if (result) Some(newPath) else None
     } catch {
       case NonFatal(e) =>

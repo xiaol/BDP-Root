@@ -30,8 +30,8 @@ trait ImageDetectIMAJServer extends ImageUtils {
 
   def imageContrast(pathA: String, pathB: String): Boolean = {
     try {
-      val imageA: MBFImage = ImageUtilities.readMBF(new File(pathA))
-      val imageB: MBFImage = ImageUtilities.readMBF(new File(pathB))
+      val imageA: MBFImage = ImageUtilities.readMBF(new File(pathA)).processInplace(new ResizeProcessor(0.5f))
+      val imageB: MBFImage = ImageUtilities.readMBF(new File(pathB)).processInplace(new ResizeProcessor(0.5f))
 
       val keypointsA: LocalFeatureList[Keypoint] = compareEngine.findFeatures(imageA.flatten())
       val keypointsB: LocalFeatureList[Keypoint] = compareEngine.findFeatures(imageB.flatten())
@@ -43,6 +43,9 @@ trait ImageDetectIMAJServer extends ImageUtils {
 
       matcher.setModelFeatures(keypointsA)
       matcher.findMatches(keypointsB)
+      keypointsA.clear(); keypointsB.clear()
+
+      println(matcher.getMatches.size())
 
       matcher.getMatches.size() > 5
     } catch {
@@ -54,8 +57,9 @@ trait ImageDetectIMAJServer extends ImageUtils {
 
   def imageDetect(path: String, format: String) = {
     try {
-      val image: FImage = ImageUtilities.readF(new File(path))
-      val imageRGB: MBFImage = ImageUtilities.readMBF(new File(path))
+      val imageFile: File = new File(path)
+      val image: FImage = ImageUtilities.readF(imageFile)
+      val imageRGB: MBFImage = ImageUtilities.readMBF(imageFile)
       val (originW: Int, originH: Int) = (image.getWidth, image.getHeight)
 
       (graynessDetections(imageRGB), generateTargetSize(originW, originH)) match {
@@ -100,7 +104,8 @@ trait ImageDetectIMAJServer extends ImageUtils {
       }
     } catch {
       case NonFatal(e) =>
-        println(s"ImageDetectIMAJServer.imageDetect: ${e.getMessage}")
+        println(s"ImageDetectIMAJServer.imageDetect: ${e.getMessage}, $path")
+        e.printStackTrace()
         None
     }
   }
