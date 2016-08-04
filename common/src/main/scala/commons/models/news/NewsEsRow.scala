@@ -88,17 +88,17 @@ object NewsEsRow {
 }
 
 //搜索新闻带上订阅号
-case class NewsFeedWithPublisherWithUserInfoResponse(news: Seq[NewsFeedResponse], total: Long, publisher: Seq[NewsPublisherWithUserResponse], s: Option[String])
+case class NewsFeedWithPublisherWithUserInfoResponse(news: Seq[NewsFeedResponse], total: Long, publisher: Option[Seq[NewsPublisherWithUserResponse]], s: Option[String])
 
 object NewsFeedWithPublisherWithUserInfoResponse {
   implicit val NewsFeedWithPublisherWithUserInfoResponseWrites: Writes[NewsFeedWithPublisherWithUserInfoResponse] = (
     (JsPath \ "news").write[Seq[NewsFeedResponse]] ~
     (JsPath \ "total").write[Long] ~
-    (JsPath \ "publisher").write[Seq[NewsPublisherWithUserResponse]] ~
+    (JsPath \ "publisher").writeNullable[Seq[NewsPublisherWithUserResponse]] ~
     (JsPath \ "s").writeNullable[String]
   )(unlift(NewsFeedWithPublisherWithUserInfoResponse.unapply))
 
-  def apply(news: Seq[NewsFeedResponse], t: Long, p: Seq[NewsPublisherWithUserResponse]): NewsFeedWithPublisherWithUserInfoResponse = new NewsFeedWithPublisherWithUserInfoResponse(news, t, p, None)
+  def apply(news: Seq[NewsFeedResponse], t: Long, p: Option[Seq[NewsPublisherWithUserResponse]]): NewsFeedWithPublisherWithUserInfoResponse = new NewsFeedWithPublisherWithUserInfoResponse(news, t, p, None)
 }
 
 //订阅号信息及用户是否关注该订阅号

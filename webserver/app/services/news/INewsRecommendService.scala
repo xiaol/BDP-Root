@@ -1,6 +1,7 @@
 package services.news
 
 import java.util
+import java.util.{ Collections, Date }
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
@@ -24,9 +25,9 @@ trait INewsRecommendService {
   def operate(nid: Long, method: String, level: Option[Double], bigimg: Option[Int]): Future[Option[Long]]
   def insert(newsRecommend: NewsRecommend): Future[Option[Long]]
   def delete(nid: Long): Future[Option[Long]]
-  def listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)]
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]]
-  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int]
+  def listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)]
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]]
+  def listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int): Future[Int]
   def listNewsBySearch(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int): Future[(Seq[NewsRecommendResponse], Long)]
   def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
   def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
@@ -64,16 +65,16 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  def listNewsAndCountByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)] = {
+  def listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)] = {
     val newsRecommendResponses: Future[Seq[NewsRecommendResponse]] = listNewsByRecommand(channel, ifrecommend, page, count)
-    val count1: Future[Int] = listNewsByRecommandCount(channel: Long, ifrecommend: Int)
+    val count1: Future[Int] = listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int)
     for {
       n <- newsRecommendResponses
       c <- count1
     } yield (n, c.toLong)
   }
 
-  def listNewsByRecommand(channel: Long, ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {
+  def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {
     newsRecommendDAO.listNewsByRecommand(channel, ifrecommend, (page - 1) * count, count).map {
       case pairs: Seq[NewsRecommendResponse] => pairs.sortBy(_.ptime)
     }.recover {
@@ -83,7 +84,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  def listNewsByRecommandCount(channel: Long, ifrecommend: Int): Future[Int] = {
+  def listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int): Future[Int] = {
     newsRecommendDAO.listNewsByRecommandCount(channel, ifrecommend).recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.listNewsByRecommandCount($channel, $ifrecommend): ${e.getMessage}")
@@ -139,25 +140,63 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
   def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
-      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
+      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 5, msecondsToDatetime(timeCursor))
+      val loadCommonFO: Future[Seq[NewsRow]] = newsRecommendDAO.load((page - 1) * count, count / 2 + 6, msecondsToDatetime(timeCursor))
       //人工推荐新闻,每个推荐等级依次一条条显示
-      val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
+      val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count / 5)
       //取一条大图新闻,作为头条
       val loadBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
       val r: Future[Seq[NewsFeedResponse]] = for {
-        hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        colds <- lostColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
-        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+        hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(1)) }.sortBy(_.ptime) } //rtype推荐类型:0普通、1热点、2推送
+        commons <- loadCommonFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
+        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(rtype = Some(2)) } }
+        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)).copy(rtype = Some(2)) } }
       } yield {
-        bigimg ++: recommends ++: hots ++: colds
+        bigimg ++: recommends ++: hots ++: commons
       }
-      val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
+      val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
+        var nids = seq.map { n => (n.nid, 1) }.toMap
+        var pname = ""
+
+        //去除组合中的重复新闻
+        seq.filter { n =>
+          if (nids.contains(n.nid) && nids.get(n.nid).getOrElse(1) == 1 && !pname.equals(n.pname.get)) {
+            nids += (n.nid -> 2)
+            pname = n.pname.getOrElse("")
+            true
+          } else {
+            false
+          }
+        }
+      }.map(_.take(20)).map { seq =>
+        //获取热点最早一条新闻时间
+        var timehotlast: Option[LocalDateTime] = None
+        var nidlast: Option[Long] = None
+        seq.foreach { n =>
+          if (n.rtype.getOrElse(0) == 1) {
+            timehotlast = Some(n.ptime)
+            nidlast = Some(n.nid)
+          }
+        }
+        val date = new Date(timeCursor)
+        val localDateTime = LocalDateTime.fromDateFields(date)
+
+        //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内
+        seq.map { n =>
+          if (nidlast.getOrElse(0) != n.nid) {
+            var newtime = timehotlast.getOrElse(localDateTime).plusSeconds(Random.nextInt(6) - 3)
+            if (newtime.isBefore(localDateTime))
+              newtime = localDateTime.plusSeconds(-1)
+            n.copy(ptime = newtime)
+          } else {
+            n
+          }
+        }
+      }
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      result
+      result.map { seq => seq.sortBy(_.ptime) }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.loadFeedByRecommendsNew($timeCursor): ${e.getMessage}")
@@ -168,23 +207,63 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
   def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 2, newTimeCursor)
-      val refreshColdFO: Future[Seq[NewsRow]] = newsDAO.refreshByCold((page - 1) * count, count / 2, newTimeCursor)
-      val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
+      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 5, newTimeCursor)
+      val refreshCommonFO: Future[Seq[NewsRow]] = newsRecommendDAO.refresh((page - 1) * count, count, newTimeCursor, uid)
+      val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count / 5)
       val refreshBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
       val r: Future[Seq[NewsFeedResponse]] = for {
-        hots <- refreshHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        colds <- refreshColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1) } }
-        bigimg <- refreshBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)) } }
+        hots <- refreshHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(1)) }.sortBy(_.ptime) }
+        commons <- refreshCommonFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
+        recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(rtype = Some(2)) } }
+        bigimg <- refreshBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(style = 10 + r._2.bigimg.getOrElse(1)).copy(rtype = Some(2)) } }
       } yield {
-        bigimg ++: recommends ++: hots ++: colds
+        bigimg ++: recommends ++: hots ++: commons
       }
-      val result: Future[Seq[NewsFeedResponse]] = r.map(_.take(20))
+      val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
+        var nids = seq.map { n => (n.nid, 1) }.toMap
+        var pname = ""
+
+        //去除组合中的重复新闻
+        seq.filter { n =>
+          if (nids.contains(n.nid) && nids.get(n.nid).getOrElse(1) == 1 && !pname.equals(n.pname.get)) {
+            nids += (n.nid -> 2)
+            pname = n.pname.getOrElse("")
+            true
+          } else {
+            false
+          }
+        }
+      }.map(_.take(20)).map { seq =>
+        //获取热点最新一条新闻时间
+        var timehotfirst: Option[LocalDateTime] = None
+        var nidfirst: Option[Long] = None
+        var counthot = 0
+        seq.foreach { n =>
+          if (counthot == 0 && n.rtype.getOrElse(0) == 1) {
+            counthot = counthot + 1
+            timehotfirst = Some(n.ptime)
+            nidfirst = Some(n.nid)
+          }
+        }
+        val date = new Date(timeCursor)
+        val localDateTime = LocalDateTime.fromDateFields(date)
+
+        //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内
+        seq.map { n =>
+          if (nidfirst.getOrElse(0) != n.nid) {
+            var newtime = timehotfirst.getOrElse(localDateTime).plusSeconds(Random.nextInt(6) - 3)
+            if (newtime.isBefore(localDateTime))
+              newtime = localDateTime.plusSeconds(1)
+            n.copy(ptime = newtime)
+          } else {
+            n
+          }
+        }
+      }
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      result
+      result.map { seq => seq.sortBy(_.ptime) }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.refreshFeedByRecommendsNew($timeCursor): ${e.getMessage}")

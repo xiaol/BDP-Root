@@ -28,7 +28,8 @@ case class NewsFeedResponse(
   tags: Option[List[String]] = None, // new field
   province: Option[String] = None,
   city: Option[String] = None,
-  district: Option[String] = None)
+  district: Option[String] = None,
+  rtype: Option[Int] = None)
 
 object NewsFeedResponse {
 
@@ -60,7 +61,8 @@ object NewsFeedResponse {
     (JsPath \ "tags").writeNullable[List[String]] ~
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
-    (JsPath \ "district").writeNullable[String]
+    (JsPath \ "district").writeNullable[String] ~
+    (JsPath \ "rtype").writeNullable[Int]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -80,7 +82,8 @@ object NewsFeedResponse {
     (JsPath \ "tags").readNullable[List[String]] ~
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
-    (JsPath \ "district").readNullable[String]
+    (JsPath \ "district").readNullable[String] ~
+    (JsPath \ "rtype").readNullable[Int]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {

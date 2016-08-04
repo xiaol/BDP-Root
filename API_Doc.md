@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.7
+# 数据平台接口文档_V2.8
 
 ## 目录
 
@@ -7,6 +7,13 @@
 
 ----
 ## 更新日志
+*V2.8:*
+
+客户端（新增）：
+
+1. 起点频道刷新：大图、推送、热点、普通新闻混合显示
+2. 起点频道加载：同上
+
 
 *V2.7:*
 
@@ -448,46 +455,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | scid | String | 否        | 二级频道 ID，该二级频(scid)道必须是一级频道(cid)的子频道 |
 
 ----
-#### 列表页刷新(新接口)
 
-_Request_
-
-```json
-GET /v2/ns/fed/rn
-Host: bdp.deeporiginalx.com
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| ---- | :----- | :------- | :---------------------------------- |
-| cid  | String | 是        | 频道ID                                |
-| tcr  | String | 是        | 起始时间，13位时间戳                         |
-| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | String | 否(默认 1)  | 页数                                  |
-| c    | String | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是         | 用户ID                                |
-
-----
-#### 列表页刷新(新接口)
-
-_Request_
-
-```json
-GET /v2/ns/fed/rn
-Host: bdp.deeporiginalx.com
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| ---- | :----- | :------- | :---------------------------------- |
-| cid  | String | 是        | 频道ID                                |
-| tcr  | String | 是        | 起始时间，13位时间戳                         |
-| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | String | 否(默认 1)  | 页数                                  |
-| c    | String | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是         | 用户ID                                |
-
-----
 #### 列表页加载
 
 _Request_
@@ -506,26 +474,7 @@ Host: bdp.deeporiginalx.com
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
 ----
-#### 列表页加载(新接口)
 
-_Request_
-
-```json
-GET /v2/ns/fed/ln
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-Host: bdp.deeporiginalx.com
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| ---- | :----- | :------- | :---------------------------------- |
-| cid  | String | 是        | 频道ID                                |
-| tcr  | String | 是        | 起始时间，13位时间戳                         |
-| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | String | 否(默认 1)  | 页数                                  |
-| c    | String | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是         | 用户ID                                |
-
-----
 #### 行政区划-列表页刷新
 
 _Request_
@@ -1830,15 +1779,14 @@ Content-Type: application/json
 ### <span id="新闻搜索">新闻搜索</span>
 
 
-#### <span id="查询">查询</span>
+#### <span id="搜索">搜索</span>
 _Request_
 
-Request
-
+```json
 GET /v2/ns/es/s
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
-
+```
 | Key      | 参数类型   | 是否必须     | 参数解释  |
 | -------- | :----- | :------- | :---- |
 | keywords | String | 是        | 搜索关键字 |
@@ -1847,6 +1795,7 @@ Host: bdp.deeporiginalx.com
 
 _Response_
 
+```json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -1873,70 +1822,87 @@ Content-Type: application/json
       "district": "山东"
     },
     …
-  ]
-  "total": 2000,                                              - 总条数
+  ],
+  "total": 2000                                               - 总条数
 }
+```
 
-
-
-----
-### <span id="新闻推荐">新闻推荐</span>
-
-
-#### <span id="查询">查询</span>
+#### <span id="搜索新闻及订阅号">搜索新闻及订阅号</span>
 _Request_
 
-Request
-
-GET /v2/ns/re
+```json
+GET /v2/ns/es/snp
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
-
-| Key  | 参数类型   | 是否必须     | 参数解释 |
-| ---- | :----- | :------- | :--- |
-| uid  | String | 是        | 用户id |
-| c    | Long   | 否(默认 20) | 条数   |
+```
+| Key      | 参数类型   | 是否必须     | 参数解释  |
+| -------- | :----- | :------- | :---- |
+| keywords | String | 是        | 搜索关键字 |
+| p        | Long   | 否(默认 1)  | 页数    |
+| c        | Long   | 否(默认 20) | 条数    |
+| uid      | Long   | 否         | 用户id  |
 
 _Response_
 
+```json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
 {
   "code": 2000,
-  "data": [
-    {
-      "nid": 6695,                                            - 新闻ID
-      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
-      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
-      "ptime": "2016-05-22 01:20:46",
-      "pname": "参考消息",
-      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
-      "channel": 9,
-      "collect": 0,                                           - 收藏数
-      "concern": 0,                                           - 关心数
-      "comment": 4,                                           - 评论数
-      "style": 1,                                             - 列表图格式，0、1、2、3
-      "imgs": [                                               - 该字段会有对应style数值的图片
-        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
-      ],
-      "province": "山东",
-      "city": "青岛",
-      "district": "山东"
-    },
-    …
-  ]
+  "data": 
+  {
+            "news": [
+                {
+                  "nid": 6695,                                            - 新闻ID
+                  "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+                  "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+                  "ptime": "2016-05-22 01:20:46",
+                  "pname": "参考消息",
+                  "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+                  "channel": 9,
+                  "collect": 0,                                           - 收藏数
+                  "concern": 0,                                           - 关心数
+                  "comment": 4,                                           - 评论数
+                  "style": 1,                                             - 列表图格式，0、1、2、3
+                  "imgs": [                                               - 该字段会有对应style数值的图片
+                    "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+                  ],
+                  "province": "山东",
+                  "city": "青岛",
+                  "district": "山东"
+                },
+                …
+              ],
+              "total": 2000,                                              - 总条数
+              "publisher": [
+                  {
+                    "id": 6695,                                            - 订阅号ID
+                    "ctime": "2016-05-22 01:20:46",                        - 创建时间
+                    "name": "安卓中国",                                     -  订阅号名称
+                    "concern": 0,                                           - 关注数
+                    "flag": 0,                                             - 0未关注, >0已关注
+                  },
+                  …
+                ]
+  }
 }
+```
+
+----
+## <span id="新闻推荐">新闻推荐</span>
+
 
 ### <span id="人工新闻推荐">人工新闻推荐</span>
 
-#### <span id="推荐/取消推荐">推荐/取消推荐 新闻</span>
+#### <span id="推荐/取消推荐CMS">推荐/取消推荐 新闻CMS</span>
 _Request_
 
+```json
 GET /v2/nsr/o
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
-
+```
 | Key  | 参数类型   | 是否必须 | 参数解释                     |
 | ---- | :----- | :--- | :----------------------- |
 | nid  | Long   | 是    | 新闻id                     |
@@ -1946,6 +1912,7 @@ Host: bdp.deeporiginalx.com
 
 _Response_
 
+```json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -1953,25 +1920,26 @@ Content-Type: application/json
   "code": 2000,
   "data": Long
 }
+```
 
-
-#### <span id="展示新闻列表">展示新闻列表</span>
+#### <span id="展示推荐新闻列表CMS">展示推荐新闻列表CMS</span>
 _Request_
 
-
+```json
 GET /v2/nsr/l
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
-
+```
 | Key  | 参数类型 | 是否必须     | 参数解释    |
 | ---- | :--- | :------- | :------ |
-| ch   | Long | 是        | 频道      |
+| ch   | Long | 否        | 频道      |
 | ifr  | Int  | 是(1/0)   | 已推荐/未推荐 |
 | p    | Long | 否(默认 1)  | 页数      |
 | c    | Long | 否(默认 20) | 条数      |
 
 _Response_
 
+```json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -2005,16 +1973,17 @@ Content-Type: application/json
   ]
   "total": 2000,                                              - 总条数
 }
+```
 
 
-
-#### <span id="搜索新闻">搜索新闻</span>
+#### <span id="搜索新闻CMS">搜索新闻CMS</span>
 _Request_
 
+```json
 GET /v2/nsr/es/l
 Content-Type: application/json
 Host: bdp.deeporiginalx.com
-
+```
 | Key      | 参数类型   | 是否必须     | 参数解释  |
 | -------- | :----- | :------- | :---- |
 | keywords | String | 是        | 搜索关键字 |
@@ -2023,8 +1992,10 @@ Host: bdp.deeporiginalx.com
 | p        | Long   | 否(默认 1)  | 页数    |
 | c        | Long   | 否(默认 20) | 条数    |
 
+
 _Response_
 
+```json
 HTTP/1.1 200 OK
 Content-Type: application/json
 
@@ -2058,3 +2029,79 @@ Content-Type: application/json
   ]
   "total": 2000,                                              - 总条数
 }
+```
+----
+#### 起点频道刷新
+
+_Request_
+
+```json
+GET /v2/ns/fed/rn
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3, 11:第一张为大图、12:第二张为大图、13:第三张为大图
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送
+    },
+    …
+  ]
+}
+```
+----
+#### 奇点频道加载
+
+_Request_
+
+```json
+GET /v2/ns/fed/ln
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是         | 用户ID                                |
+
+----
