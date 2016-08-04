@@ -143,20 +143,20 @@ object SpiderNewsPipelineServer {
         try {
           Right(NewsTemp(
             base = BaseTemp(
-              url = cache.get("url").get,
-              title = cache.get("title").get,
+              url = cache.get("url").get.trim,
+              title = cache.get("title").get.trim,
               tags = cache.get("keywords"),
-              author = cache.get("author"),
+              author = cache.get("author").map(_.trim),
               ptime = dateTimeStr2DateTime(cache.get("pub_time").get),
-              pname = cache.get("pub_name"),
+              pname = cache.get("pub_name").map(_.trim),
               purl = cache.get("pub_url"),
               picon = cache.get("pub_icon"),
               pdescr = cache.get("pub_descr"),
               html = cache.get("content_html").get,
-              synopsis = cache.get("synopsis"),
-              province = cache.get("province"),
-              city = cache.get("city"),
-              district = cache.get("district"),
+              synopsis = cache.get("synopsis").map(_.trim),
+              province = cache.get("province").map(_.trim),
+              city = cache.get("city").map(_.trim),
+              district = cache.get("district").map(_.trim),
               docid = cache.get("docid").get,
               content = Json.parse(cache.get("content").get).as[List[NewsBodyBlock]]
             ),

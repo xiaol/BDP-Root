@@ -109,7 +109,7 @@ class ImagePipelineServer(imageProcessor: ActorRef) extends Actor with ImageUtil
         val dissimilarities: ArrayBuffer[Oss] = temp.length match {
           case 0 | 1 => temp
           case 2     => temp.slice(1, 2)
-          case _ => if (imageContrast(temp.head.ori, temp.tail.head.ori) || imageContrast(temp.head.ori, temp.last.ori) || imageContrast(temp.tail.head.ori, temp.last.ori)) {
+          case _ => if (imageContrast(temp.head.ori, temp.tail.head.ori)) {
             temp.slice(1, 2)
           } else temp
         }
