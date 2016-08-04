@@ -95,13 +95,13 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   private def newsJoinnewsRecommend(channel: ConstColumn[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
     for {
       (news, nr) <- newsList.filter(_.chid === channel)
-        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).drop(offset).take(limit)
+        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).sortBy(_._2.rtime.desc).drop(offset).take(limit)
     } yield (news, nr)
   }
 
   private def newsJoinnewsRecommendAll(offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
     for {
-      (news, nr) <- newsList.join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).drop(offset).take(limit)
+      (news, nr) <- newsList.join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(-24))).on(_.nid === _.nid).sortBy(_._2.rtime.desc).drop(offset).take(limit)
     } yield (news, nr)
   }
 

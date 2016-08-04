@@ -1,6 +1,7 @@
 package services.news
 
 import java.util
+import java.util.{ Collections, Date }
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
@@ -156,8 +157,9 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
         var nids = seq.map { n => (n.nid, 1) }.toMap
         var pname = ""
+
+        //去除组合中的重复新闻
         seq.filter { n =>
-          //nid重复过滤,pname连续出现过滤
           if (nids.contains(n.nid) && nids.get(n.nid).getOrElse(1) == 1 && !pname.equals(n.pname.get)) {
             nids += (n.nid -> 2)
             pname = n.pname.getOrElse("")
@@ -167,29 +169,25 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
           }
         }
       }.map(_.take(20)).map { seq =>
-        //比较热点和普通新闻最新时间,获取两者比较的最新时间
-        var timehot = LocalDateTime.now()
-        var timecommon = timehot
-        var counthot = 0
-        var countcommon = 0
+        //获取热点最早一条新闻时间
+        var timehotlast: Option[LocalDateTime] = None
+        var nidlast: Option[Long] = None
         seq.foreach { n =>
-          if (counthot == 0 && n.rtype.getOrElse(1) == 1) {
-            counthot = counthot + 1
-            timehot = n.ptime
-          } else if (countcommon == 0 && n.rtype.getOrElse(0) == 0) {
-            countcommon = countcommon + 1
-            timecommon = n.ptime
+          if (n.rtype.getOrElse(0) == 1) {
+            timehotlast = Some(n.ptime)
+            nidlast = Some(n.nid)
           }
         }
-        if (timehot.isBefore(timecommon)) {
-          timehot = timecommon
-        }
-        //将推荐新闻时间,伪造为比热点早1-2秒
+        val date = new Date(timeCursor)
+        val localDateTime = LocalDateTime.fromDateFields(date)
+
+        //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内
         seq.map { n =>
-          if (n.rtype.getOrElse(1) == 2 && n.style > 10) {
-            n.copy(ptime = timehot.plusSeconds(2))
-          } else if (n.rtype.getOrElse(1) == 2) {
-            n.copy(ptime = timehot.plusSeconds(1))
+          if (nidlast.getOrElse(0) != n.nid) {
+            var newtime = timehotlast.getOrElse(localDateTime).plusSeconds(Random.nextInt(6) - 3)
+            if (newtime.isBefore(localDateTime))
+              newtime = localDateTime.plusSeconds(-1)
+            n.copy(ptime = newtime)
           } else {
             n
           }
@@ -198,7 +196,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      result
+      result.map { seq => seq.sortBy(_.ptime) }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.loadFeedByRecommendsNew($timeCursor): ${e.getMessage}")
@@ -225,6 +223,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         var nids = seq.map { n => (n.nid, 1) }.toMap
         var pname = ""
 
+        //去除组合中的重复新闻
         seq.filter { n =>
           if (nids.contains(n.nid) && nids.get(n.nid).getOrElse(1) == 1 && !pname.equals(n.pname.get)) {
             nids += (n.nid -> 2)
@@ -236,28 +235,26 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         }
       }.map(_.take(20)).map { seq =>
         //获取热点最新一条新闻时间
-        var timehotfirst = LocalDateTime.now()
-        var timehotlast = timehotfirst
+        var timehotfirst: Option[LocalDateTime] = None
+        var nidfirst: Option[Long] = None
         var counthot = 0
         seq.foreach { n =>
           if (counthot == 0 && n.rtype.getOrElse(0) == 1) {
             counthot = counthot + 1
-            timehotfirst = n.ptime
-          }
-          if (n.rtype.getOrElse(0) == 1) {
-            timehotlast = n.ptime
+            timehotfirst = Some(n.ptime)
+            nidfirst = Some(n.nid)
           }
         }
+        val date = new Date(timeCursor)
+        val localDateTime = LocalDateTime.fromDateFields(date)
 
-        //将推荐新闻时间,伪造为比热点早1-2秒
-        //将普通新闻时间,伪造为比热点晚1秒
+        //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内
         seq.map { n =>
-          if (n.rtype.getOrElse(0) == 2 && n.style > 10) {
-            n.copy(ptime = timehotfirst.plusSeconds(2))
-          } else if (n.rtype.getOrElse(0) == 2) {
-            n.copy(ptime = timehotfirst.plusSeconds(1))
-          } else if (n.rtype.getOrElse(0) == 0) {
-            n.copy(ptime = timehotlast.plusSeconds(-1))
+          if (nidfirst.getOrElse(0) != n.nid) {
+            var newtime = timehotfirst.getOrElse(localDateTime).plusSeconds(Random.nextInt(6) - 3)
+            if (newtime.isBefore(localDateTime))
+              newtime = localDateTime.plusSeconds(1)
+            n.copy(ptime = newtime)
           } else {
             n
           }
@@ -266,7 +263,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      result
+      result.map { seq => seq.sortBy(_.ptime) }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsRecommendService.refreshFeedByRecommendsNew($timeCursor): ${e.getMessage}")
