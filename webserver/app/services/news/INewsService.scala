@@ -210,7 +210,8 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {
     val reqTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
     val oldTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(-12))
-    if (reqTimeCursor.isBefore(oldTimeCursor)) oldTimeCursor else reqTimeCursor
+    val nowTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(0))
+    if (reqTimeCursor.isBefore(oldTimeCursor) || reqTimeCursor.isAfter(nowTimeCursor)) oldTimeCursor else reqTimeCursor
   }
 
   def insert(newsRow: NewsRow): Future[Option[Long]] = {
