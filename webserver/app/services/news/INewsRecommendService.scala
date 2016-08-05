@@ -140,7 +140,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
   def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 5, msecondsToDatetime(timeCursor))
+      val loadHotFO: Future[Seq[NewsRow]] = newsRecommendDAO.loadByHot((page - 1) * count, count / 5, msecondsToDatetime(timeCursor), uid)
       val loadCommonFO: Future[Seq[NewsRow]] = newsRecommendDAO.load((page - 1) * count, count / 2 + 6, msecondsToDatetime(timeCursor))
       //人工推荐新闻,每个推荐等级依次一条条显示
       val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count / 5)
@@ -207,7 +207,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
   def refreshFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 5, newTimeCursor)
+      val refreshHotFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByHot((page - 1) * count, count / 5, newTimeCursor, uid)
       val refreshCommonFO: Future[Seq[NewsRow]] = newsRecommendDAO.refresh((page - 1) * count, count, newTimeCursor, uid)
       val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count / 5)
       val refreshBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
