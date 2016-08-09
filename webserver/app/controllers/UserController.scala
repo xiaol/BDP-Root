@@ -32,9 +32,12 @@ class UserController @Inject() (val userService: UserService)(implicit ec: Execu
     request.body.validate[UserSocial] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(userSocial, _) if userSocial.muid.isDefined =>
-        userService.updateUserRowByUid(userSocial.muid.get, UserRowHelpers.from(userSocial)).flatMap {
+        userService.updateUserRowBySuid(userSocial.suid, UserRowHelpers.from(userSocial)).flatMap {
           case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
-          case _             => Future.successful(ServerError(userSocial.toString))
+          case None => userService.updateUserRowByUid(userSocial.muid.get, UserRowHelpers.from(userSocial)).flatMap {
+            case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
+            case _             => Future.successful(ServerError(userSocial.toString))
+          }
         }
       case JsSuccess(userSocial, _) =>
         val suid = if (userSocial.msuid.isDefined) userSocial.msuid.get else userSocial.suid
