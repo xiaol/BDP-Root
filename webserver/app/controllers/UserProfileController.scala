@@ -47,7 +47,7 @@ class UserProfileController @Inject() (val channelService: ChannelService, val c
   }
 
   def listComments(uid: Long, page: Long, count: Long) = AsyncStack(AuthorityKey -> RegistRole) { implicit request =>
-    profileService.listComments(uid, page, count).map {
+    profileService.listCommentsWithNewsInfo(uid, page, count).map {
       case news: Seq[CommentResponse] if news.nonEmpty => ServerSucced(news)
       case _                                           => DataEmptyError(s"$uid, $page, $count")
     }

@@ -108,9 +108,9 @@ class ImagePipelineServer(imageProcessor: ActorRef) extends Actor with ImageUtil
         val temp = successTemp.slice(0, 3)
         val dissimilarities: ArrayBuffer[Oss] = temp.length match {
           case 0 | 1 => temp
-          case 2     => temp.slice(1, 2)
+          case 2     => temp.slice(0, 1)
           case _ => if (imageContrast(temp.head.ori, temp.tail.head.ori)) {
-            temp.slice(1, 2)
+            temp.slice(0, 1)
           } else temp
         }
         superior ! FeedOssList(for (oss <- dissimilarities.toList) yield oss.oss)

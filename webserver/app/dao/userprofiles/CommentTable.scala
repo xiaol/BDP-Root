@@ -3,6 +3,7 @@ package dao.userprofiles
 import javax.inject.{ Inject, Singleton }
 
 import commons.models.userprofiles.CommentRow
+import dao.news.NewsTable
 import org.joda.time._
 import play.api.db.slick._
 import utils.MyPostgresDriver
@@ -34,11 +35,12 @@ trait CommentTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 @Singleton
-class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends CommentTable with CommendTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends CommentTable with CommendTable with NewsTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
 
   val commentList = TableQuery[CommentTable]
   val commendList = TableQuery[CommendTable]
+  val newsList = TableQuery[NewsTable]
 
   def findById(id: Long): Future[Option[CommentRow]] = {
     db.run(commentList.filter(_.id === id).result.headOption)
@@ -48,27 +50,24 @@ class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
     db.run(commentList.filter(_.uid === uid).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
+  def listByUidWithNewsInfo(uid: Long, offset: Long, limit: Long): Future[Seq[(CommentRow, Long, String)]] = {
+    val joinQuery = for {
+      (comment, news) <- commentList.filter(_.uid === uid).sortBy(_.ctime.desc).drop(offset).take(limit)
+        .joinLeft(newsList).on(_.docid === _.docid)
+    } yield (comment, news.map(_.nid), news.map(_.title))
+
+    for (pairs <- db.run(joinQuery.result)) yield {
+      for (pair <- pairs) yield {
+        pair match {
+          case (comment, nids, titles) => (comment, nids.get, titles.get)
+        }
+      }
+    }
+  }
+
   def listByDocid(docid: String, offset: Long, limit: Long): Future[Seq[CommentRow]] = {
     db.run(commentList.filter(_.docid === docid).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
-
-  //  private def commentsJoinCommends(docid: ConstColumn[String], uid: ConstColumn[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
-  //    (for {
-  //      (comments, commends) <- commentList.filter(_.docid === docid).sortBy(_.ctime.desc).drop(offset).take(limit)
-  //        .joinLeft(commendList.filter(_.uid === uid)).on(_.id === _.cid) //
-  //    } yield (comments, commends)).groupBy(_._1).map { case (comments, commends) => (comments, commends.length) }
-  //  }
-  //  private val commentsJoinCommendsCompiled = Compiled(commentsJoinCommends _)
-  //  def listByDocidAndUid(docid: String, uid: Long, offset: Long, limit: Long): Future[Seq[(CommentRow, Int)]] = {
-  //    db.run(commentsJoinCommendsCompiled(docid, uid, offset, limit).result).map {
-  //      case pairs: Seq[(CommentRow, Int)] =>
-  //        println(pairs)
-  //        pairs.map {
-  //          case (cr, 1) => (cr, 0)
-  //          case (cr, _) => (cr, 1)
-  //        }
-  //    }
-  //  }
 
   private def commentsJoinCommends(docid: ConstColumn[String], uid: ConstColumn[Long], offset: ConstColumn[Long], limit: ConstColumn[Long]) = {
     for {

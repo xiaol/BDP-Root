@@ -68,7 +68,7 @@ POST    /v2/ns/cocs                 controllers.UserProfileController.addConcern
 DELETE  /v2/ns/cocs                 controllers.UserProfileController.remConcerns(nid:Long,uid:Long)
 
 GET     /v2/ns/au/coms              controllers.UserProfileController.listComments(uid:Long,p:Long ?= 1, c:Long ?= 20)
-DELETE  /v2/ns/au/coms              controllers.UserProfileController.remComment(uid:Long,did:String)
+DELETE  /v2/ns/au/coms              controllers.UserProfileController.remComment(cid:Long,did:String)
 
 GET     /v2/ns/au/cols              controllers.UserProfileController.listCollects(uid:Long,p:Long ?= 1, c:Long ?= 20)
 GET     /v2/ns/au/cocs              controllers.UserProfileController.listConcerns(uid:Long,p:Long ?= 1, c:Long ?= 20)

@@ -19,7 +19,9 @@ case class CommentResponse(
     uname: String,
     avatar: Option[String],
     docid: String,
-    upflag: Int = 0) {
+    upflag: Int = 0,
+    nid: Option[Long],
+    ntitle: Option[String]) {
   require(Set(0, 1).contains(upflag), "upflag must be 0 or 1, 0 means not yet commend.")
 }
 
@@ -34,10 +36,12 @@ object CommentResponse {
     (JsPath \ "uname").write[String] ~
     (JsPath \ "avatar").writeNullable[String] ~
     (JsPath \ "docid").write[String] ~
-    (JsPath \ "upflag").write[Int]
+    (JsPath \ "upflag").write[Int] ~
+    (JsPath \ "nid").writeNullable[Long] ~
+    (JsPath \ "ntitle").writeNullable[String]
   )(unlift(CommentResponse.unapply))
 
-  def from(row: CommentRow, upflag: Int = 0): CommentResponse = {
-    CommentResponse(row.id, row.content, row.commend, row.ctime, row.uid, row.uname, row.avatar, row.docid, upflag)
+  def from(row: CommentRow, upflag: Int = 0, nid: Option[Long] = None, ntitle: Option[String] = None): CommentResponse = {
+    CommentResponse(row.id, row.content, row.commend, row.ctime, row.uid, row.uname, row.avatar, row.docid, upflag, nid, ntitle)
   }
 }

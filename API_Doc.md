@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.8
+# 数据平台接口文档_V2.8.1
 
 ## 目录
 
@@ -7,6 +7,13 @@
 
 ----
 ## 更新日志
+*V2.8.1:*
+
+客户端(修改)：
+
+1. 用户评论删除：原有接口调用参数为(uid, did)，修正为(cid, did)，即评论 ID、评论 docid；
+2. 用户查看 **个人** 评论列表接口：新增`nid`、`ntitle`字段，对应“新闻ID”、“新闻标题”。
+
 *V2.8:*
 
 客户端（新增）：
@@ -683,7 +690,9 @@ Content-Type: application/json
       "uname": "zhange",                - 创建该评论的用户名
       "avatar": "http://touxiang.jpg"   - Option
       "docid": "http://toutiao.com/group/2223/comments/111",  - 该评论对应的新闻 docid
-      "upflag": 1                       - 用户是否能对该条评论点赞，0、1 对应 可点、不可点
+      "upflag": 1,                      - 用户是否能对该条评论点赞，0、1 对应 可点、不可点
+      "nid": 12332,						- 该评论的新闻ID，仅用户个人评论列表接口
+      "ntitle": "这是新闻标题"			- 该评论的新闻标题，仅用户个人评论列表接口
     }
   ]
 }
@@ -761,7 +770,7 @@ Host: bdp.deeporiginalx.com
 | Key  | 参数类型           | 是否必须 | 参数解释      |
 | ---- | :------------- | :--- | :-------- |
 | did  | String(base64) | 是    | 评论的 docid |
-| uid  | String         | 是    | 用户ID      |
+| cid  | String         | 是    | 评论  ID    |
 
 _Response_
 
@@ -1840,7 +1849,7 @@ Host: bdp.deeporiginalx.com
 | keywords | String | 是        | 搜索关键字 |
 | p        | Long   | 否(默认 1)  | 页数    |
 | c        | Long   | 否(默认 20) | 条数    |
-| uid      | Long   | 否         | 用户id  |
+| uid      | Long   | 否        | 用户id  |
 
 _Response_
 
@@ -2048,7 +2057,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是         | 用户ID                                |
+| uid  | Long   | 是        | 用户ID                                |
 
 
 _Response_
@@ -2102,6 +2111,6 @@ Host: bdp.deeporiginalx.com
 | tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是         | 用户ID                                |
+| uid  | Long   | 是        | 用户ID                                |
 
 ----

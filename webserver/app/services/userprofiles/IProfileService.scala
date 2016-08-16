@@ -26,7 +26,7 @@ import scala.util.control.NonFatal
 trait IProfileService {
   def addComment(commentRow: CommentRow): Future[Option[Long]]
   def remComment(cid: Long, docid: String): Future[Option[Long]]
-  //def listComments()
+  def listCommentsWithNewsInfo(uid: Long, page: Long, count: Long): Future[Seq[CommentResponse]]
 
   def addCommend(cid: Long, uid: Long): Future[Option[Int]]
   def remCommend(cid: Long, uid: Long): Future[Option[Int]]
@@ -76,11 +76,21 @@ class ProfileService @Inject() (val commentDAO: CommentDAO, val newsDAO: NewsDAO
   }
 
   def listComments(uid: Long, page: Long, count: Long): Future[Seq[CommentResponse]] = {
-    commentDAO.listByUid(uid, (page - 1) * count, count).map {
-      case rows => rows.sortBy(_.ctime).map(CommentResponse.from(_, 1))
+    commentDAO.listByUid(uid, (page - 1) * count, count).map { rows =>
+      rows.sortBy(_.ctime).map(CommentResponse.from(_, 1))
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within ProfileService.listComments($uid, $page, $count): ${e.getMessage}")
+        Seq[CommentResponse]()
+    }
+  }
+
+  def listCommentsWithNewsInfo(uid: Long, page: Long, count: Long): Future[Seq[CommentResponse]] = {
+    commentDAO.listByUidWithNewsInfo(uid, (page - 1) * count, count).map { pairs =>
+      pairs.sortBy(_._1.ctime).map { pair => CommentResponse.from(pair._1, 1, Some(pair._2), Some(pair._3)) }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within ProfileService.listCommentsWithNewsInfo($uid, $page, $count): ${e.getMessage}")
         Seq[CommentResponse]()
     }
   }

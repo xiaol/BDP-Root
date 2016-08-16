@@ -83,7 +83,7 @@ class SpiderNewsPipelineServer(persistanceServer: ActorRef, imageServer: ActorRe
         case msg @ _ => logger.error(s"UnCatchMsg: $msg")
       }
 
-      temp.base.content.collect { case ImageBlock(src) if src.startsWith("http") => src } match {
+      temp.base.content.collect { case ImageBlock(src) if src.startsWith("http://") || src.startsWith("https://") => src } match {
         case srcs: List[String] if srcs.nonEmpty => imageServer ! DetailTasks(srcs)
         case srcs: List[String] =>
           detailOSSTemp = Some(List[Oss]()); feedOSSTemp = Some(List[String]())
@@ -143,28 +143,28 @@ object SpiderNewsPipelineServer {
         try {
           Right(NewsTemp(
             base = BaseTemp(
-              url = cache.get("url").get.trim,
-              title = cache.get("title").get.trim,
+              url = cache("url").trim,
+              title = cache("title").trim,
               tags = cache.get("keywords"),
               author = cache.get("author").map(_.trim),
-              ptime = dateTimeStr2DateTime(cache.get("pub_time").get),
+              ptime = dateTimeStr2DateTime(cache("pub_time")),
               pname = cache.get("pub_name").map(_.trim),
               purl = cache.get("pub_url"),
               picon = cache.get("pub_icon"),
               pdescr = cache.get("pub_descr"),
-              html = cache.get("content_html").get,
+              html = cache("content_html"),
               synopsis = cache.get("synopsis").map(_.trim),
               province = cache.get("province").map(_.trim),
               city = cache.get("city").map(_.trim),
               district = cache.get("district").map(_.trim),
-              docid = cache.get("docid").get,
-              content = Json.parse(cache.get("content").get).as[List[NewsBodyBlock]]
+              docid = cache("docid"),
+              content = Json.parse(cache("content")).as[List[NewsBodyBlock]]
             ),
             syst = SystTemp(
-              chid = cache.get("channel_id").get.toLong,
+              chid = cache("channel_id").toLong,
               sechid = cache.get("se_channel_id").map(_.toLong),
-              srid = cache.get("source_id").get.toLong,
-              srstate = cache.get("source_online").get.toInt,
+              srid = cache("source_id").toLong,
+              srstate = cache("source_online").toInt,
               pconf = cache.get("task_conf").map { conf => Json.parse(conf).as[JsValue] },
               comment_queue = cache.get("comment_queue"),
               comment_task = cache.get("comment_task")
@@ -214,7 +214,7 @@ object SpiderNewsPipelineServer {
         pname = baseTemp.pname,
         purl = baseTemp.purl,
         descr = baseTemp.synopsis,
-        tags = if (baseTemp.tags.isDefined && baseTemp.tags.nonEmpty) Some(baseTemp.tags.get.trim.split(",").toList.filter(_.nonEmpty).map(_.trim)) else None,
+        tags = if (baseTemp.tags.isDefined && baseTemp.tags.nonEmpty) Some(baseTemp.tags.get.trim.split(",").toList.map(_.trim).filter(_.nonEmpty)) else None,
         province = baseTemp.province,
         city = baseTemp.city,
         district = baseTemp.district)
