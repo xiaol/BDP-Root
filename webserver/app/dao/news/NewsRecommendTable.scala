@@ -56,7 +56,7 @@ object NewsRecommendDAO {
 
 @Singleton
 class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with ConcernPublisherTable with NewsPublisherTable
+    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable with ConcernPublisherTable with NewsPublisherTable
     with HasDatabaseConfigProvider[MyPostgresDriver] {
 
   import driver.api._
@@ -65,6 +65,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val newsRecommendList = TableQuery[NewsRecommendTable]
   val newsRecommendAPPList = TableQuery[NewsRecommendAPPTable]
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
+  val newsRecommendForUserList = TableQuery[NewsRecommendForUserTable]
   val newsList = TableQuery[NewsTable]
   val concernPubList = TableQuery[ConcernPublisherTable]
   val publisherList = TableQuery[NewsPublisherTable]
@@ -229,7 +230,15 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
+  def loadByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filter(_.comment > 0).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).sortBy(_.predict.desc).map(_.nid)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
   def refreshByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  }
+
+  def refreshByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > timeCursor).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.comment > 0).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).sortBy(_.predict.desc).map(_.nid)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 }

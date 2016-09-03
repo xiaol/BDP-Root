@@ -61,7 +61,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def loadFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+  def loadFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
     chid match {
       case 1L => newsService.loadFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -74,7 +74,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def refreshFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+  def refreshFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
     chid match {
       case 1L => newsService.refreshFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -87,7 +87,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def loadLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+  def loadLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = Action.async { implicit request =>
     (province, city, district) match {
       case (None, None, None) => Future.successful(DataInvalidError("Not all location fields are empty"))
       case _ => newsService.loadFeedByLocation(page, count, tcursor, province, city, district).map {
@@ -97,7 +97,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def refreshLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
+  def refreshLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = Action.async { implicit request =>
     (province, city, district) match {
       case (None, None, None) => Future.successful(DataInvalidError("Not all location fields are empty"))
       case _ => newsService.refreshFeedByLocation(page, count, tcursor, province, city, district).map {

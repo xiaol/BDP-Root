@@ -2087,7 +2087,7 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送
+      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告
     },
     …
   ]
@@ -2114,3 +2114,76 @@ Host: bdp.deeporiginalx.com
 | uid  | Long   | 是        | 用户ID                                |
 
 ----
+#### 频道刷新加上广告
+
+_Request_
+
+```json
+GET /v2/ns/fed/ra
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,太长可用base64编码处理下|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 列表图格式，0、1、2、3, 11:第一张为大图、12:第二张为大图、13:第三张为大图
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告
+    },
+    …
+  ]
+}
+```
+----
+#### 频道加载加上广告
+
+_Request_
+
+```json
+GET /v2/ns/fed/la
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | String | 是        | 频道ID                                |
+| tcr  | String | 是        | 起始时间，13位时间戳                         |
+| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | String | 否(默认 1)  | 页数                                  |
+| c    | String | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,太长可用base64编码处理下|

@@ -1,10 +1,13 @@
 package commons.models.news
 
 import com.sksamuel.elastic4s.{ HitAs, RichSearchHit }
+import commons.models.advertisement.{ Creative, Adspace }
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
+import scala.util.Try
 
 /**
  * Created by zhange on 2016-05-04.
@@ -91,6 +94,15 @@ object NewsFeedResponse {
     val incr = newsRow.incr
     val syst = newsRow.syst
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.tags, base.province, base.city, base.district)
+  }
+
+  def from(creative: Creative): NewsFeedResponse = {
+    val app = creative.app.get
+    val event = creative.event.get.head
+    val ad_native = creative.ad_native.get
+    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
+    val title: String = ad_native.filter(_.required_field.get == 1).head.required_value.getOrElse("")
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app.app_name, event.event_value, None, 9999L, 0, 0, 0, 1, imgs, None, None, None, None, Some(3))
   }
 }
 

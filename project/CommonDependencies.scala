@@ -24,5 +24,7 @@ object CommonDependencies{
 
   val BetterFile = "com.github.pathikrit" % "better-files_2.11" % "2.16.0"
 
-  val commonDependencies: Seq[ModuleID] = specs ++ scalacheck ++ Seq(jodaTime,logback,codec,PlayJson,Mail,BetterFile)
+  val asynchttpclient = "org.asynchttpclient" % "async-http-client" % "2.0.14"
+
+  val commonDependencies: Seq[ModuleID] = specs ++ scalacheck ++ Seq(jodaTime,logback,codec,PlayJson,Mail,BetterFile,asynchttpclient)
 }
