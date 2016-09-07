@@ -131,3 +131,18 @@ object NewsPublisherWithUserResponse {
     (JsPath \ "flag").read[Long]
   )(NewsPublisherWithUserResponse.apply _)
 }
+
+//
+case class NewsPipelineWithKey(key: String, value: Option[String] = None)
+
+object NewsPipelineWithKey {
+  implicit val NewsPipelineWithKeyWrites: Writes[NewsPipelineWithKey] = (
+    (JsPath \ "key").write[String] ~
+    (JsPath \ "value").writeNullable[String]
+  )(unlift(NewsPipelineWithKey.unapply))
+
+  implicit val NewsPipelineWithKeyReads: Reads[NewsPipelineWithKey] = (
+    (JsPath \ "key").read[String] ~
+    (JsPath \ "value").readNullable[String]
+  )(NewsPipelineWithKey.apply _)
+}

@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.8.1
+# 数据平台接口文档_V2.9
 
 ## 目录
 
@@ -7,6 +7,14 @@
 
 ----
 ## 更新日志
+
+*V2.9:*
+
+客户端（新增）：
+
+1. 频道刷新加上广告
+2. 频道加载加上广告
+
 *V2.8.1:*
 
 客户端(修改)：
@@ -2132,7 +2140,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
-| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,太长可用base64编码处理下|
+| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
 
 _Response_
 
@@ -2161,7 +2169,7 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告
+      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告
     },
     …
   ]
@@ -2186,4 +2194,4 @@ Host: bdp.deeporiginalx.com
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
-| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,太长可用base64编码处理下|
+| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|

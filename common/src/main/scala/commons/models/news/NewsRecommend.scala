@@ -154,3 +154,22 @@ object NewsRecommendForUser {
     (JsPath \ "ctime").read[LocalDateTime]
   )(NewsRecommendForUser.apply _)
 }
+
+case class NewsRecommendHot(
+  nid: Long,
+  ctime: LocalDateTime,
+  status: Option[Int] = None)
+
+object NewsRecommendHot {
+  implicit val NewsRecommendHotWrites: Writes[NewsRecommendHot] = (
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "readtime").write[LocalDateTime] ~
+    (JsPath \ "status").writeNullable[Int]
+  )(unlift(NewsRecommendHot.unapply))
+
+  implicit val NewsRecommendHotReads: Reads[NewsRecommendHot] = (
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "readtime").read[LocalDateTime] ~
+    (JsPath \ "status").readNullable[Int]
+  )(NewsRecommendHot.apply _)
+}

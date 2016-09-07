@@ -53,6 +53,26 @@ class NewsEsService @Inject() extends INewsElasticSearchService with ElasticDsl 
     }
   }
 
+  def searchHotNid(key: String, page: Int, count: Int): Future[Long] = {
+    EsDriver.esClient.execute {
+      var boolQuery: BoolQueryBuilder = QueryBuilders.boolQuery()
+        .should(QueryBuilders.matchQuery("title", key))
+        .should(QueryBuilders.termQuery("tags", key))
+
+      search("index_news" / "type_news")
+        .query2(boolQuery)
+        .sourceInclude("nid")
+        .start((page - 1) * count).limit(count)
+        .sort2(SortBuilders.fieldSort("_score").order(SortOrder.DESC))
+    }.map { o =>
+      (o.hits.head.getSource.get("nid").toString.toLong)
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsEsService.searchHotNid($key): ${e.getMessage}")
+        0L
+    }
+  }
+
   def insert(newsRow: NewsRow): Future[Option[Boolean]] = {
     EsDriver.esClient.execute {
       index("index_news", "type_news").source(Json.toJson(NewsEsRow.from(newsRow)).toString)

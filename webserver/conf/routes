@@ -45,6 +45,8 @@ GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(si
 # News from Elasticsearch
 GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20)
 GET     /v2/ns/es/snp               controllers.NewsSearchController.searchNewsWithPublisher(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20,uid: Option[Long])
+GET     /v2/ns/es/sh                controllers.NewsSearchController.searchHotNid(keywords: String, p:Int ?= 1, c:Int ?= 1)
+
 # News from Recommend
 GET     /v2/nsr/ar                  controllers.NewsSearchController.addRecommend(nid: Long, score: Double)
 GET     /v2/nsr/re                  controllers.NewsSearchController.recommend(uid: Long, c:Int ?= 20)
@@ -119,7 +121,7 @@ POST    /v2/sps/dp/push/:sid        controllers.SpiderDispatcherController.pushS
 # Spiders pipeline
 POST    /v2/sps/ns/test/:msg        controllers.SpiderPipelineController.newsPipelineTest(msg:String)
 # base64.encode(msg)
-POST    /v2/sps/ns/:task            controllers.SpiderPipelineController.newsPipeline(task:String)
+POST    /v2/sps/ns                 controllers.SpiderPipelineController.newsPipeline()
 POST    /v2/sps/coms                controllers.SpiderPipelineController.createComments()
 
 POST    /v2/sps/nsr                 controllers.SpiderPipelineController.createNews()

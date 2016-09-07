@@ -1,27 +1,27 @@
 package controllers
 
-import scala.concurrent.duration._
-import akka.pattern.ask
-import akka.util.Timeout
-import play.api.mvc._
-import akka.actor._
 import javax.inject._
 
+import akka.actor._
+import akka.pattern.ask
 import akka.routing.FromConfig
-import utils.Response._
-import services.news.NewsService
-import play.api.libs.json.{ JsError, JsSuccess }
+import akka.util.Timeout
+import commons.messages.pipeline.NewsPipelineTask
+import commons.models.community.ASearchRow
+import commons.models.news.{NewsPipelineWithKey, NewsRow}
+import commons.models.userprofiles.CommentRow
+import commons.utils.Base64Utils.decodeBase64
+import play.api.libs.json.{JsError, JsSuccess}
+import play.api.mvc._
 import services.community.ASearchService
+import services.news.NewsService
+import services.userprofiles.ProfileService
+import utils.Response._
 
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.control.NonFatal
-import commons.utils.Base64Utils.decodeBase64
-import commons.models.community.ASearchRow
-import commons.models.news.NewsRow
-import commons.models.userprofiles.CommentRow
-import commons.messages.pipeline.NewsPipelineTask
-import services.userprofiles.ProfileService
-
 /**
  * Created by zhange on 2016-05-19.
  *
@@ -43,12 +43,16 @@ class SpiderPipelineController @Inject() (system: ActorSystem, val profileServic
     }
   }
 
-  def newsPipeline(task: String) = Action.async {
-    (newsPipelineRoutees ? NewsPipelineTask(decodeBase64(task))).map {
-      case msg: String         => ServerError(msg)
-      case NewsPipelineTask(t) => ServerSucced(t)
-    }.recover {
-      case NonFatal(e) => ServerError(s"NewsPipelineError: ${e.getMessage}")
+  def newsPipeline() = Action.async(parse.json) { implicit request =>
+    request.body.validate[NewsPipelineWithKey] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(newsPipelineWithKey, _) =>
+        (newsPipelineRoutees ? NewsPipelineTask(decodeBase64(newsPipelineWithKey.key))).map {
+          case msg: String         => ServerError(msg)
+          case NewsPipelineTask(t) => ServerSucced(t)
+        }.recover {
+          case NonFatal(e) => ServerError(s"NewsPipelineError: ${e.getMessage}")
+        }
     }
   }
 

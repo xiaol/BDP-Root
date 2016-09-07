@@ -20,6 +20,14 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
     }
   }
 
+  //根据百度热词,搜索热点新闻
+  def searchHotNid(key: String, page: Int, count: Int) = Action.async { implicit request =>
+    newsEsService.searchHotNid(key, page, count).map {
+      case nid: Long if nid != 0L => ServerSucced(nid)
+      case _                      => DataEmptyError(s"$key")
+    }
+  }
+
   //搜索新闻并添加订阅号列表及用户是否关注该订阅号
   def searchNewsWithPublisher(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int, uid: Option[Long]) = Action.async { implicit request =>
     if (page == 1) {
