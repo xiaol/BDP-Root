@@ -61,6 +61,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
+  //AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
   def loadFeed(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
     chid match {
       case 1L => newsService.loadFeedByRecommends(page, count, tcursor).map {

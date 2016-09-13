@@ -2127,20 +2127,20 @@ Host: bdp.deeporiginalx.com
 _Request_
 
 ```json
-GET /v2/ns/fed/ra
+POST /v2/ns/fed/ra
 Host: bdp.deeporiginalx.com
 Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
 ```
 
 | Key  | 参数类型   | 是否必须     | 参数解释                                |
 | ---- | :----- | :------- | :---------------------------------- |
-| cid  | String | 是        | 频道ID                                |
-| tcr  | String | 是        | 起始时间，13位时间戳                         |
-| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | String | 否(默认 1)  | 页数                                  |
-| c    | String | 否(默认 20) | 条数                                  |
+| cid  | Long | 是        | 频道ID                                |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
-| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
 
 _Response_
 
@@ -2169,7 +2169,7 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告
+      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告、4图片新闻、5视频
     },
     …
   ]
@@ -2181,17 +2181,17 @@ Content-Type: application/json
 _Request_
 
 ```json
-GET /v2/ns/fed/la
+POST /v2/ns/fed/la
 Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
 Host: bdp.deeporiginalx.com
 ```
 
 | Key  | 参数类型   | 是否必须     | 参数解释                                |
 | ---- | :----- | :------- | :---------------------------------- |
-| cid  | String | 是        | 频道ID                                |
-| tcr  | String | 是        | 起始时间，13位时间戳                         |
-| tmk  | String | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | String | 否(默认 1)  | 页数                                  |
-| c    | String | 否(默认 20) | 条数                                  |
+| cid  | Long | 是        | 频道ID                                |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
-| b    | String | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|

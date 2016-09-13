@@ -26,5 +26,8 @@ object CommonDependencies{
 
   val asynchttpclient = "org.asynchttpclient" % "async-http-client" % "2.0.14"
 
-  val commonDependencies: Seq[ModuleID] = specs ++ scalacheck ++ Seq(jodaTime,logback,codec,PlayJson,Mail,BetterFile,asynchttpclient)
+  val commonsEmail = "org.apache.commons" % "commons-email" % "1.4"
+
+
+  val commonDependencies: Seq[ModuleID] = specs ++ scalacheck ++ Seq(jodaTime,logback,codec,PlayJson,Mail,BetterFile,asynchttpclient,commonsEmail)
 }

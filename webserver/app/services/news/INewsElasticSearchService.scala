@@ -57,7 +57,6 @@ class NewsEsService @Inject() extends INewsElasticSearchService with ElasticDsl 
     EsDriver.esClient.execute {
       var boolQuery: BoolQueryBuilder = QueryBuilders.boolQuery()
         .should(QueryBuilders.matchQuery("title", key))
-        .should(QueryBuilders.termQuery("tags", key))
 
       search("index_news" / "type_news")
         .query2(boolQuery)

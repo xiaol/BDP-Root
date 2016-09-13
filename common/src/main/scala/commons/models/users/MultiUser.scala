@@ -67,6 +67,7 @@ object UserSocial {
 }
 
 case class UserLocal(
+  uid: Option[Long] = None,
   utype: Int,
   platform: Int,
   uname: Option[String] = None,
@@ -82,6 +83,7 @@ case class UserLocal(
 
 object UserLocal {
   implicit val UserLocalReads: Reads[UserLocal] = (
+    (JsPath \ "uid").readNullable[Long] ~
     (JsPath \ "utype").read[Int] ~
     (JsPath \ "platform").read[Int] ~
     (JsPath \ "uname").readNullable[String] ~

@@ -5,9 +5,16 @@
 # User Test
 GET     /v2/listuser                controllers.Application.listUser()
 
+#register
 POST    /v2/au/sin/g                controllers.UserController.signupGuest(token:Int ?= 0)
-POST    /v2/au/lin/g                controllers.UserController.loginGuest(token:Int ?= 0)
 POST    /v2/au/sin/s                controllers.UserController.signupSocial(token:Int ?= 0)
+POST    /v2/au/sin/l                controllers.UserController.signupLocalUser(token:Int ?= 0)
+#login
+POST    /v2/au/lin/g                controllers.UserController.loginGuest(token:Int ?= 0)
+#reset password
+POST    /v2/au/lin/r                controllers.UserController.resetPassword(token:Int ?= 0)
+#change password
+POST    /v2/au/lin/c                controllers.UserController.changePassword(token:Int ?= 0)
 
 GET     /v2/au/alin                 controllers.UserController.afterLogin()
 GET     /v2/au/alou                 controllers.UserController.afterLogout()
@@ -35,6 +42,8 @@ GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long
 GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long)
 GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long)
 
+POST    /v2/ns/fed/ra               controllers.NewsRecommendController.refreshFeedWithAd()
+POST    /v2/ns/fed/la               controllers.NewsRecommendController.loadFeedWithAd()
 
 GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
 GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
@@ -121,7 +130,7 @@ POST    /v2/sps/dp/push/:sid        controllers.SpiderDispatcherController.pushS
 # Spiders pipeline
 POST    /v2/sps/ns/test/:msg        controllers.SpiderPipelineController.newsPipelineTest(msg:String)
 # base64.encode(msg)
-POST    /v2/sps/ns                 controllers.SpiderPipelineController.newsPipeline()
+POST    /v2/sps/ns                  controllers.SpiderPipelineController.newsPipeline()
 POST    /v2/sps/coms                controllers.SpiderPipelineController.createComments()
 
 POST    /v2/sps/nsr                 controllers.SpiderPipelineController.createNews()

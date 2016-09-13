@@ -1,5 +1,6 @@
 package services.news
 
+import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
@@ -9,9 +10,11 @@ import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import org.joda.time.LocalDateTime
 import play.api.Logger
+import services.advertisement.AdResponseService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Random
 import scala.util.control.NonFatal
 
 /**
@@ -33,7 +36,7 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO) extends INewsService {
+class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val adResponseService: AdResponseService) extends INewsService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -161,6 +164,82 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def loadFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String): Future[Seq[NewsFeedResponse]] = {
+    {
+      val result: Future[Seq[NewsRow]] = sechidOpt match {
+        case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+        case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+      }
+
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody)
+
+      val response = for {
+        r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        ad <- adFO
+      } yield {
+        r ++: ad
+      }
+
+      response.map { seq =>
+        //将广告时间随机成任意一条新闻时间
+        if (seq.length > 1) {
+          seq.map { r =>
+            if (r.rtype.getOrElse(0) == 3)
+              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
+            else
+              r
+          }.sortBy(_.ptime)
+        } else {
+          seq
+        }
+      }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.loadFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def refreshFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String): Future[Seq[NewsFeedResponse]] = {
+    {
+      val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
+      val date = new Date(timeCursor)
+      val localDateTime = LocalDateTime.fromDateFields(date)
+
+      val result: Future[Seq[NewsRow]] = sechidOpt match {
+        case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor)
+        case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
+      }
+
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody)
+
+      val response = for {
+        r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        ad <- adFO
+      } yield {
+        r ++: ad
+      }
+
+      response.map { seq =>
+        //将广告时间随机成任意一条新闻时间
+        if (seq.length > 1) {
+          seq.map { r =>
+            if (r.rtype.getOrElse(0) == 3)
+              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
+            else
+              r
+          }.sortBy(_.ptime)
+        } else {
+          seq
+        }
+      }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }

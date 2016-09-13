@@ -232,7 +232,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   }
 
   def loadByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).sortBy(_.ctime.desc).map(_.nid)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).sortBy(_.ctime.desc).map(_.nid)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   def loadByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
@@ -244,7 +244,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   }
 
   def refreshByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   def refreshByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {

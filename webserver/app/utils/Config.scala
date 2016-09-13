@@ -21,4 +21,18 @@ trait Config {
 
   val elasticConfig = config.getConfig("elasticsearch")
   val elasticClusterUrl = elasticConfig.getString("cluster")
+
+  val ad = config.getConfig("ad")
+  val appids = ad.getString("appid")
+  val appkeys = ad.getString("appkey")
+  val urls = ad.getString("url")
+
+  val email = config.getConfig("email")
+  val emailhostname = email.getString("emailhostname")
+  val emailpost = email.getInt("emailpost")
+  val emailfrom = email.getString("emailfrom")
+  val emailusername = email.getString("emailusername")
+  val emailpassword = email.getString("emailpassword")
+  val emailsubject = email.getString("emailsubject")
+  val emailwelcome = email.getString("emailwelcome")
 }

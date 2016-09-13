@@ -181,7 +181,9 @@ class UserService @Inject() (val userListDAO: UserDAO) extends IUserService with
       case UserLoginInfo(_, Some(email), password) =>
         findByEmail(email).map {
           case Some(user) if user.base.password.isDefined && user.base.passsalt.isDefined &&
-            hashAndStretch(password, user.base.passsalt.get, STRETCH_LOOP_COUNT) == user.base.password.get => Some(user)
+            hashAndStretch(password, user.base.passsalt.get, STRETCH_LOOP_COUNT) == user.base.password.get =>
+            println("")
+            Some(user)
           case _ => None
         }
     }

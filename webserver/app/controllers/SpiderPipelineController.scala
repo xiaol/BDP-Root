@@ -8,10 +8,10 @@ import akka.routing.FromConfig
 import akka.util.Timeout
 import commons.messages.pipeline.NewsPipelineTask
 import commons.models.community.ASearchRow
-import commons.models.news.{NewsPipelineWithKey, NewsRow}
+import commons.models.news.{ NewsPipelineWithKey, NewsRow }
 import commons.models.userprofiles.CommentRow
 import commons.utils.Base64Utils.decodeBase64
-import play.api.libs.json.{JsError, JsSuccess}
+import play.api.libs.json.{ JsError, JsSuccess }
 import play.api.mvc._
 import services.community.ASearchService
 import services.news.NewsService
