@@ -1,4 +1,4 @@
-# 数据平台接口文档_V2.9
+# 数据平台接口文档_V3.0
 
 ## 目录
 
@@ -7,6 +7,12 @@
 
 ----
 ## 更新日志
+
+*V3.0:*
+
+客户端（新增）：
+
+1. 本地用户 注册、登陆、修改密码、重置密码 4个接口
 
 *V2.9:*
 
@@ -257,6 +263,143 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
     "uid": 5,
     "uname": "zhange",
     "avatar": "http://tva4.sinaimg.cn/crop.0.0.1080.1080.180/e56a51c9jw8erh17sxq87j20u00u0jta.jpg"
+  }
+}
+```
+----
+#### 本地用户注册
+
+_Request_
+
+```json
+POST /v2/au/sin/l
+Host: bdp.deeporiginalx.com
+Content-Type: application/json
+
+{
+  "utype": 1,
+  "platform": 1,
+  "uid": 22,    - Option
+  "uname":"lieying",
+  "email":"lieying@lieying.cn",
+  "password":"******",
+  "province": "北京市",   - Option
+  "city": "北京市",       - Option
+  "district": "东城区"    - Option
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic OWNtcWFibHYoN2tzZ2MuZyoqN18uZjQydS50bnBpNSlnYmR+filwdW4qaWVpM2xzNXhxOH4qeWdzMWRuOXVndQ
+
+{
+  "code": 2000,
+  "data": {
+    "utype": 1,
+    "uid": 22,
+    "uname": "lieying"
+  }
+}
+```
+----
+#### 本地用户登录
+
+_Request_
+
+```json
+POST /v2/au/lin/g
+Host: bdp.deeporiginalx.com
+Content-Type: application/json
+
+{
+  "email": "lieying@lieying.cn",
+  "password": "******"
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmFsc20pdV8xcDh6aTY5bmwuNl9vKA
+
+{
+  "code": 2000,
+  "data": {
+    "utype": 1,
+    "uid": 22,
+    "uname": "lieying"
+  }
+}
+```
+----
+#### 本地用户修改密码
+
+_Request_
+
+```json
+POST /v2/au/lin/c
+Host: bdp.deeporiginalx.com
+Content-Type: application/json
+
+{
+  "email": "lieying@lieying.cn",
+  "oldpassword": "******",
+  "newpassword": "******",
+  "verification": ""    - Option
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmFsc20pdV8xcDh6aTY5bmwuNl9vKA
+
+{
+  "code": 2000,
+  "data": {
+    "utype": 1,
+    "uid": 22,
+    "uname": "lieying"
+  }
+}
+```
+----
+#### 本地用户重置密码
+
+_Request_
+
+```json
+POST /v2/au/lin/r
+Host: bdp.deeporiginalx.com
+Content-Type: application/json
+
+{
+  "email": "lieying@lieying.cn",
+  "verification": ""    - Option
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmFsc20pdV8xcDh6aTY5bmwuNl9vKA
+
+{
+  "code": 2000,
+  "data": {
+    "utype": 1,
+    "uid": 22,
+    "uname": "lieying"
   }
 }
 ```

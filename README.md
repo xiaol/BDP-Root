@@ -27,7 +27,8 @@
 4. 解包新版本应用，新版压缩包必须在`/data/pro`目录下
 
 5. 终止守护进程并重启：
-
+   `supervisorctl stop api`
+   或
    1. 获取 PID：`ps aux|grep super`
    2. 终止：`kill -9 PID`
    3. 重启服务：`supervisord -c /etc/supervisord.conf`

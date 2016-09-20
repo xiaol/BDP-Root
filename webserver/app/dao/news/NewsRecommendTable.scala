@@ -218,8 +218,8 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     }
   }
 
-  def load(offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def load(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   //新闻刷到头了,用6小时以内没看过的新闻补上

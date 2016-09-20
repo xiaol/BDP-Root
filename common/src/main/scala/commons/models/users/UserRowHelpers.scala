@@ -75,9 +75,12 @@ trait UserRowHelpers {
    */
   def merge(origin: UserRowBase, update: UserRowBase): UserRowBase = {
     val uname: Option[String] = if (update.uname.isDefined) update.uname else origin.uname
+    val email: Option[String] = if (update.email.isDefined) update.email else origin.email
+    val password: Option[String] = if (update.password.isDefined) update.password else origin.password
+    val passsalt: Option[String] = if (update.passsalt.isDefined) update.passsalt else origin.passsalt
     val gender: Option[Int] = if (update.gender.isDefined) update.gender else origin.gender
     val avatar: Option[String] = if (update.avatar.isDefined) update.avatar else origin.avatar
-    origin.copy(uname = uname, gender = gender, avatar = avatar)
+    origin.copy(uname = uname, email = email, password = password, passsalt = passsalt, gender = gender, avatar = avatar)
   }
 
   /**

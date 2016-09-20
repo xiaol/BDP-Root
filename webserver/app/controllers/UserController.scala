@@ -78,6 +78,11 @@ class UserController @Inject() (val userService: UserService, val mailService: M
       case JsSuccess(userLocal, _) =>
         userService.findByEmail(userLocal.email).flatMap {
           case Some(userRow) => Future.successful(DataCreateError("Email:  " + userLocal.email + " already exists!"))
+          case None if (userLocal.uid.isDefined) =>
+            userService.updateUserRowByUid(userLocal.uid.get, UserRowHelpers.from(userLocal)).flatMap {
+              case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
+              case _             => Future.successful(ServerError(userLocal.toString))
+            }
           case _ => userService.insert(UserRowHelpers.from(userLocal)).flatMap {
             case Some(userRow) =>
               //mailService.welcome(userLocal.email)
