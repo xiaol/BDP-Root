@@ -1,5 +1,7 @@
 package commons.models.news
 
+import java.sql.Date
+
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json.{ JsPath, Reads, Writes }
@@ -137,21 +139,24 @@ case class NewsRecommendForUser(
   uid: Long,
   nid: Long,
   predict: Double,
-  ctime: LocalDateTime)
+  ctime: LocalDateTime,
+  sourcetype: Int)
 
 object NewsRecommendForUser {
   implicit val NewsRecommendForUserWrites: Writes[NewsRecommendForUser] = (
     (JsPath \ "uid").write[Long] ~
     (JsPath \ "nid").write[Long] ~
     (JsPath \ "predict").write[Double] ~
-    (JsPath \ "ctime").write[LocalDateTime]
+    (JsPath \ "ctime").write[LocalDateTime] ~
+    (JsPath \ "sourcetype").write[Int]
   )(unlift(NewsRecommendForUser.unapply))
 
   implicit val NewsRecommendForUserReads: Reads[NewsRecommendForUser] = (
     (JsPath \ "uid").read[Long] ~
     (JsPath \ "nid").read[Long] ~
     (JsPath \ "predict").read[Double] ~
-    (JsPath \ "ctime").read[LocalDateTime]
+    (JsPath \ "ctime").read[LocalDateTime] ~
+    (JsPath \ "sourcetype").read[Int]
   )(NewsRecommendForUser.apply _)
 }
 
@@ -172,4 +177,25 @@ object NewsRecommendHot {
     (JsPath \ "readtime").read[LocalDateTime] ~
     (JsPath \ "status").readNullable[Int]
   )(NewsRecommendHot.apply _)
+}
+
+case class Newsrecommendclick(
+  uid: Long,
+  nid: Long,
+  ctime: Date)
+
+object Newsrecommendclick {
+  implicit val getNewsrecommendclickResult = GetResult(r => Newsrecommendclick(r.<<, r.<<, r.<<))
+
+  implicit val NewsrecommendclickWrites: Writes[Newsrecommendclick] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "ctime").write[Date]
+  )(unlift(Newsrecommendclick.unapply))
+
+  implicit val NewsrecommendclickReads: Reads[Newsrecommendclick] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "ctime").read[Date]
+  )(Newsrecommendclick.apply _)
 }

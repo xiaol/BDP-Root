@@ -45,8 +45,10 @@ trait UserRowHelpers {
 
   def toResponse(userRow: UserRow): UserResponse = {
     val password: Option[String] = userRow.sys.utype match {
-      case GUEST_TYPE_CODE => userRow.base.password
-      case _               => None
+      case GUEST_TYPE_CODE  => userRow.base.password
+      case WEIBO_TYPE_CODE  => userRow.base.password
+      case WEIXIN_TYPE_CODE => userRow.base.password
+      case _                => None
     }
     UserResponse(userRow.sys.utype, userRow.sys.uid.get, password, userRow.base.uname, userRow.base.avatar, userRow.profile.channel)
   }

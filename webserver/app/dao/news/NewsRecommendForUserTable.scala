@@ -23,8 +23,9 @@ trait NewsRecommendForUserTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def nid = column[Long]("nid")
     def predict = column[Double]("predict")
     def ctime = column[LocalDateTime]("ctime")
+    def sourcetype = column[Int]("sourcetype")
 
-    def * = (uid, nid, predict, ctime) <> ((NewsRecommendForUser.apply _).tupled, NewsRecommendForUser.unapply)
+    def * = (uid, nid, predict, ctime, sourcetype) <> ((NewsRecommendForUser.apply _).tupled, NewsRecommendForUser.unapply)
   }
 }
 

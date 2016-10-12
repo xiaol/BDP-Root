@@ -1,7 +1,7 @@
 package commons.models.news
 
 import com.sksamuel.elastic4s.{ HitAs, RichSearchHit }
-import commons.models.advertisement.{ Creative, Adspace }
+import commons.models.advertisement.{ App, Creative, Adspace }
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
@@ -32,7 +32,8 @@ case class NewsFeedResponse(
   province: Option[String] = None,
   city: Option[String] = None,
   district: Option[String] = None,
-  rtype: Option[Int] = None)
+  rtype: Option[Int] = None,
+  adimpression: Option[List[String]] = None)
 
 object NewsFeedResponse {
 
@@ -65,7 +66,8 @@ object NewsFeedResponse {
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "district").writeNullable[String] ~
-    (JsPath \ "rtype").writeNullable[Int]
+    (JsPath \ "rtype").writeNullable[Int] ~
+    (JsPath \ "adimpression").writeNullable[List[String]]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -86,7 +88,8 @@ object NewsFeedResponse {
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "district").readNullable[String] ~
-    (JsPath \ "rtype").readNullable[Int]
+    (JsPath \ "rtype").readNullable[Int] ~
+    (JsPath \ "adimpression").readNullable[List[String]]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {
@@ -97,12 +100,17 @@ object NewsFeedResponse {
   }
 
   def from(creative: Creative): NewsFeedResponse = {
-    val app = creative.app.get
+    val app = creative.app
+    var app_name: Option[String] = Some(" ")
+    if (app.isDefined) {
+      app_name = app.get.app_name
+    }
     val event = creative.event.get.head
     val ad_native = creative.ad_native.get
     val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
     val title: String = ad_native.filter(_.required_field.get == 1).head.required_value.getOrElse("")
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app.app_name, event.event_value, None, 9999L, 0, 0, 0, 1, imgs, None, None, None, None, Some(3))
+
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, 1, imgs, None, None, None, None, Some(3), creative.impression)
   }
 }
 

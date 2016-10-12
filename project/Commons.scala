@@ -57,6 +57,7 @@ object Commons {
     case PathList("com", "esotericsoftware", xs @ _*)        => MergeStrategy.first
     case PathList(ps @ _*) if ps.last endsWith ".dic"       => MergeStrategy.first
     case PathList(ps @ _*) if ps.last endsWith ".data"      => MergeStrategy.first
+    case PathList("META-INF", "io.netty.versions.properties") => MergeStrategy.first
     //  case "application.conf"                             => MergeStrategy.concat
     //  case "unwanted.txt"                                 => MergeStrategy.discard
     case x =>

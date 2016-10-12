@@ -157,12 +157,11 @@ class UserService @Inject() (val userListDAO: UserDAO) extends IUserService with
 
   def updateUserRowBySuid(suid: String, updateRow: UserRow): Future[Option[UserRow]] = {
     findBySuid(suid).flatMap {
-      case Some(userRow) =>
-        update(userRow.sys.uid.get, UserRowHelpers.merge(userRow, updateRow)).map {
-          case userOpt @ Some(_) =>
-            setUserRowCache(userOpt.get); userOpt
-          case _ => None
-        }
+      case Some(userRow) => update(userRow.sys.uid.get, UserRowHelpers.merge(userRow, updateRow)).map {
+        case userOpt @ Some(_) =>
+          setUserRowCache(userOpt.get); userOpt
+        case _ => None
+      }
       case _ => Future.successful(None)
     }.recover {
       case NonFatal(e) =>
@@ -182,7 +181,6 @@ class UserService @Inject() (val userListDAO: UserDAO) extends IUserService with
         findByEmail(email).map {
           case Some(user) if user.base.password.isDefined && user.base.passsalt.isDefined &&
             hashAndStretch(password, user.base.passsalt.get, STRETCH_LOOP_COUNT) == user.base.password.get =>
-            println("")
             Some(user)
           case _ => None
         }

@@ -55,10 +55,12 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def pconf = column[Option[JsValue]]("pconf")
     def plog = column[Option[JsValue]]("plog")
     def sechid = column[Option[Long]]("sechid")
+    //    def videotype = column[Option[Int]]("videotype")
 
     def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
     def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
+    //    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, videotype) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsRow.apply _).tupled, NewsRow.unapply)
   }
 }
