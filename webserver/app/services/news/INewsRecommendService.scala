@@ -36,7 +36,7 @@ trait INewsRecommendService {
 }
 
 class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, val newsEsService: NewsEsService, val adResponseService: AdResponseService,
-                                      val newsDAO: NewsDAO, val newsRecommendReadDAO: NewsRecommendReadDAO) extends INewsRecommendService {
+                                      val newsDAO: NewsDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val newsrecommendclickDAO: NewsrecommendclickDAO) extends INewsRecommendService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -67,12 +67,30 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
   }
 
   def listNewsAndCountByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[(Seq[NewsRecommendResponse], Long)] = {
-    val newsRecommendResponses: Future[Seq[NewsRecommendResponse]] = listNewsByRecommand(channel, ifrecommend, page, count)
+    val newsRecommendResponses: Future[Seq[NewsRecommendResponse]] = listShowAndClickCount(channel, ifrecommend, page, count)
     val count1: Future[Int] = listNewsByRecommandCount(channel: Option[Long], ifrecommend: Int)
     for {
       n <- newsRecommendResponses
       c <- count1
     } yield (n, c.toLong)
+  }
+
+  def listShowAndClickCount(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {
+    for {
+      newsFeedResponses <- listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long)
+      showAndClickCount <- queryShowAndClickCount(newsFeedResponses.map(_.nid))
+      newsFeedResponsesWithCount <- combineShowAndClickCount(newsFeedResponses, showAndClickCount)
+    } yield (newsFeedResponsesWithCount)
+  }
+
+  def queryShowAndClickCount(nids: Seq[Long]) = {
+    newsrecommendclickDAO.selectNewsrecommendclicks(nids)
+  }
+
+  def combineShowAndClickCount(newsFeedResponses: Seq[NewsRecommendResponse], showAndClickCount: Seq[(Long, Int, Int)]): Future[Seq[NewsRecommendResponse]] = {
+    Future.successful {
+      newsFeedResponses.map { news => news.copy(showcount = Some(showAndClickCount.filter(_._1 == news.nid).head._2)).copy(clickcount = Some(showAndClickCount.filter(_._1 == news.nid).head._3)) }
+    }
   }
 
   def listNewsByRecommand(channel: Option[Long], ifrecommend: Int, page: Long, count: Long): Future[Seq[NewsRecommendResponse]] = {

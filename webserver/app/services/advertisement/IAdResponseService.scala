@@ -43,10 +43,14 @@ class AdResponseService @Inject() () extends IAdResponseService {
       val response: Future[String] = Future.successful {
         val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(body).setHeaders(headers).execute()
         val r: String = f.get().getResponseBody
+        asyncHttpClient.close()
         r
       }
 
       response.map { response =>
+        if (!asyncHttpClient.isClosed) {
+          asyncHttpClient.close()
+        }
         val adResponse: AdResponse = Json.parse(response).as[AdResponse]
         if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
           val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
@@ -54,6 +58,7 @@ class AdResponseService @Inject() () extends IAdResponseService {
             case creative: Creative =>
               NewsFeedResponse.from(creative)
           }.toSeq
+
           seq
         } else {
           Seq[NewsFeedResponse]()

@@ -56,7 +56,10 @@ case class NewsRecommendResponse(
   rtime: Option[LocalDateTime] = None,
   level: Option[Double] = None,
   bigimg: Option[Int] = None,
-  status: Option[Int] = None)
+  status: Option[Int] = None,
+
+  showcount: Option[Int] = None,
+  clickcount: Option[Int] = None)
 
 object NewsRecommendResponse {
 
@@ -81,7 +84,10 @@ object NewsRecommendResponse {
     (JsPath \ "rtime").writeNullable[LocalDateTime] ~
     (JsPath \ "level").writeNullable[Double] ~
     (JsPath \ "bigimg").writeNullable[Int] ~
-    (JsPath \ "status").writeNullable[Int]
+    (JsPath \ "status").writeNullable[Int] ~
+
+    (JsPath \ "showcount").writeNullable[Int] ~
+    (JsPath \ "clickcount").writeNullable[Int]
   )(unlift(NewsRecommendResponse.unapply))
 
   implicit val NewsRecommendResponseReads: Reads[NewsRecommendResponse] = (
@@ -105,7 +111,10 @@ object NewsRecommendResponse {
     (JsPath \ "rtime").readNullable[LocalDateTime] ~
     (JsPath \ "level").readNullable[Double] ~
     (JsPath \ "bigimg").readNullable[Int] ~
-    (JsPath \ "status").readNullable[Int]
+    (JsPath \ "status").readNullable[Int] ~
+
+    (JsPath \ "showcount").readNullable[Int] ~
+    (JsPath \ "clickcount").readNullable[Int]
   )(NewsRecommendResponse.apply _)
 
   def from(newsFeedResponse: NewsFeedResponse): NewsRecommendResponse = {
