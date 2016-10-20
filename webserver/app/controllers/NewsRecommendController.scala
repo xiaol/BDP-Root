@@ -28,9 +28,9 @@ import commons.utils.Base64Utils.decodeBase64
 class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val newsService: NewsService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
-  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = Action.async { implicit request =>
+  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
     cid match {
-      case 1L => newsRecommendService.loadFeedByRecommendsNew(uid, page, count, tcursor).map {
+      case 1L => newsRecommendService.loadFeedByRecommendsNew(uid, page, count, tcursor, t).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
@@ -41,9 +41,9 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     }
   }
 
-  def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long) = Action.async { implicit request =>
+  def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
     cid match {
-      case 1L => newsRecommendService.refreshFeedByRecommendsNew(uid, page, count, tcursor).map {
+      case 1L => newsRecommendService.refreshFeedByRecommendsNew(uid, page, count, tcursor, t).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
@@ -96,7 +96,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         requestParams.cid match {
-          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b)).map {
+          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0)).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }
@@ -113,7 +113,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         requestParams.cid match {
-          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b)).map {
+          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0)).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }

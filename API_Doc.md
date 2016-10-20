@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.0
+# 数据平台接口文档_V3.1
 
 ## 目录
 
@@ -7,6 +7,12 @@
 
 ----
 ## 更新日志
+*V3.1:*
+
+客户端（新增）：
+
+1. 专题详情 接口
+2. 奇点频道 新增专题内容
 
 *V3.0:*
 
@@ -2209,7 +2215,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
-
+| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
 
 _Response_
 
@@ -2238,7 +2244,7 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告
+      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题
     },
     …
   ]
@@ -2263,6 +2269,7 @@ Host: bdp.deeporiginalx.com
 | p    | String | 否(默认 1)  | 页数                                  |
 | c    | String | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
+| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
 
 ----
 #### 频道刷新加上广告
@@ -2284,7 +2291,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
 | b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-
+| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
 _Response_
 
 ```json
@@ -2312,7 +2319,7 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告、4图片新闻、5视频
+      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
     },
     …
   ]
@@ -2338,3 +2345,96 @@ Host: bdp.deeporiginalx.com
 | c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
 | b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
+
+----
+#### 专题详情
+
+_Request_
+
+```json
+GET /v2/ns/tdq
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| tid  | Int       | 是          | 专题ID                                 |
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": {
+    "topicBaseInfo": {                                                 - 专题基本信息
+      "id": 1,                                                         - 专题ID
+      "name": "专题标题",
+      "cover": "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png", - 专题封面图
+      "description": "",
+      "class_count": 0,                                                - 专题包含分类数
+      "news_count": 0,                                                 - 专题包含新闻数
+      "online": 1,                                                     - 专题是否上线
+      "top": 0,                                                        - 专题是否置顶
+      "create_time": "2016-09-27 16:46:54"
+    },
+    "topicClass": [                                                    - 专题分类数组
+      {
+        "topicClassBaseInfo": {                                        - 专题分类基本信息
+          "id": 1,
+          "name": "分类一",
+          "topic": 1,
+          "order": 1
+        },
+        "newsFeed": [                                                  - 专题分类中的新闻feed流数组
+          {
+            "nid": 7660914,
+            "docid": "http://www.yidianzixun.com/article/0Ehfu9ep",
+            "title": "詹姆斯有多强？NBA经理们说最强SF/PF都是他！",
+            "ptime": "2016-10-19 11:23:59",
+            "pname": "颜小白的篮球梦",
+            "channel": 6,
+            "collect": 0,
+            "concern": 0,
+            "comment": 0,
+            "style": 1,
+            "imgs": [
+              "http://bdp-pic.deeporiginalx.com/111c7c64f9ccb7be3c8a61e6d3fcca0e_544X408.jpg"
+            ]
+          }
+          ......
+        ]
+      },
+      {
+        "topicClassBaseInfo": {
+          "id": 2,
+          "name": "分类二",
+          "topic": 1,
+          "order": 2
+        },
+        "newsFeed": [
+          {
+            "nid": 7660911,
+            "docid": "https://kuaibao.qq.com/s/20161019G02RTQ00",
+            "title": "2016学年度华东师范大学优秀外国留学生奖学金申请",
+            "ptime": "2016-10-19 11:23:53",
+            "pname": "华东师范大学留学生办公室",
+            "channel": 28,
+            "collect": 0,
+            "concern": 0,
+            "comment": 0,
+            "style": 0,
+            "city": "上海"
+          }
+          ......
+        ]
+      }
+      ......
+    ]
+  }
+}
+```

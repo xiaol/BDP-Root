@@ -112,6 +112,10 @@ object NewsFeedResponse {
 
     NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, 1, imgs, None, None, None, None, Some(3), creative.impression)
   }
+
+  def from(topic: TopicList): NewsFeedResponse = {
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 1, Some(List(topic.cover)), None, None, None, None, Some(4))
+  }
 }
 
 case class NewsDetailsResponse(

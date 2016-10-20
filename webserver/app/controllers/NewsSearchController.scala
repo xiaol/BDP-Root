@@ -9,7 +9,7 @@ import utils.ResponseRecommand._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class NewsSearchController @Inject() (val newsEsService: NewsEsService, val newsCacheService: NewsCacheService, val newsRecommendService: NewsRecommendService)(implicit ec: ExecutionContext)
+class NewsSearchController @Inject() (val newsEsService: NewsEsService, val newsRecommendService: NewsRecommendService)(implicit ec: ExecutionContext)
     extends Controller {
 
   //正常搜索新闻
@@ -56,20 +56,6 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
       }
     }
 
-  }
-
-  def recommend(uid: Long, count: Int) = Action.async { implicit request =>
-    newsCacheService.getNewRowList(uid, count).map {
-      case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
-      case _                                            => DataEmptyError(s"$uid")
-    }
-  }
-
-  def addRecommend(nid: Long, score: Double) = Action.async { implicit request =>
-    newsCacheService.addRecommendNew(nid, score).map {
-      case true => ServerSucced(true)
-      case _    => DataEmptyError(s"$nid")
-    }
   }
 
   def operate(nid: Long, method: String, level: Option[Double], bigimg: Option[Int]) = Action.async { implicit request =>
