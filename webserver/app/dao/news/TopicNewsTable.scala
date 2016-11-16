@@ -24,8 +24,9 @@ trait TopicNewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def news = column[Long]("news")
     def user = column[Int]("user")
     def create_time = column[Option[LocalDateTime]]("create_time")
+    def order = column[Option[Int]]("order")
 
-    def * = (id, topic, topic_class, news, user, create_time) <> ((TopicNews.apply _).tupled, TopicNews.unapply)
+    def * = (id, topic, topic_class, news, user, create_time, order) <> ((TopicNews.apply _).tupled, TopicNews.unapply)
   }
 }
 

@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.1
+# 数据平台接口文档_V3.2
 
 ## 目录
 
@@ -7,6 +7,11 @@
 
 ----
 ## 更新日志
+*V3.2:*
+新增：
+
+1. 手机信息日志上报
+
 *V3.1:*
 
 客户端（新增）：
@@ -1381,6 +1386,9 @@ Content-Type: application/json
 
 ### 日志上报
 
+----
+#### 点击日志上报
+
 _Request_
 
 ```json
@@ -1444,6 +1452,56 @@ Content-Type: image/gif
 | 0    | 列表页  |
 | 1    | 搜索页  |
 | -    | 后续新增 |
+
+----
+#### 手机信息日志上报
+
+_Request_
+
+```json
+GET /rep/v2/p
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须 | 参数解释 |
+| ---- | :----- | :--- | :--- |
+| u    | String | 是    | 用户ID |
+| p    | String | 否    | 省份   |
+| t    | String | 否    | 市    |
+| i    | String | 否    | 地区/县 |
+| d    | String | 是    | 数据   |
+
+字段 d 的数据格式初始为JSON，通过base64加密并移除末尾空格：
+
+```json
+"d":{
+    "b": "苹果",   		- 品牌
+    "v": "iPhone7",    - 型号
+    "apps": [
+        {
+            "ai": "1",          - app_id
+            "an": "奇点资讯",    - app_name
+            "ac": 1             - is_active是否活跃(1：活跃，0：不活跃)
+        }
+        ...
+    ]
+  }
+
+```
+
+1. 将字段d的值(不包括字段名[“d”:]部分)进行base64加密 - ImQiOlt7Im4iOiAyMzQsImMiOiAxMiwidCI6IDIsInMiOiAyMywiZiI6IDF9XQ==
+2. 移除空格 - ImQiOlt7Im4iOiAyMzQsImMiOiAxMiwidCI6IDIsInMiOiAyMywiZiI6IDF9XQ
+3. 与其他参数一起进行URLEncode，构建请求出URL
+
+**示例**
+
+```sh
+GET http://bdp.deeporiginalx.com/rep/v2/p?u=22&p=%E5%8C%97%E4%BA%AC&t=%E5%8C%97%E4%BA%AC&i=%E4%B8%9C%E5%9F%8E&d=ImQiOlt7Im4iOiAyMzQsImMiOiAxMiwidCI6IDIsInMiOiAyMywiZiI6IDF9XQ
+
+HTTP/1.1 200 OK
+Content-Type: image/gif
+```
+
 
 ## 内部服务接口
 
@@ -2359,6 +2417,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 | Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
 | tid  | Int       | 是          | 专题ID                                 |
 
 
@@ -2436,5 +2495,51 @@ Content-Type: application/json
       ......
     ]
   }
+}
+```
+
+----
+#### 用户手机信息,手机app列表收集接口
+
+_Request_
+
+```json
+
+POST /v2/au/app
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Content-Type: application/json
+
+{
+  "uid": 634788,
+  "province": "省份",
+  "city": "市",
+  "area": "地区/县",
+  "brand": "苹果",
+  "model": "iPhone7",
+  "apps": [
+    {
+      "app_id": "sogou.mobile.explorer",
+      "app_name": "搜狗浏览器",
+      "active": 1
+    },
+    {
+      "app_id": "com.baidu.BaiduMap",
+      "app_name": "百度地图",
+      "active": 1
+    }
+  ]
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 634788
 }
 ```

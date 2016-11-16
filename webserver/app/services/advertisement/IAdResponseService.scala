@@ -1,5 +1,7 @@
 package services.advertisement
 
+import java.io.{ BufferedWriter, OutputStreamWriter }
+import java.net.{ Socket, InetSocketAddress, SocketAddress }
 import java.util.Date
 import javax.inject.Inject
 
@@ -72,5 +74,26 @@ class AdResponseService @Inject() () extends IAdResponseService {
 
     //      org.apache.http.impl.nio.client.HttpAsyncClients
 
+  }
+
+  def deleteAd(nid: Long) {
+    Future.successful {
+      val path: String = deleteAdPath_v + "?nid=" + nid
+      val dest: SocketAddress = new InetSocketAddress(deleteAdHost_v, Integer.parseInt(deleteAdPort_v))
+      val socket: Socket = new Socket()
+      socket.connect(dest)
+      val streamWriter: OutputStreamWriter = new OutputStreamWriter(socket.getOutputStream());
+      val bufferedWriter: BufferedWriter = new BufferedWriter(streamWriter);
+      bufferedWriter.write("GET " + path + " HTTP/1.1\r\n");
+      bufferedWriter.write("Host: " + deleteAdHost_v + "\r\n");
+      bufferedWriter.write("\r\n");
+
+      bufferedWriter.flush()
+      streamWriter.flush()
+      socket.close()
+      //    val asyncHttpClient = new DefaultAsyncHttpClient()
+      //    asyncHttpClient.prepareGet(deleteAdUrl_v + "?nid=" + nid).execute().get()
+      //    asyncHttpClient.close()
+    }
   }
 }

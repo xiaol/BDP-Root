@@ -56,7 +56,8 @@ case class TopicNews(id: Int,
                      topic_class: Int,
                      news: Long,
                      user: Int,
-                     create_time: Option[LocalDateTime])
+                     create_time: Option[LocalDateTime],
+                     order: Option[Int] = None)
 
 object TopicNews {
   implicit val TopicNewsWrites: Writes[TopicNews] = (
@@ -65,7 +66,8 @@ object TopicNews {
     (JsPath \ "topic_class").write[Int] ~
     (JsPath \ "news").write[Long] ~
     (JsPath \ "user").write[Int] ~
-    (JsPath \ "create_time").writeNullable[LocalDateTime]
+    (JsPath \ "create_time").writeNullable[LocalDateTime] ~
+    (JsPath \ "order").writeNullable[Int]
   )(unlift(TopicNews.unapply))
 }
 

@@ -108,13 +108,21 @@ object NewsFeedResponse {
     val event = creative.event.get.head
     val ad_native = creative.ad_native.get
     val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
+    val number: Option[Int] = imgs.map(_.size).map { num =>
+      if (num > 3)
+        3
+      else if (num == 2)
+        1
+      else
+        num
+    }
     val title: String = ad_native.filter(_.required_field.get == 1).head.required_value.getOrElse("")
 
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, 1, imgs, None, None, None, None, Some(3), creative.impression)
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs, None, None, None, None, Some(3), creative.impression)
   }
 
   def from(topic: TopicList): NewsFeedResponse = {
-    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 1, Some(List(topic.cover)), None, None, None, None, Some(4))
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), None, None, None, None, Some(4))
   }
 }
 

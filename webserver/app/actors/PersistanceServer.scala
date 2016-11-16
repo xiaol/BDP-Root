@@ -4,6 +4,7 @@ import akka.actor.Actor
 import akka.actor.Props
 import akka.event.Logging
 import akka.util.Timeout
+import services.advertisement.AdResponseService
 
 import scala.concurrent.duration._
 import services.community.ASearchService
@@ -16,19 +17,22 @@ import commons.models.community.ASearchRows
  *
  */
 
-class PersistanceServer(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService) extends Actor {
+class PersistanceServer(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService, val adResponseService: AdResponseService) extends Actor {
 
   import context.dispatcher
   val logger = Logging(context.system, this)
   val timeout: Timeout = 15.seconds
 
   override def receive = {
-    case newsRow: NewsRow =>
+    case newsRow: NewsRow if (newsRow.base.content.toString().length > 2) =>
       val superior = sender()
       newsService.insert(newsRow).map {
         case reply if reply.isDefined =>
           val base = newsRow.base
+          //插入搜索引擎
           newsEsService.insert(newsRow.copy(base = base.copy(nid = reply)))
+          //删除新闻中的广告
+          adResponseService.deleteAd(reply.getOrElse(0))
           superior ! reply
         case reply => superior ! reply
       }
@@ -49,6 +53,6 @@ class PersistanceServer(aSearchService: ASearchService, newsService: NewsService
 }
 
 object PersistanceServer {
-  def props(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService): Props =
-    Props(new PersistanceServer(aSearchService, newsService, newsEsService, newsPublisherService))
+  def props(aSearchService: ASearchService, newsService: NewsService, newsEsService: NewsEsService, newsPublisherService: NewsPublisherService, adResponseService: AdResponseService): Props =
+    Props(new PersistanceServer(aSearchService, newsService, newsEsService, newsPublisherService, adResponseService))
 }

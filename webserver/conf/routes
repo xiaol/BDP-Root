@@ -144,3 +144,5 @@ POST    /v2/sps/asc                 controllers.SpiderPipelineController.createS
 #GET     /v2/actor/:msg                      controllers.ActorController.sayHello(msg:String)
 GET     /v2/persist/:msg                     controllers.PersistanceController.testPersistance(msg:String)
 
+#insert apps
+POST    /v2/au/app                  controllers.UserProfilesAppController.insert()

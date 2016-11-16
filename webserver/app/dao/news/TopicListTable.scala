@@ -57,12 +57,12 @@ class TopicListDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProv
 
   private def topicClassNews(tid: ConstColumn[Int]) = {
     for {
-      (topic, news) <- topicList.filter(_.id === tid).filter(_.online === 1).join(topicClassList).on(_.id === _.topic).join(topicNews).on(_._2.id === _.topic_class).join(newsList).on(_._2.news === _.nid)
+      (topic, news) <- topicList.filter(_.id === tid).filter(_.online === 1).join(topicClassList).on(_.id === _.topic).join(topicNews).on(_._2.id === _.topic_class).join(newsList).on(_._2.news === _.nid).sortBy(p => (p._1._1._2.order.desc, p._1._2.order.desc))
     } yield (topic._1._1, topic._1._2, topic._2, news)
   }
 
   def topicShow(uid: Long): Future[Seq[(TopicList)]] = {
-    db.run(topicList.filter(_.id in topicNews.filter(_.create_time > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).filterNot(_.news in topicNewsRead.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.create_time.desc).map(_.topic)).result)
+    db.run(topicList.filter(_.online === 1).filter(_.id in topicNews.filter(_.create_time > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).filterNot(_.news in topicNewsRead.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.create_time.desc).map(_.topic)).result)
   }
 
 }

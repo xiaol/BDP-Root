@@ -27,6 +27,11 @@ trait Config {
   val appkeys = ad.getString("appkey")
   val urls = ad.getString("url")
 
+  val deleteAd = config.getConfig("deleteAd")
+  val deleteAdHost = deleteAd.getString("host")
+  val deleteAdPort = deleteAd.getString("port")
+  val deleteAdPath = deleteAd.getString("path")
+
   val email = config.getConfig("email")
   val emailhostname = email.getString("emailhostname")
   val emailpost = email.getInt("emailpost")

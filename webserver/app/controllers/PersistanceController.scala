@@ -4,6 +4,7 @@ import javax.inject._
 
 import akka.actor.ActorSystem
 import play.api.mvc._
+import services.advertisement.AdResponseService
 
 import scala.concurrent.duration._
 import akka.util.Timeout
@@ -21,13 +22,13 @@ import services.news._
  */
 
 @Singleton
-class PersistanceController @Inject() (system: ActorSystem, val aSearchService: ASearchService, val newsService: NewsService, val newsEsService: NewsEsService, val newsPublisherService: NewsPublisherService) extends Controller {
+class PersistanceController @Inject() (system: ActorSystem, val aSearchService: ASearchService, val newsService: NewsService, val newsEsService: NewsEsService, val newsPublisherService: NewsPublisherService, val adResponseService: AdResponseService) extends Controller {
 
   implicit val timeout: Timeout = 20.seconds
 
   val persistanceRoutees: ActorRef = system.actorOf(FromConfig.props(), "PersistanceRoutees")
 
-  val persistanceServer: ActorRef = system.actorOf(PersistanceServer.props(aSearchService, newsService, newsEsService, newsPublisherService), "PersistanceServer")
+  val persistanceServer: ActorRef = system.actorOf(PersistanceServer.props(aSearchService, newsService, newsEsService, newsPublisherService, adResponseService), "PersistanceServer")
 
   def testPersistance(msg: String) = Action.async {
     (persistanceServer ? msg).mapTo[String].map { message =>
