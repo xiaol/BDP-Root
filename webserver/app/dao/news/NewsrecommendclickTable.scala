@@ -35,7 +35,6 @@ class NewsrecommendclickDAO @Inject() (protected val dbConfigProvider: DatabaseC
 
   def selectNewsrecommendclicks(nids: Seq[Long]): Future[Seq[(Long, Int, Int)]] = {
     val action = sql"select t.nid,COALESCE(t1.c1,0), COALESCE(t2.c2,0) as c2 from newslist_v2 t left join (select nid ,count(1) as c1  from newsrecommendread  where nid in (#${nids.mkString(",")}) group by nid)t1 on t.nid=t1.nid left join (select nid ,count(1) as c2 from (select distinct uid,nid from newsrecommendclick where nid in (#${nids.mkString(",")}))t group by nid)t2 on t1.nid=t2.nid where t.nid in (#${nids.mkString(",")}) ".as[(Long, Int, Int)]
-    println(action.toString)
     db.run(action)
   }
 

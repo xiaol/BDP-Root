@@ -4,12 +4,13 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import dao.news.{ NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
+import dao.news.{ NewsPublisherDAO, NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import org.joda.time.LocalDateTime
 import play.api.Logger
+import play.api.libs.json.Json
 import services.advertisement.AdResponseService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,7 +37,7 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val adResponseService: AdResponseService) extends INewsService {
+class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO) extends INewsService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -168,14 +169,14 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     {
       val result: Future[Seq[NewsRow]] = sechidOpt match {
         case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
         case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
       }
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody)
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress)
 
       val response = for {
         r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
@@ -204,7 +205,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
       val date = new Date(timeCursor)
@@ -215,7 +216,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
       }
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody)
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress)
 
       val response = for {
         r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
@@ -294,6 +295,13 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   }
 
   def insert(newsRow: NewsRow): Future[Option[Long]] = {
+    //    val result: Future[Option[Long]] = newsRow.base.pname match {
+    //      case Some(pname) => newsPublisherDAO.findByName(pname).flatMap {
+    //        case Some(newsPublisherRow: NewsPublisherRow) => newsDAO.insert(newsRow.copy(base = newsRow.base.copy(icon = newsPublisherRow.icon))).map { nid => Some(nid) }
+    //        case _ => newsDAO.insert(newsRow).map { nid => Some(nid) }
+    //      }
+    //      case _ => newsDAO.insert(newsRow).map { nid => Some(nid) }
+    //    }
     newsDAO.insert(newsRow).map { nid => Some(nid) }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsService.insert(${newsRow.base.url}, ${newsRow.base.docid}, ${newsRow.base.title}): ${e.getMessage}")

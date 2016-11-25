@@ -6,7 +6,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.advertisement.{ Creative, AdResponse }
+import commons.models.advertisement.{ AdRequest, Creative, AdResponse }
 import commons.models.news.NewsFeedResponse
 import commons.utils.Sha1Utils
 import io.netty.handler.codec.http.{ HttpHeaders, DefaultHttpHeaders }
@@ -25,13 +25,21 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 @ImplementedBy(classOf[AdResponseService])
 trait IAdResponseService {
-  def getAdResponse(body: String): Future[Seq[NewsFeedResponse]]
+  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
 }
 
 class AdResponseService @Inject() () extends IAdResponseService {
 
-  def getAdResponse(body: String): Future[Seq[NewsFeedResponse]] = {
+  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     {
+      //替换nginx传过来的真实ip
+      val requestbody: String = remoteAddress match {
+        case Some(ip) =>
+          val adRequest: AdRequest = Json.parse(body).as[AdRequest]
+          Json.toJson(adRequest.copy(device = adRequest.device.copy(ip = ip))).toString()
+        case _ => body
+      }
+
       val nowtime: Long = new Date().getTime / 1000
       val sign: String = Sha1Utils.encodeSha1(adappkey + "|" + nowtime)
       val str = adappid + "|" + nowtime + "|" + sign
@@ -43,7 +51,7 @@ class AdResponseService @Inject() () extends IAdResponseService {
       headers.add("X-TOKEN", X_TOKEN)
       //.executeRequest()可以设置超时时间
       val response: Future[String] = Future.successful {
-        val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(body).setHeaders(headers).execute()
+        val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(requestbody).setHeaders(headers).execute()
         val r: String = f.get().getResponseBody
         asyncHttpClient.close()
         r
@@ -60,7 +68,6 @@ class AdResponseService @Inject() () extends IAdResponseService {
             case creative: Creative =>
               NewsFeedResponse.from(creative)
           }.toSeq
-
           seq
         } else {
           Seq[NewsFeedResponse]()

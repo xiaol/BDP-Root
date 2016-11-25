@@ -33,7 +33,8 @@ case class NewsFeedResponse(
   city: Option[String] = None,
   district: Option[String] = None,
   rtype: Option[Int] = None,
-  adimpression: Option[List[String]] = None)
+  adimpression: Option[List[String]] = None,
+  icon: Option[String] = None)
 
 object NewsFeedResponse {
 
@@ -67,7 +68,8 @@ object NewsFeedResponse {
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "district").writeNullable[String] ~
     (JsPath \ "rtype").writeNullable[Int] ~
-    (JsPath \ "adimpression").writeNullable[List[String]]
+    (JsPath \ "adimpression").writeNullable[List[String]] ~
+    (JsPath \ "icon").writeNullable[String]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -89,14 +91,15 @@ object NewsFeedResponse {
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "district").readNullable[String] ~
     (JsPath \ "rtype").readNullable[Int] ~
-    (JsPath \ "adimpression").readNullable[List[String]]
+    (JsPath \ "adimpression").readNullable[List[String]] ~
+    (JsPath \ "icon").readNullable[String]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.tags, base.province, base.city, base.district)
+    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.tags, base.province, base.city, base.district, None, None, None)
   }
 
   def from(creative: Creative): NewsFeedResponse = {
@@ -122,7 +125,11 @@ object NewsFeedResponse {
   }
 
   def from(topic: TopicList): NewsFeedResponse = {
-    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), None, None, None, None, Some(4))
+    val rtype = topic.top match {
+      case 1 => 41 //置顶
+      case _ => 4 //普通专题
+    }
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), None, None, None, None, Some(rtype))
   }
 }
 

@@ -37,6 +37,7 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def province = column[Option[String]]("province")
     def city = column[Option[String]]("city")
     def district = column[Option[String]]("district")
+    //    def icon = column[Option[String]]("icon")
 
     def collect = column[Int]("collect")
     def concern = column[Int]("concern")

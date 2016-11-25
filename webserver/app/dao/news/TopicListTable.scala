@@ -62,7 +62,7 @@ class TopicListDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProv
   }
 
   def topicShow(uid: Long): Future[Seq[(TopicList)]] = {
-    db.run(topicList.filter(_.online === 1).filter(_.id in topicNews.filter(_.create_time > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).filterNot(_.news in topicNewsRead.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.create_time.desc).map(_.topic)).result)
+    db.run(topicList.filter(_.online === 1).filter(_.top === 1).result)
   }
 
 }

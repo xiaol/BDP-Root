@@ -25,7 +25,8 @@ case class NewsRowBase(
   tags: Option[List[String]] = None,
   province: Option[String] = None,
   city: Option[String] = None,
-  district: Option[String] = None)
+  district: Option[String] = None) //,
+//  icon: Option[String] = None)
 
 object NewsRowBase {
   implicit val NewsRowBaseWrites: Writes[NewsRowBase] = (
@@ -43,7 +44,8 @@ object NewsRowBase {
     (JsPath \ "tags").writeNullable[List[String]] ~
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
-    (JsPath \ "district").writeNullable[String]
+    (JsPath \ "district").writeNullable[String] //~
+  //    (JsPath \ "icon").writeNullable[String]
   )(unlift(NewsRowBase.unapply))
 
   implicit val NewsRowBaseReads: Reads[NewsRowBase] = (
@@ -61,7 +63,8 @@ object NewsRowBase {
     (JsPath \ "tags").readNullable[List[String]] ~
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
-    (JsPath \ "district").readNullable[String]
+    (JsPath \ "district").readNullable[String] // ~
+  //    (JsPath \ "icon").readNullable[String]
   )(NewsRowBase.apply _)
 }
 

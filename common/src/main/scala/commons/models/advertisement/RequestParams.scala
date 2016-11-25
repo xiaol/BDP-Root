@@ -31,7 +31,7 @@ object RequestParams {
     (JsPath \ "t").writeNullable[Int]
   )(unlift(RequestParams.unapply))
 
-  implicit val ChannelRowReads: Reads[RequestParams] = (
+  implicit val RequestParamsReads: Reads[RequestParams] = (
     (JsPath \ "cid").read[Long] ~
     (JsPath \ "scid").readNullable[Long] ~
     (JsPath \ "p").readNullable[Long] ~
