@@ -36,8 +36,8 @@ GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Lo
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
-GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
-GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
 
 GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
 GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
@@ -52,7 +52,7 @@ GET     /v2/ns/src/r                controllers.NewsController.refreshSourceFeed
 GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
 
 # News from Elasticsearch
-GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20)
+GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, pn: Option[String],ch: Option[Long], uid:Option[Long], p:Int ?= 1, c:Int ?= 20)
 GET     /v2/ns/es/snp               controllers.NewsSearchController.searchNewsWithPublisher(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20,uid: Option[Long])
 GET     /v2/ns/es/sh                controllers.NewsSearchController.searchHotNid(keywords: String, p:Int ?= 1, c:Int ?= 1)
 
@@ -146,3 +146,6 @@ GET     /v2/persist/:msg                     controllers.PersistanceController.t
 
 #insert apps
 POST    /v2/au/app                  controllers.UserProfilesAppController.insert()
+
+POST    /v2/ns/replay               controllers.UserProfileController.addRelay()
+POST    /v2/ns/hate                 controllers.UserProfileController.addHate()

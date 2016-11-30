@@ -3,17 +3,28 @@ package controllers
 import javax.inject.Inject
 
 import commons.models.news._
+import commons.models.userprofiles.Searchnewslist
+import org.joda.time.LocalDateTime
 import play.api.mvc._
 import services.news._
+import services.userprofiles.ProfileService
 import utils.ResponseRecommand._
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-class NewsSearchController @Inject() (val newsEsService: NewsEsService, val newsRecommendService: NewsRecommendService)(implicit ec: ExecutionContext)
+class NewsSearchController @Inject() (val newsEsService: NewsEsService, val newsRecommendService: NewsRecommendService, val profileService: ProfileService)(implicit ec: ExecutionContext)
     extends Controller {
 
   //正常搜索新闻
-  def search(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int) = Action.async { implicit request =>
+  def search(key: String, pname: Option[String], channel: Option[Long], uid: Option[Long], page: Int, count: Int) = Action.async { implicit request =>
+
+    //记录搜索历史
+    uid match {
+      case Some(uid) => profileService.addSearch(Searchnewslist(None, uid, key, Some(LocalDateTime.now())))
+      case _         =>
+    }
+
+    //搜索结果
     newsEsService.search(key, pname, channel, page, count).map {
       case news: (Seq[NewsFeedResponse], Long) if news._1.nonEmpty => ServerSucced(news._1, Some(news._2))
       case _                                                       => DataEmptyError(s"$key")

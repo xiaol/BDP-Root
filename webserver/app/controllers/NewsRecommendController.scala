@@ -34,7 +34,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
-      case _ => newsService.loadFeedByChannel(cid, sechidOpt, page, count, tcursor).map {
+      case _ => newsService.loadFeedByChannel(uid: Long, cid, sechidOpt, page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
@@ -47,25 +47,54 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
-      case _ => newsService.refreshFeedByChannel(cid, sechidOpt, page, count, tcursor).map {
+      case _ => newsService.refreshFeedByChannel(uid: Long, cid, sechidOpt, page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
     }
   }
 
-  //  def loadFeedWithAd(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, adbody: String) = Action.async { implicit request =>
-  //    cid match {
-  //      case 1L => newsRecommendService.loadFeedWithAd(uid, page, count, tcursor, adbody: String).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
-  //      }
-  //      case _ => newsService.loadFeedByChannel(cid, sechidOpt, page, count, tcursor).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
-  //      }
-  //    }
-  //  }
+  def loadFeedWithAd = Action.async(parse.json) { implicit request =>
+    request.body.validate[RequestParams] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(requestParams, _) =>
+        requestParams.cid match {
+          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+          case _ => newsService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+        }
+    }
+  }
+
+  def refreshFeedWithAd = Action.async(parse.json) { request =>
+    request.body.validate[RequestParams] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(requestParams, _) =>
+        requestParams.cid match {
+          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+          case _ => newsService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+        }
+    }
+  }
+
+  final private def mockRealTime(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
+    val mockIndexs = Random.shuffle((1 to news.length - 2).toList).slice(0, news.length / 4)
+    news.map {
+      case n: NewsFeedResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
+      case n: NewsFeedResponse                                         => n
+    }
+  }
 
   //  implicit val rds = (
   //    (__ \ 'cid).read[Long] and
@@ -90,47 +119,5 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   //        }
   //    }
   //  }
-
-  def loadFeedWithAd = Action.async(parse.json) { implicit request =>
-    request.body.validate[RequestParams] match {
-      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
-      case JsSuccess(requestParams, _) =>
-        requestParams.cid match {
-          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
-            case _                                            => DataEmptyError(s"$requestParams")
-          }
-          case _ => newsService.loadFeedByChannelWithAd(requestParams.cid, None, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
-            case _                                            => DataEmptyError(s"$requestParams")
-          }
-        }
-    }
-  }
-
-  def refreshFeedWithAd = Action.async(parse.json) { request =>
-    request.body.validate[RequestParams] match {
-      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
-      case JsSuccess(requestParams, _) =>
-        requestParams.cid match {
-          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
-            case _                                            => DataEmptyError(s"$requestParams")
-          }
-          case _ => newsService.refreshFeedByChannelWithAd(requestParams.cid, None, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
-            case _                                            => DataEmptyError(s"$requestParams")
-          }
-        }
-    }
-  }
-
-  final private def mockRealTime(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
-    val mockIndexs = Random.shuffle((1 to news.length - 2).toList).slice(0, news.length / 4)
-    news.map {
-      case n: NewsFeedResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
-      case n: NewsFeedResponse                                         => n
-    }
-  }
 
 }

@@ -57,7 +57,7 @@ object NewsRecommendDAO {
 
 @Singleton
 class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable with NewsRecommendHotTable with ConcernPublisherTable with NewsPublisherTable with NewsClickTable
+    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable with NewsRecommendHotTable with ConcernPublisherTable with NewsPublisherTable with NewsClickTable with NewsRecommendLikeTable
     with HasDatabaseConfigProvider[MyPostgresDriver] {
 
   import driver.api._
@@ -72,6 +72,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val concernPubList = TableQuery[ConcernPublisherTable]
   val publisherList = TableQuery[NewsPublisherTable]
   val newsClickList = TableQuery[NewsClickTable]
+  val newsRecommendLikeList = TableQuery[NewsRecommendLikeTable]
 
   def insert(newsRecommend: NewsRecommend): Future[Long] = {
     db.run(newsRecommendList returning newsRecommendList.map(_.nid) += newsRecommend)
@@ -298,6 +299,10 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
 
   def refreshByClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+  }
+
+  def refreshByLike(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendLikeList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
 }

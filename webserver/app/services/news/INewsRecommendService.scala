@@ -9,6 +9,7 @@ import commons.models.news.{ NewsRecommendResponse, _ }
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
+import dao.userprofiles.HateNewsDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import services.advertisement.AdResponseService
@@ -37,7 +38,7 @@ trait INewsRecommendService {
 
 class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, val newsEsService: NewsEsService, val adResponseService: AdResponseService,
                                       val newsDAO: NewsDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val newsrecommendclickDAO: NewsrecommendclickDAO,
-                                      val topicListDAO: TopicListDAO, val topicNewsReadDAO: TopicNewsReadDAO) extends INewsRecommendService {
+                                      val topicListDAO: TopicListDAO, val topicNewsReadDAO: TopicNewsReadDAO, val hateNewsDAO: HateNewsDAO) extends INewsRecommendService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -305,6 +306,11 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         case _ => Future.successful { Seq[TopicList]() }
       }
 
+      //不感兴趣新闻,获取来源和频道
+      val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
+      //感兴趣新闻,收藏、关心、关注、转发、搜索
+      val refreshByLikeFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByLike((page - 1) * count, 3, newTimeCursor, uid)
+
       val r: Future[Seq[NewsFeedResponse]] = for {
         hots <- refreshHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(1)) }.sortBy(_.ptime) } //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
         //将热词的rtype改为99,后面要根据热点新闻改时间,这里的热词会打乱时间顺序,最后再改回来
@@ -312,11 +318,8 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         moderRecommend <- refreshModerRecommendFO.map {
           case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime)
         }
-        refreshByClick <- refreshByClickFO.map {
-          case newsRow: Seq[NewsRow] => newsRow.map { r =>
-            NewsFeedResponse.from(r).copy(rtype = Some(0))
-          }.sortBy(_.ptime)
-        }
+        refreshByClick <- refreshByClickFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
+        refreshByLike <- refreshByLikeFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
         peopleRecommend <- refreshByPeopleRecommendFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(2)) }.sortBy(_.ptime) }
         commons <- refreshCommonFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
         recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(rtype = Some(2)) } }
@@ -356,9 +359,17 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
           }
         }
         topics <- topicsFO.map { case seq: Seq[TopicList] => seq.map { topic => NewsFeedResponse.from(topic) } }
+        hatePnameWithChid <- hateNews
       } yield {
         //大图:每次最多出一个,1、有5等级的出5等级,2、没5等级从模型荐选择大图,3、5等级和模型推荐大图都没有,看是不是冷启动(即有没有模型推荐数据,1和2都没大图,也没有模型推荐数据,直接出人工大图,有模型推荐数据,没大图,说明没有用户喜好的频道大图,不推荐大图)
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: level5 ++: topics ++: (hotWords ++: hots).take((count / 5).toInt) ++: (peopleRecommend ++: refreshByClick ++: moderRecommend ++: recommends).take(count.toInt) ++: commons).take(25)
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: level5 ++: topics ++: (hotWords ++: hots).take((count / 5).toInt) ++: (peopleRecommend ++: refreshByLike ++: refreshByClick ++: moderRecommend ++: recommends).take(count.toInt) ++: commons).filter { feed =>
+          var flag = true
+          hatePnameWithChid.foreach { news =>
+            if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)
+              flag = false
+          }
+          flag
+        }.take(25)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -569,6 +580,11 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         case _ => Future.successful { Seq[TopicList]() }
       }
 
+      //不感兴趣新闻,获取来源和频道
+      val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
+      //感兴趣新闻,收藏、关心、关注、转发、搜索
+      val refreshByLikeFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByLike((page - 1) * count, 3, newTimeCursor, uid)
+
       val body: String = adbody
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(body, remoteAddress)
 
@@ -578,6 +594,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         hotWords <- refreshHotWordFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(1)) }.sortBy(_.ptime) }
         moderRecommend <- refreshModerRecommendFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
         refreshByClick <- refreshByClickFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
+        refreshByLike <- refreshByLikeFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
         peopleRecommend <- refreshByPeopleRecommendFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(2)) }.sortBy(_.ptime) }
         commons <- refreshCommonFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsFeedResponse.from(r).copy(rtype = Some(0)) }.sortBy(_.ptime) }
         recommends <- refreshRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsFeedResponse.from(r._1).copy(rtype = Some(2)) } }
@@ -617,9 +634,17 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
           }
         }
         topics <- topicsFO.map { case seq: Seq[TopicList] => seq.map { topic => NewsFeedResponse.from(topic) } }
+        hatePnameWithChid <- hateNews
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((count / 5).toInt) ++: (peopleRecommend ++: refreshByClick ++: moderRecommend ++: recommends).take(count.toInt) ++: commons).take(20)
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((count / 5).toInt) ++: (peopleRecommend ++: refreshByLike ++: refreshByClick ++: moderRecommend ++: recommends).take(count.toInt) ++: commons).filter { feed =>
+          var flag = true
+          hatePnameWithChid.foreach { news =>
+            if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)
+              flag = false
+          }
+          flag
+        }.take(25)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间

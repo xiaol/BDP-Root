@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.2
+# 数据平台接口文档_V3.3
 
 ## 目录
 
@@ -7,6 +7,18 @@
 
 ----
 ## 更新日志
+*V3.3:*
+
+新增接口：
+
+1. 转发记录
+2. 不感兴趣记录
+
+修改接口:
+
+1. 搜索接口/v2/ns/es/s,添加uid参数,方便记录用户搜索记录
+
+
 *V3.2:*
 新增：
 
@@ -2014,6 +2026,7 @@ Host: bdp.deeporiginalx.com
 | Key      | 参数类型   | 是否必须     | 参数解释  |
 | -------- | :----- | :------- | :---- |
 | keywords | String | 是        | 搜索关键字 |
+| uid      | Long   | 否        | 用户id |
 | p        | Long   | 否(默认 1)  | 页数    |
 | c        | Long   | 否(默认 20) | 条数    |
 
@@ -2541,5 +2554,69 @@ Content-Type: application/json
 {
   "code": 2000,
   "data": 634788
+}
+```
+
+----
+##### 转发记录
+
+_Request_
+
+```json
+POST /v2/ns/replay
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+X-Requested-With: *
+
+{
+  "nid": 1,                                                              - 新闻ID
+  "uid": 634788,                                                         - 用户ID
+  "whereabout": 1                                                        - 转发去向:1:微信朋友圈 2:微信好友 3:QQ好友 4:新浪微博 5:短信 6:邮件 7:转发链接
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+
+{
+  "code": 2000,
+  "data": 1               - 已创建的转发记录ID
+}
+```
+
+----
+##### 不感兴趣记录
+
+_Request_
+
+```json
+POST /v2/ns/hate
+Content-Type: application/json
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+X-Requested-With: *
+
+{
+  "nid": 1,                                                              - 新闻ID
+  "uid": 634788,                                                         - 用户ID
+  "reason": 1                                                            - 不感兴趣原因(可空):1、不喜欢 2、低质量 3、重复旧闻 4、来源;
+}
+```
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+
+{
+  "code": 2000,
+  "data": 1               - 已创建的不感兴趣记录ID
 }
 ```

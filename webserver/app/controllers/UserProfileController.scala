@@ -4,7 +4,6 @@ import commons.models.users.UserRow._
 import javax.inject.{ Inject, Singleton }
 
 import jp.t2v.lab.play2.auth.AuthElement
-import commons.models.users._
 import play.api.mvc._
 import play.api.libs.json.{ JsError, JsSuccess }
 import security.auth.AuthConfigImpl
@@ -129,4 +128,25 @@ class UserProfileController @Inject() (val channelService: ChannelService, val c
       case _                                              => DataEmptyError("")
     }
   }
+
+  def addRelay() = Action.async(parse.json) { implicit request =>
+    request.body.validate[Relaylist] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(relaylist, _) => profileService.addRelay(relaylist).map {
+        case Some(id) => ServerSucced(id)
+        case _        => DataCreateError(s"${relaylist.toString}")
+      }
+    }
+  }
+
+  def addHate() = Action.async(parse.json) { implicit request =>
+    request.body.validate[Hatenewslist] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(hatenewslist, _) => profileService.addHate(hatenewslist).map {
+        case Some(id) => ServerSucced(id)
+        case _        => DataCreateError(s"${hatenewslist.toString}")
+      }
+    }
+  }
+
 }

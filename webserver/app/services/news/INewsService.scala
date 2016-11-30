@@ -26,8 +26,8 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[NewsService])
 trait INewsService {
   def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]]
-  def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
-  def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
   def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
   def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
   def insert(newsRow: NewsRow): Future[Option[Long]]
@@ -137,11 +137,15 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     val result: Future[Seq[NewsRow]] = sechidOpt match {
       case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
       case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
     }
+
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
+    //从结果中取要浏览的20条,插入已浏览表中
+    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
     result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
@@ -152,13 +156,17 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
     val result: Future[Seq[NewsRow]] = sechidOpt match {
       case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor)
       case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
     }
+
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
+    //从结果中取要浏览的20条,插入已浏览表中
+    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
     result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
@@ -169,7 +177,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     {
       val result: Future[Seq[NewsRow]] = sechidOpt match {
         case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
@@ -184,6 +192,10 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       } yield {
         r ++: ad
       }
+
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
         //将广告时间随机成任意一条新闻时间
@@ -205,7 +217,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByChannelWithAd(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
       val date = new Date(timeCursor)
@@ -224,6 +236,10 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       } yield {
         r ++: ad
       }
+
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
         //将广告时间随机成任意一条新闻时间

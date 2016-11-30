@@ -228,3 +228,27 @@ object NewsClick {
     (JsPath \ "ctime").read[LocalDateTime]
   )(NewsClick.apply _)
 }
+
+case class NewsRecommendLike(id: Option[Long] = None,
+                             uid: Long,
+                             nid: Long,
+                             predict: Double,
+                             ctime: LocalDateTime)
+
+object NewsRecommendLike {
+  implicit val NewsRecommendLikeWrites: Writes[NewsRecommendLike] = (
+    (JsPath \ "id").writeNullable[Long] ~
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "predict").write[Double] ~
+    (JsPath \ "ctime").write[LocalDateTime]
+  )(unlift(NewsRecommendLike.unapply))
+
+  implicit val NewsRecommendLikeReads: Reads[NewsRecommendLike] = (
+    (JsPath \ "id").readNullable[Long] ~
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "predict").read[Double] ~
+    (JsPath \ "ctime").read[LocalDateTime]
+  )(NewsRecommendLike.apply _)
+}

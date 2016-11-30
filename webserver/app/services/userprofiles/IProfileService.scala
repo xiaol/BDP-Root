@@ -40,10 +40,15 @@ trait IProfileService {
   def listConcerns(uid: Long, page: Long, count: Long): Future[Seq[NewsFeedResponse]]
 
   def updateUserChannels(uid: Long, channels: UserChannels): Future[Option[UserChannels]]
+
+  def addSearch(searchnews: Searchnewslist): Future[Option[Int]]
+  def addRelay(relaynews: Relaylist): Future[Option[Int]]
+  def addHate(hatenews: Hatenewslist): Future[Option[Int]]
 }
 
 class ProfileService @Inject() (val commentDAO: CommentDAO, val newsDAO: NewsDAO, val commendDAO: CommendDAO,
-                                val collectDAO: CollectDAO, val concernDAO: ConcernDAO, val userDAO: UserDAO)
+                                val collectDAO: CollectDAO, val concernDAO: ConcernDAO, val userDAO: UserDAO,
+                                val searchNewsDAO: SearchNewsDAO, val relayNewsDAO: RelayNewsDAO, val hateNewsDAO: HateNewsDAO)
     extends IProfileService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
@@ -206,6 +211,30 @@ class ProfileService @Inject() (val commentDAO: CommentDAO, val newsDAO: NewsDAO
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within ProfileService.updateUserChannels($uid, ${channels.toString}): ${e.getMessage}")
+        None
+    }
+  }
+
+  def addSearch(searchnews: Searchnewslist): Future[Option[Int]] = {
+    searchNewsDAO.insert(searchnews).map { id => Some(id) }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within ProfileService.addSearch(${searchnews.toString}): ${e.getMessage}")
+        None
+    }
+  }
+
+  def addRelay(relaynews: Relaylist): Future[Option[Int]] = {
+    relayNewsDAO.insert(relaynews.copy(ctime = Some(LocalDateTime.now()))).map { id => Some(id) }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within ProfileService.addRelay(${relaynews.toString}): ${e.getMessage}")
+        None
+    }
+  }
+
+  def addHate(hatenews: Hatenewslist): Future[Option[Int]] = {
+    hateNewsDAO.insert(hatenews.copy(ctime = Some(LocalDateTime.now()))).map { id => Some(id) }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within ProfileService.addHate(${hatenews.toString}): ${e.getMessage}")
         None
     }
   }
