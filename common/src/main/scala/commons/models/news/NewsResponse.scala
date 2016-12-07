@@ -99,7 +99,9 @@ object NewsFeedResponse {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, base.descr, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, base.tags, base.province, base.city, base.district, None, None, None)
+    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
+      None, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs,
+      base.tags, base.province, base.city, base.district, None, None, base.descr)
   }
 
   def from(creative: Creative): NewsFeedResponse = {

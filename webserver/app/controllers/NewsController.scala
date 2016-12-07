@@ -15,7 +15,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import commons.utils.Base64Utils.decodeBase64
 import commons.models.channels.{ ChannelResponse, ChannelRow }
 import commons.models.community.ASearchRow
-import commons.models.news.{ NewsFeedResponse, NewsRecommendResponse }
+import commons.models.news.{ PvDetail, NewsFeedResponse, NewsRecommendResponse }
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
 import commons.models.users._
@@ -30,7 +30,8 @@ import scala.util.Random
  */
 
 class NewsController @Inject() (val userService: UserService, val channelService: ChannelService, val newsService: NewsService,
-                                val sourceService: SourceService, val commentService: CommentService, val aSearchService: ASearchService, val newsPublisherService: NewsPublisherService)(implicit ec: ExecutionContext)
+                                val sourceService: SourceService, val commentService: CommentService, val aSearchService: ASearchService,
+                                val newsPublisherService: NewsPublisherService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
   def listChannel(state: Int, sech: Int) = Action.async { implicit request =>
@@ -48,6 +49,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
   }
 
   def getDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getDetails", LocalDateTime.now()))
     newsService.findDetailsWithProfileByNid(nid, uid).map {
       case Some(news) => ServerSucced(news)
       case _          => DataEmptyError(s"$nid")
@@ -63,6 +65,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
 
   //AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
   def loadFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.loadFeed", LocalDateTime.now()))
     chid match {
       case 1L => newsService.loadFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -76,6 +79,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
   }
 
   def refreshFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.refreshFeed", LocalDateTime.now()))
     chid match {
       case 1L => newsService.refreshFeedByRecommends(page, count, tcursor).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)

@@ -48,4 +48,8 @@ class UserProfilesInfoDAO @Inject() (protected val dbConfigProvider: DatabaseCon
       case _ => Some(uid)
     })
   }
+
+  def findByUid(uid: Long): Future[Option[UserProfilesInfo]] = {
+    db.run(userProfilesList.filter(_.uid === uid).result.headOption)
+  }
 }

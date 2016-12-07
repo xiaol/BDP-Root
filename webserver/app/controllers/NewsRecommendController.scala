@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import commons.models.advertisement.RequestParams
-import commons.models.news.NewsFeedResponse
+import commons.models.news.{ PvDetail, NewsFeedResponse }
 import jp.t2v.lab.play2.auth.AuthElement
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
@@ -25,10 +25,11 @@ import commons.utils.Base64Utils.decodeBase64
 /**
  * Created by zhangshl on 16/7/27.
  */
-class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val newsService: NewsService)(implicit ec: ExecutionContext)
+class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val newsService: NewsService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
   def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.loadFeedNew", LocalDateTime.now()))
     cid match {
       case 1L => newsRecommendService.loadFeedByRecommendsNew(uid, page, count, tcursor, t).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -42,6 +43,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   }
 
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.refreshFeedNew", LocalDateTime.now()))
     cid match {
       case 1L => newsRecommendService.refreshFeedByRecommendsNew(uid, page, count, tcursor, t).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
@@ -58,6 +60,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.loadFeedWithAd", LocalDateTime.now()))
         requestParams.cid match {
           case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
@@ -75,6 +78,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.refreshFeedWithAd", LocalDateTime.now()))
         requestParams.cid match {
           case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), requestParams.c.getOrElse(20), requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)

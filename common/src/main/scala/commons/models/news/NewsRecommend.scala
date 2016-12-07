@@ -252,3 +252,21 @@ object NewsRecommendLike {
     (JsPath \ "ctime").read[LocalDateTime]
   )(NewsRecommendLike.apply _)
 }
+
+case class PvDetail(uid: Long,
+                    method: String,
+                    ctime: LocalDateTime)
+
+object PvDetail {
+  implicit val PvDetailWrites: Writes[PvDetail] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "method").write[String] ~
+    (JsPath \ "ctime").write[LocalDateTime]
+  )(unlift(PvDetail.unapply))
+
+  implicit val PvDetailReads: Reads[PvDetail] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "method").read[String] ~
+    (JsPath \ "ctime").read[LocalDateTime]
+  )(PvDetail.apply _)
+}

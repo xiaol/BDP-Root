@@ -525,12 +525,18 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
       //将99的改回
       result.map { seq =>
-        seq.map { r: NewsFeedResponse =>
+        val feed = seq.map { r: NewsFeedResponse =>
           if (r.rtype.getOrElse(0) == 999)
             r.copy(rtype = Some(2))
           else
             r
         }.sortBy(_.ptime)
+        //若只有广告,返回空
+        if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          feed
+        } else {
+          Seq[NewsFeedResponse]()
+        }
       }
     }.recover {
       case NonFatal(e) =>
@@ -689,12 +695,18 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
       //将99的改回
       result.map { seq =>
-        seq.map { r: NewsFeedResponse =>
+        val feed = seq.map { r: NewsFeedResponse =>
           if (r.rtype.getOrElse(0) == 999)
             r.copy(rtype = Some(2))
           else
             r
         }.sortBy(_.ptime)
+        //若只有广告,返回空
+        if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          feed
+        } else {
+          Seq[NewsFeedResponse]()
+        }
       }
     }.recover {
       case NonFatal(e) =>

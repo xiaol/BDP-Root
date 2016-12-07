@@ -38,4 +38,9 @@ class NewsrecommendclickDAO @Inject() (protected val dbConfigProvider: DatabaseC
     db.run(action)
   }
 
+  def getNextId(): Future[Seq[Long]] = {
+    val action = sql"select nextval('usergloblelist_global_id_seq') ".as[Long]
+    db.run(action)
+  }
+
 }

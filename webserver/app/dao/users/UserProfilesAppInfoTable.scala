@@ -46,4 +46,8 @@ class AppInfoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
       case _ => Some(uid)
     })
   }
+
+  def findByUid(uid: Long): Future[Seq[AppInfo]] = {
+    db.run(appInfoList.filter(_.uid === uid).result)
+  }
 }

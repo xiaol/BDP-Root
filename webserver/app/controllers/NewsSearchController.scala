@@ -41,6 +41,11 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
 
   //搜索新闻并添加订阅号列表及用户是否关注该订阅号
   def searchNewsWithPublisher(key: String, pname: Option[String], channel: Option[Long], page: Int, count: Int, uid: Option[Long]) = Action.async { implicit request =>
+    //记录搜索历史
+    uid match {
+      case Some(uid) => profileService.addSearch(Searchnewslist(None, uid, key, Some(LocalDateTime.now())))
+      case _         =>
+    }
     if (page == 1) {
       val news: Future[(Seq[NewsFeedResponse], Long)] = newsEsService.search(key, pname, channel, page, count)
       val publisher: Future[Seq[(NewsPublisherRow, Long)]] = newsRecommendService.listPublisherWithFlag(uid, key)

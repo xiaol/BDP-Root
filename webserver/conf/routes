@@ -147,5 +147,16 @@ GET     /v2/persist/:msg                     controllers.PersistanceController.t
 #insert apps
 POST    /v2/au/app                  controllers.UserProfilesAppController.insert()
 
+#记录转发、不感兴趣日志
 POST    /v2/ns/replay               controllers.UserProfileController.addRelay()
 POST    /v2/ns/hate                 controllers.UserProfileController.addHate()
+
+#用户影射功能
+GET     /v2/us/urc/add              controllers.UserReferenceController.insert(uid: String, uname: Option[String], sys_source: String)
+GET     /v2/us/urc/update           controllers.UserReferenceController.update(global_id: String, uid: String, uname: Option[String], sys_source: String)
+GET     /v2/us/urc/delete           controllers.UserReferenceController.delete(global_id: String)
+GET     /v2/us/urc/fus              controllers.UserReferenceController.findByUid(uid: String, sys_source: String)
+GET     /v2/us/urc/fg               controllers.UserReferenceController.findByGlobal_id(global_id: String)
+
+#获取用户画像
+GET     /v2/us/urc/fp               controllers.UserReferenceController.getPersonaByUid(uid: Long)
