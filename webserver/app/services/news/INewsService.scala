@@ -198,8 +198,9 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
-        //将广告时间随机成任意一条新闻时间
-        if (seq.length > 1) {
+        //若只有广告,返回空
+        if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          //将广告时间随机成任意一条新闻时间
           seq.map { r =>
             if (r.rtype.getOrElse(0) == 3)
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
@@ -207,7 +208,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
               r
           }.sortBy(_.ptime)
         } else {
-          seq
+          Seq[NewsFeedResponse]()
         }
       }
     }.recover {
@@ -242,8 +243,9 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
-        //将广告时间随机成任意一条新闻时间
-        if (seq.length > 1) {
+        //若只有广告,返回空
+        if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          //将广告时间随机成任意一条新闻时间
           seq.map { r =>
             if (r.rtype.getOrElse(0) == 3)
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
@@ -251,7 +253,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
               r
           }.sortBy(_.ptime)
         } else {
-          seq
+          Seq[NewsFeedResponse]()
         }
       }
     }.recover {

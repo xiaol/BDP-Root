@@ -2534,12 +2534,12 @@ Content-Type: application/json
     {
       "app_id": "sogou.mobile.explorer",
       "app_name": "搜狗浏览器",
-      "active": 1
+      "active": 0                                   --预装软件
     },
     {
       "app_id": "com.baidu.BaiduMap",
       "app_name": "百度地图",
-      "active": 1
+      "active": 1                                   --自装软件
     }
   ]
 }

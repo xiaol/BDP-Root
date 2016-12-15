@@ -99,8 +99,18 @@ object NewsFeedResponse {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
+    //修改评论数
+    var commentnum = incr.comment
+    println(base.nid + "====================" + commentnum)
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      None, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs,
+      None, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
       base.tags, base.province, base.city, base.district, None, None, base.descr)
   }
 
