@@ -101,7 +101,6 @@ object NewsFeedResponse {
     val syst = newsRow.syst
     //修改评论数
     var commentnum = incr.comment
-    println(base.nid + "====================" + commentnum)
     if (commentnum > 10 && commentnum <= 70) {
       commentnum = commentnum * 2
     } else if (commentnum > 70 && commentnum <= 200) {
