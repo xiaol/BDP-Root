@@ -293,8 +293,12 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 1).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
   }
 
+  //  def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+  //    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 0).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+  //  }
+
   def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 0).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
   def refreshByClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {

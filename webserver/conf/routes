@@ -36,11 +36,11 @@ GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Lo
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
-GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
-GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 7, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1)
 
-GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
-GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
+GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 7, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
+GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
 
 POST    /v2/ns/fed/ra               controllers.NewsRecommendController.refreshFeedWithAd()
 POST    /v2/ns/fed/la               controllers.NewsRecommendController.loadFeedWithAd()
@@ -65,6 +65,8 @@ GET     /v2/nsr/es/l                controllers.NewsSearchController.listNewsByS
 GET     /v2/ns/coms/c               controllers.NewsController.listCommentCommon(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 20)
 GET     /v2/ns/coms/h               controllers.NewsController.listCommentHot(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 5)
 POST    /v2/ns/coms                 controllers.UserProfileController.addComment()
+#其他系统插入评论接口
+POST    /v2/ns/coms/add             controllers.UserProfileController.addCommentOut()
 
 POST    /v2/ns/coms/up              controllers.UserProfileController.addCommends(cid:Long,uid:Long)
 DELETE  /v2/ns/coms/up              controllers.UserProfileController.remCommends(cid:Long,uid:Long)

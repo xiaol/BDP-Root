@@ -38,6 +38,16 @@ class UserProfileController @Inject() (val channelService: ChannelService, val c
     }
   }
 
+  def addCommentOut() = Action.async(parse.json) { implicit request => //AsyncStack(parse.json, AuthorityKey -> RegistRole) { implicit request =>
+    request.body.validate[CommentOut] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(commentOut, _) => profileService.addComment(CommentRow.from(commentOut)).map {
+        case Some(comment) => ServerSucced(comment)
+        case _             => DataCreateError(s"${commentOut.toString}")
+      }
+    }
+  }
+
   def remComment(cid: Long, docid: String) = Action.async { implicit request =>
     profileService.remComment(cid, decodeBase64(docid)).map {
       case Some(c) => ServerSucced(c)
@@ -54,7 +64,7 @@ class UserProfileController @Inject() (val channelService: ChannelService, val c
 
   def addCommends(cid: Long, uid: Long) = Action.async { implicit request =>
     commentService.findById(cid).flatMap {
-      case Some(CommentRow(_, _, _, _, ouid, _, _, _, _, _)) if ouid.isDefined && ouid.get == uid => Future.successful(DataInvalidError("Can not commend your own comment"))
+      case Some(CommentRow(_, _, _, _, ouid, _, _, _, _, _, _)) if ouid.isDefined && ouid.get == uid => Future.successful(DataInvalidError("Can not commend your own comment"))
       case Some(_) => profileService.addCommend(cid, uid).map {
         case Some(c) => ServerSucced(c)
         case _       => DataCreateError(s"$cid, $uid")

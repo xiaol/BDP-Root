@@ -6,9 +6,11 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.advertisement.{ AdRequest, Creative, AdResponse }
+import commons.models.advertisement.{ Device, AdRequest, Creative, AdResponse }
 import commons.models.news.NewsFeedResponse
+import commons.models.userprofiles.UserDevice
 import commons.utils.Sha1Utils
+import dao.userprofiles.UserDeviceDAO
 import io.netty.handler.codec.http.{ HttpHeaders, DefaultHttpHeaders }
 import org.asynchttpclient.{ Response, ListenableFuture, DefaultAsyncHttpClient }
 import org.springframework.util.Base64Utils
@@ -25,18 +27,31 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 @ImplementedBy(classOf[AdResponseService])
 trait IAdResponseService {
-  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
+  def getAdResponse(body: String, remoteAddress: Option[String], uid: Long): Future[Seq[NewsFeedResponse]]
 }
 
-class AdResponseService @Inject() () extends IAdResponseService {
+class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAdResponseService {
 
-  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def getAdResponse(body: String, remoteAddress: Option[String], uid: Long): Future[Seq[NewsFeedResponse]] = {
     {
       //替换nginx传过来的真实ip
       val requestbody: String = remoteAddress match {
         case Some(ip) =>
-          val adRequest: AdRequest = Json.parse(body).as[AdRequest]
-          Json.toJson(adRequest.copy(device = adRequest.device.copy(ip = ip))).toString()
+          val request: AdRequest = Json.parse(body).as[AdRequest]
+          val adRequest = request.copy(device = request.device.copy(ip = ip))
+          val device: Device = adRequest.device
+          userDeviceDAO.findByuid(uid.toString).map {
+            _ match {
+              case None =>
+                println(UserDevice.from(device, uid))
+                userDeviceDAO.insert(UserDevice.from(device, uid))
+              case _ =>
+            }
+          }.recover {
+            case _ => Logger.error(s"Within userDeviceDAO.insert(UserDevice.from(device, uid))")
+          }
+
+          Json.toJson(adRequest).toString()
         case _ => body
       }
 

@@ -29,8 +29,9 @@ trait CommentTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def docid = column[String]("docid")
     def cid = column[Option[String]]("cid")
     def pid = column[Option[String]]("pid")
+    def global_id = column[Option[String]]("global_id")
 
-    def * = (id.?, content, commend, ctime, uid, uname, avatar, docid, cid, pid) <> ((CommentRow.apply _).tupled, CommentRow.unapply)
+    def * = (id.?, content, commend, ctime, uid, uname, avatar, docid, cid, pid, global_id) <> ((CommentRow.apply _).tupled, CommentRow.unapply)
   }
 }
 

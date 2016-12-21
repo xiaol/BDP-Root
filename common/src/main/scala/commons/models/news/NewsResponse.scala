@@ -208,7 +208,16 @@ object NewsDetailsResponse {
     val base = newsRow.base
     val incr = newsRow.incr
     val syst = newsRow.syst
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, incr.comment, colFlag, conFlag, conPubFlag)
+    //修改评论数
+    var commentnum = incr.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
   }
 }
 
