@@ -3,6 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import jp.t2v.lab.play2.auth.AuthElement
+import play.api.libs.json.Json
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.news._
@@ -15,7 +16,7 @@ import scala.concurrent.{ ExecutionContext, Future }
 import commons.utils.Base64Utils.decodeBase64
 import commons.models.channels.{ ChannelResponse, ChannelRow }
 import commons.models.community.ASearchRow
-import commons.models.news.{ PvDetail, NewsFeedResponse, NewsRecommendResponse }
+import commons.models.news._
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
 import commons.models.users._
@@ -48,12 +49,23 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def getDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
+  def getDetails(nid: Long, uid: Option[Long], s: Int) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getDetails", LocalDateTime.now()))
     newsService.findDetailsWithProfileByNid(nid, uid).map {
-      case Some(news) => ServerSucced(news)
+      case Some(news) => ServerSucced(if (s == 1) https(news) else news)
       case _          => DataEmptyError(s"$nid")
     }
+  }
+
+  final private def https(detail: NewsDetailsResponse): NewsDetailsResponse = {
+    var list: List[NewsBodyBlock] = detail.content.as[List[NewsBodyBlock]]
+    list = list.map { news =>
+      news match {
+        case imageBlock: ImageBlock => imageBlock.copy(img = imageBlock.img.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com"))
+        case _                      => news
+      }
+    }
+    detail.copy(content = Json.toJson(list))
   }
 
   def listASearch(nid: Long, page: Long, count: Long) = Action.async { implicit request =>

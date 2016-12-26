@@ -2,6 +2,7 @@ package commons.models.news
 
 import com.sksamuel.elastic4s.{ HitAs, RichSearchHit }
 import commons.models.advertisement.{ App, Creative, Adspace }
+import commons.models.video.VideoRow
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
@@ -28,13 +29,15 @@ case class NewsFeedResponse(
   comment: Int,
   style: Int,
   imgs: Option[List[String]] = None,
-  tags: Option[List[String]] = None, // new field
+  tags: Option[List[String]] = None,
   province: Option[String] = None,
   city: Option[String] = None,
   district: Option[String] = None,
   rtype: Option[Int] = None,
   adimpression: Option[List[String]] = None,
-  icon: Option[String] = None)
+  icon: Option[String] = None,
+  videourl: Option[String] = None,
+  thumbnail: Option[String] = None)
 
 object NewsFeedResponse {
 
@@ -69,7 +72,9 @@ object NewsFeedResponse {
     (JsPath \ "district").writeNullable[String] ~
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "adimpression").writeNullable[List[String]] ~
-    (JsPath \ "icon").writeNullable[String]
+    (JsPath \ "icon").writeNullable[String] ~
+    (JsPath \ "videourl").writeNullable[String] ~
+    (JsPath \ "thumbnail").writeNullable[String]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -92,7 +97,9 @@ object NewsFeedResponse {
     (JsPath \ "district").readNullable[String] ~
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "adimpression").readNullable[List[String]] ~
-    (JsPath \ "icon").readNullable[String]
+    (JsPath \ "icon").readNullable[String] ~
+    (JsPath \ "videourl").readNullable[String] ~
+    (JsPath \ "thumbnail").readNullable[String]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {
@@ -109,8 +116,26 @@ object NewsFeedResponse {
       commentnum = commentnum * 61
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      None, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      base.tags, base.province, base.city, base.district, None, None, base.descr)
+      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
+      base.tags, base.province, base.city, base.district, None, None, syst.icon)
+  }
+
+  def from(videoRow: VideoRow): NewsFeedResponse = {
+    val base = videoRow.base
+    val incr = videoRow.incr
+    val syst = videoRow.syst
+    //修改评论数
+    var commentnum = incr.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
+      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
+      base.tags, base.province, base.city, base.district, None, None, syst.icon, Some(base.videourl), Some(syst.thumbnail))
   }
 
   def from(creative: Creative): NewsFeedResponse = {

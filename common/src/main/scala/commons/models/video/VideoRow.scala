@@ -1,18 +1,14 @@
-package commons.models.news
+package commons.models.video
 
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-/**
- * Created by zhange on 2016-05-04.
- *
- */
-
-case class NewsRowBase(
+case class VideoRowBase(
   nid: Option[Long] = None,
   url: String,
+  videourl: String,
   docid: String,
   title: String,
   content: JsValue,
@@ -27,10 +23,11 @@ case class NewsRowBase(
   city: Option[String] = None,
   district: Option[String] = None)
 
-object NewsRowBase {
-  implicit val NewsRowBaseWrites: Writes[NewsRowBase] = (
+object VideoRowBase {
+  implicit val VideoRowBaseWrites: Writes[VideoRowBase] = (
     (JsPath \ "nid").writeNullable[Long] ~
     (JsPath \ "url").write[String] ~
+    (JsPath \ "videourl").write[String] ~
     (JsPath \ "docid").write[String] ~
     (JsPath \ "title").write[String] ~
     (JsPath \ "content").write[JsValue] ~
@@ -44,11 +41,12 @@ object NewsRowBase {
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "district").writeNullable[String]
-  )(unlift(NewsRowBase.unapply))
+  )(unlift(VideoRowBase.unapply))
 
-  implicit val NewsRowBaseReads: Reads[NewsRowBase] = (
+  implicit val VideoRowBaseReads: Reads[VideoRowBase] = (
     (JsPath \ "nid").readNullable[Long] ~
     (JsPath \ "url").read[String] ~
+    (JsPath \ "videourl").read[String] ~
     (JsPath \ "docid").read[String] ~
     (JsPath \ "title").read[String] ~
     (JsPath \ "content").read[JsValue] ~
@@ -62,10 +60,10 @@ object NewsRowBase {
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "district").readNullable[String]
-  )(NewsRowBase.apply _)
+  )(VideoRowBase.apply _)
 }
 
-case class NewsRowIncr(
+case class VideoRowIncr(
   collect: Int,
   concern: Int,
   comment: Int,
@@ -75,8 +73,8 @@ case class NewsRowIncr(
   compress: Option[String] = None,
   ners: Option[JsValue] = None)
 
-object NewsRowIncr {
-  implicit val NewsRowIncrWrites: Writes[NewsRowIncr] = (
+object VideoRowIncr {
+  implicit val VideoRowIncrWrites: Writes[VideoRowIncr] = (
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
     (JsPath \ "comment").write[Int] ~
@@ -85,9 +83,9 @@ object NewsRowIncr {
     (JsPath \ "imgs").writeNullable[List[String]] ~
     (JsPath \ "compress").writeNullable[String] ~
     (JsPath \ "ners").writeNullable[JsValue]
-  )(unlift(NewsRowIncr.unapply))
+  )(unlift(VideoRowIncr.unapply))
 
-  implicit val NewsRowIncrReads: Reads[NewsRowIncr] = (
+  implicit val VideoRowIncrReads: Reads[VideoRowIncr] = (
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
     (JsPath \ "comment").read[Int] ~
@@ -96,10 +94,10 @@ object NewsRowIncr {
     (JsPath \ "imgs").readNullable[List[String]] ~
     (JsPath \ "compress").readNullable[String] ~
     (JsPath \ "ners").readNullable[JsValue]
-  )(NewsRowIncr.apply _)
+  )(VideoRowIncr.apply _)
 }
 
-case class NewsRowSyst(
+case class VideoRowSyst(
   state: Int,
   ctime: LocalDateTime,
   chid: Long,
@@ -108,10 +106,11 @@ case class NewsRowSyst(
   srstate: Int,
   pconf: Option[JsValue] = None,
   plog: Option[JsValue] = None,
-  icon: Option[String] = None)
+  icon: Option[String] = None,
+  thumbnail: String)
 
-object NewsRowSyst {
-  implicit val NewsRowSystWrites: Writes[NewsRowSyst] = (
+object VideoRowSyst {
+  implicit val VideoRowSystWrites: Writes[VideoRowSyst] = (
     (JsPath \ "state").write[Int] ~
     (JsPath \ "ctime").write[LocalDateTime] ~
     (JsPath \ "chid").write[Long] ~
@@ -120,10 +119,11 @@ object NewsRowSyst {
     (JsPath \ "srstate").write[Int] ~
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "plog").writeNullable[JsValue] ~
-    (JsPath \ "icon").writeNullable[String]
-  )(unlift(NewsRowSyst.unapply))
+    (JsPath \ "icon").writeNullable[String] ~
+    (JsPath \ "thumbnail").write[String]
+  )(unlift(VideoRowSyst.unapply))
 
-  implicit val NewsRowSystReads: Reads[NewsRowSyst] = (
+  implicit val VideoRowSystReads: Reads[VideoRowSyst] = (
     (JsPath \ "state").read[Int] ~
     (JsPath \ "ctime").read[LocalDateTime] ~
     (JsPath \ "chid").read[Long] ~
@@ -132,23 +132,24 @@ object NewsRowSyst {
     (JsPath \ "srstate").read[Int] ~
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "plog").readNullable[JsValue] ~
-    (JsPath \ "icon").readNullable[String]
-  )(NewsRowSyst.apply _)
+    (JsPath \ "icon").readNullable[String] ~
+    (JsPath \ "thumbnail").read[String]
+  )(VideoRowSyst.apply _)
 }
 
-case class NewsRow(base: NewsRowBase, incr: NewsRowIncr, syst: NewsRowSyst)
+case class VideoRow(base: VideoRowBase, incr: VideoRowIncr, syst: VideoRowSyst)
 
-object NewsRow {
-  implicit val NewsRowWrites: Writes[NewsRow] = (
-    (JsPath \ "base").write[NewsRowBase] ~
-    (JsPath \ "incr").write[NewsRowIncr] ~
-    (JsPath \ "syst").write[NewsRowSyst]
-  )(unlift(NewsRow.unapply))
+object VideoRow {
+  implicit val VideoRowWrites: Writes[VideoRow] = (
+    (JsPath \ "base").write[VideoRowBase] ~
+    (JsPath \ "incr").write[VideoRowIncr] ~
+    (JsPath \ "syst").write[VideoRowSyst]
+  )(unlift(VideoRow.unapply))
 
-  implicit val NewsRowReads: Reads[NewsRow] = (
-    (JsPath \ "base").read[NewsRowBase] ~
-    (JsPath \ "incr").read[NewsRowIncr] ~
-    (JsPath \ "syst").read[NewsRowSyst]
-  )(NewsRow.apply _)
+  implicit val VideoRowReads: Reads[VideoRow] = (
+    (JsPath \ "base").read[VideoRowBase] ~
+    (JsPath \ "incr").read[VideoRowIncr] ~
+    (JsPath \ "syst").read[VideoRowSyst]
+  )(VideoRow.apply _)
 
 }

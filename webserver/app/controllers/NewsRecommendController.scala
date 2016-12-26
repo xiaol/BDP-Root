@@ -3,7 +3,7 @@ package controllers
 import javax.inject.Inject
 
 import commons.models.advertisement.RequestParams
-import commons.models.news.{ PvDetail, NewsFeedResponse }
+import commons.models.news._
 import jp.t2v.lab.play2.auth.AuthElement
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
@@ -14,6 +14,7 @@ import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.news._
 import services.users.UserService
+import services.video.VideoService
 import utils.Response._
 import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _ }
 
@@ -25,7 +26,7 @@ import commons.utils.Base64Utils.decodeBase64
 /**
  * Created by zhangshl on 16/7/27.
  */
-class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val newsService: NewsService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
+class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val videoService: VideoService, val newsService: NewsService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
   def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
@@ -75,11 +76,16 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         }
         requestParams.cid match {
           case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+          //视频
+          case 42L => videoService.loadFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }
           case _ => newsService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }
         }
@@ -97,11 +103,16 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         }
         requestParams.cid match {
           case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
+            case _                                            => DataEmptyError(s"$requestParams")
+          }
+          //视频
+          case 42L => videoService.refreshFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }
           case _ => newsService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
-            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
+            case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }
         }
@@ -114,6 +125,32 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
       case n: NewsFeedResponse if mockIndexs.contains(news.indexOf(n)) => n.copy(ptime = LocalDateTime.now().plusMinutes(-Random.nextInt(5)))
       case n: NewsFeedResponse                                         => n
     }
+  }
+
+  //美女频道,图片需大于1
+  final private def removeOnePicChin26(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
+    news.filter { news =>
+      if (news.channel == 26 && news.imgs.isEmpty)
+        false
+      else if (news.imgs.nonEmpty && news.imgs.get.size <= 1)
+        false
+      else
+        true
+    }
+  }
+
+  //http改https
+  final private def https(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
+    news.map { news =>
+      news.imgs match {
+        case Some(imags: List[String]) => news.copy(imgs = Some(https(imags)))
+        case None                      => news
+      }
+    }
+  }
+
+  final private def https(imags: List[String]): List[String] = {
+    imags.map { url => url.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com") }
   }
 
   //  implicit val rds = (

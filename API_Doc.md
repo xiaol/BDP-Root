@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.3
+# 数据平台接口文档_V3.4
 
 ## 目录
 
@@ -7,6 +7,13 @@
 
 ----
 ## 更新日志
+*V3.4:*
+
+1. 新闻详情页: 添加参数s， 详情页图片地址是否http改https
+2. 频道刷新加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
+3. 频道加载加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
+4. 添加视频频道， 频道id为42
+
 *V3.3:*
 
 新增接口：
@@ -745,6 +752,7 @@ Host: bdp.deeporiginalx.com
 | ---- | :----- | :------------ | :--- |
 | nid  | String | 是             | 新闻ID |
 | uid  | String | 否(非正式注册用户不提供) | 用户ID |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 
 _Response_
 
@@ -2362,7 +2370,9 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
 | b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
 _Response_
 
 ```json
@@ -2416,7 +2426,9 @@ Host: bdp.deeporiginalx.com
 | c    | Long | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
 | b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-| t    | Int    | 是        | 显示专题  是(1)否(0)                              |
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
 
 ----
 #### 专题详情

@@ -53,6 +53,7 @@ object NewsRecommendDAO {
   final private val newsrecommendtimeWindow: Int = -24 //只取近24小时人工推荐的新闻
   final private val newsWindow: Int = -6 //没新闻的时候,主要是6小时内没看过的新闻都可以
   final private val shieldedCid: Long = 28L // 本地频道
+  final private val filterSet = Set("就是逗你笑", "bomb01")
 }
 
 @Singleton
@@ -261,52 +262,52 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   }
 
   def load(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   //新闻刷到头了,用6小时以内没看过的新闻补上
   def refresh(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusHours(newsWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusHours(newsWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   def loadByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
   }
 
   def loadByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   def loadByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
   }
 
   def refreshByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > timeCursor).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > timeCursor).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
   }
 
   def refreshByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   def refreshByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 1).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 1).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
   }
 
   //  def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-  //    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 0).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+  //    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 0).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
   //  }
 
   def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
   def refreshByClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
   def refreshByLike(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendLikeList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendLikeList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
 }

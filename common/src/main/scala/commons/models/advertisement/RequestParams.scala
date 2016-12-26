@@ -16,7 +16,9 @@ case class RequestParams(cid: Long,
                          tmk: Option[Int] = None,
                          uid: Long,
                          b: String,
-                         t: Option[Int] = None)
+                         t: Option[Int] = None,
+                         s: Option[Int] = None,
+                         v: Option[Int] = None)
 
 object RequestParams {
   implicit val RequestParamsWrites: Writes[RequestParams] = (
@@ -28,7 +30,9 @@ object RequestParams {
     (JsPath \ "tmk").writeNullable[Int] ~
     (JsPath \ "uid").write[Long] ~
     (JsPath \ "b").write[String] ~
-    (JsPath \ "t").writeNullable[Int]
+    (JsPath \ "t").writeNullable[Int] ~
+    (JsPath \ "s").writeNullable[Int] ~
+    (JsPath \ "v").writeNullable[Int]
   )(unlift(RequestParams.unapply))
 
   implicit val RequestParamsReads: Reads[RequestParams] = (
@@ -40,6 +44,8 @@ object RequestParams {
     (JsPath \ "tmk").readNullable[Int] ~
     (JsPath \ "uid").read[Long] ~
     (JsPath \ "b").read[String] ~
-    (JsPath \ "t").readNullable[Int]
+    (JsPath \ "t").readNullable[Int] ~
+    (JsPath \ "s").readNullable[Int] ~
+    (JsPath \ "v").readNullable[Int]
   )(RequestParams.apply _)
 }

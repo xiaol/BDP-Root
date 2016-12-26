@@ -1,0 +1,84 @@
+package dao.video
+
+import javax.inject.{ Inject, Singleton }
+
+import commons.models.video._
+import org.joda.time._
+import play.api.db.slick._
+import utils.MyPostgresDriver
+
+import scala.concurrent.{ ExecutionContext, Future }
+import play.api.libs.json.JsValue
+import commons.utils.JodaOderingImplicits
+
+trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
+  import driver.api._
+
+  class VideoTable(tag: Tag) extends Table[VideoRow](tag, "videolist") {
+
+    def nid = column[Long]("nid", O.PrimaryKey, O.AutoInc)
+    def url = column[String]("url")
+    def videourl = column[String]("videourl")
+    def docid = column[String]("docid")
+    def title = column[String]("title")
+    def content = column[JsValue]("content")
+    def html = column[String]("html")
+    def author = column[Option[String]]("author")
+    def ptime = column[LocalDateTime]("ptime")
+    def pname = column[Option[String]]("pname")
+    def purl = column[Option[String]]("purl")
+    def descr = column[Option[String]]("icon")
+    def tags = column[Option[List[String]]]("tags")
+    def province = column[Option[String]]("province")
+    def city = column[Option[String]]("city")
+    def district = column[Option[String]]("district")
+
+    def collect = column[Int]("collect")
+    def concern = column[Int]("concern")
+    def comment = column[Int]("comment")
+    def inum = column[Int]("inum")
+    def style = column[Int]("style")
+    def imgs = column[Option[List[String]]]("imgs")
+    def compress = column[Option[String]]("compress")
+    def ners = column[Option[JsValue]]("ners")
+
+    def state = column[Int]("state")
+    def ctime = column[LocalDateTime]("ctime")
+    def chid = column[Long]("chid")
+    def srid = column[Long]("srid")
+    def srstate = column[Int]("srstate")
+    def pconf = column[Option[JsValue]]("pconf")
+    def plog = column[Option[JsValue]]("plog")
+    def sechid = column[Option[Long]]("sechid")
+    def icon = column[Option[String]]("icon")
+    def thumbnail = column[String]("thumbnail")
+
+    def base = (nid.?, url, videourl, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((VideoRowBase.apply _).tupled, VideoRowBase.unapply)
+    def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((VideoRowIncr.apply _).tupled, VideoRowIncr.unapply)
+    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, thumbnail) <> ((VideoRowSyst.apply _).tupled, VideoRowSyst.unapply)
+    def * = (base, incr, syst) <> ((VideoRow.apply _).tupled, VideoRow.unapply)
+  }
+}
+
+object VideoDAO {
+  final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-7)
+}
+
+@Singleton
+class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends VideoTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+  import driver.api._
+  import VideoDAO._
+
+  type VideoTableQuery = Query[VideoTable, VideoTable#TableElementType, Seq]
+
+  val videoList = TableQuery[VideoTable]
+
+  def refreshVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  def loadVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+}
