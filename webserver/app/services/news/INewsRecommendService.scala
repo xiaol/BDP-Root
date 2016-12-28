@@ -379,7 +379,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
               flag = false
           }
           flag
-        }.take(10)
+        }.take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -577,14 +577,14 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val refreshHotWordFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByHotWord((page - 1) * count, level2, newTimeCursor, uid)
 
       //----推荐部分----
-      //模型非人工推荐
+      //主题模型推荐
       val refreshModerRecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByModelRecommend((page - 1) * count, level1, newTimeCursor, uid)
-      //模型人工推荐
-      val refreshByPeopleRecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByPeopleRecommend((page - 1) * count, level2, newTimeCursor, uid)
+      //线性模型从人工推荐数据中选取推荐
+      val refreshByPeopleRecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
       //人工推荐(没有推荐模型时,直接出人工推荐)
       val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, level1 + 1)
       //根据点击日志推荐频道
-      val refreshByClickFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByClick((page - 1) * count, level1 + 1, newTimeCursor, uid)
+      val refreshByClickFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByClick((page - 1) * count, level1, newTimeCursor, uid)
 
       //普通新闻(可能情况:其他都没有数据,全出普通)
       val refreshCommonFO: Future[Seq[NewsRow]] = newsRecommendDAO.refresh((page - 1) * count, count, newTimeCursor, uid)
@@ -663,14 +663,14 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         hatePnameWithChid <- hateNews
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).filter { feed =>
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((level2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)
               flag = false
           }
           flag
-        }.take(10)
+        }.take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间

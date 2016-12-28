@@ -12,7 +12,8 @@
 1. 新闻详情页: 添加参数s， 详情页图片地址是否http改https
 2. 频道刷新加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
 3. 频道加载加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
-4. 添加视频频道， 频道id为42
+4. 添加接口:
+	视频频道(刷新)， 视频频道(加载)， 视频详情页
 
 *V3.3:*
 
@@ -2630,5 +2631,182 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 {
   "code": 2000,
   "data": 1               - 已创建的不感兴趣记录ID
+}
+```
+
+
+----
+#### 视频频道(刷新)
+
+_Request_
+
+```json
+POST /v2/ns/fed/ra
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | Long | 是        | 频道ID:42                                |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 视频格式，6、7、8
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "videourl": "http://gslb.miaopai.com/stream/sHLX8Z6pr0hAKyK6SDucXA__.mp4?yx=&refer=weibo_app&Expires=1482375610&ssig=MtRxNEvf0N&KID=unistore,video", -视频url
+      "thumbnail": "http://bdp-pic.deeporiginalx.com/W0JAMjIzZmZhZGQ.jpg", -背景图
+      "rtype": "6"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
+    },
+    …
+  ]
+}
+```
+----
+#### 视频频道(加载)
+
+_Request_
+
+```json
+POST /v2/ns/fed/la
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | Long | 是        | 频道ID:42                                |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 6695,                                            - 新闻ID
+      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
+      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
+      "ptime": "2016-05-22 01:20:46",
+      "pname": "参考消息",
+      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
+      "channel": 9,
+      "collect": 0,                                           - 收藏数
+      "concern": 0,                                           - 关心数
+      "comment": 4,                                           - 评论数
+      "style": 1,                                             - 视频格式，6、7、8
+      "imgs": [                                               - 该字段会有对应style数值的图片
+        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      ],
+      "province": "山东",
+      "city": "青岛",
+      "district": "山东",
+      "videourl": "http://gslb.miaopai.com/stream/sHLX8Z6pr0hAKyK6SDucXA__.mp4?yx=&refer=weibo_app&Expires=1482375610&ssig=MtRxNEvf0N&KID=unistore,video", -视频url
+      "thumbnail": "http://bdp-pic.deeporiginalx.com/W0JAMjIzZmZhZGQ.jpg", -背景图
+      "rtype": "6"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
+    },
+    …
+  ]
+}
+```
+----
+### 视频详情页
+
+_Request_
+
+```json
+GET /v2/vi/con
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须          | 参数解释 |
+| ---- | :----- | :------------ | :--- |
+| nid  | Long | 是             | 新闻ID |
+| uid  | Long | 否              | 用户ID |
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": {
+    "nid": 6825,                                    - 新闻ID
+    "docid": "http://mp.weixin.qq.com/...",         - 用于获取评论的docid
+    "title": "分享 | 驾照自学直考到底难不难？成都31人报名2人拿证，他们的经验是......",
+    "ptime": "2016-05-22 01:03:00",                 - 发布时间
+    "pname": "央视新闻",
+    "purl": "http://mp.weixin.qq.com/s?...",
+    "channel": 2,                                   - 频道ID
+    "inum": 6,                                      - 正文图片数量
+    "tags": [                                       - 关键字
+      "驾照","驾校"
+    ],
+    "descr": "今年4月1日起，武汉、成都、南京、福州等...",
+    "content": [
+      {
+        "txt": "本文来源：荆楚网、华西都市报"
+      },
+      {
+        "img": "http://bdp-pic.deeporiginalx.com/W0JAMjIzZmZhZGQ.jpg"
+      },
+      {
+        "vid": "http://anyvideourl.com"
+      },
+      ...
+    ],
+    "collect": 1,
+    "concern": 1,
+    "comment": 0,
+	"colflag":1,		- 是(1)否(0)已收藏
+	"conflag":1,		- 是(1)否(0)已关心
+	"conpubflag":1,		- 是(1)否(0)已关心该新闻对应的发布源
+	"videourl": "http://gslb.miaopai.com/stream/sHLX8Z6pr0hAKyK6SDucXA__.mp4?yx=&refer=weibo_app&Expires=1482375610&ssig=MtRxNEvf0N&KID=unistore,video", -视频url
+    "thumbnail": "http://bdp-pic.deeporiginalx.com/W0JAMjIzZmZhZGQ.jpg" -背景图
+  }
 }
 ```

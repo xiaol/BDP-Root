@@ -135,7 +135,7 @@ object NewsFeedResponse {
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
       base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      base.tags, base.province, base.city, base.district, None, None, syst.icon, Some(base.videourl), Some(syst.thumbnail))
+      base.tags, base.province, base.city, base.district, Some(6), None, syst.icon, Some(base.videourl), Some(syst.thumbnail))
   }
 
   def from(creative: Creative): NewsFeedResponse = {
@@ -186,7 +186,9 @@ case class NewsDetailsResponse(
   comment: Int,
   colFlag: Option[Int],
   conFlag: Option[Int],
-  conPubFlag: Option[Int])
+  conPubFlag: Option[Int],
+  videourl: Option[String] = None,
+  thumbnail: Option[String] = None)
 
 object NewsDetailsResponse {
   implicit val NewsDetailsResponseWrites: Writes[NewsDetailsResponse] = (
@@ -206,7 +208,9 @@ object NewsDetailsResponse {
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "colflag").writeNullable[Int] ~
     (JsPath \ "conflag").writeNullable[Int] ~
-    (JsPath \ "conpubflag").writeNullable[Int]
+    (JsPath \ "conpubflag").writeNullable[Int] ~
+    (JsPath \ "videourl").writeNullable[String] ~
+    (JsPath \ "thumbnail").writeNullable[String]
   )(unlift(NewsDetailsResponse.unapply))
 
   implicit val NewsDetailsResponseReads: Reads[NewsDetailsResponse] = (
@@ -226,7 +230,9 @@ object NewsDetailsResponse {
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "colflag").readNullable[Int] ~
     (JsPath \ "conflag").readNullable[Int] ~
-    (JsPath \ "conpubflag").readNullable[Int]
+    (JsPath \ "conpubflag").readNullable[Int] ~
+    (JsPath \ "videourl").readNullable[String] ~
+    (JsPath \ "thumbnail").readNullable[String]
   )(NewsDetailsResponse.apply _)
 
   def from(newsRow: NewsRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
@@ -243,6 +249,22 @@ object NewsDetailsResponse {
       commentnum = commentnum * 61
     }
     NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+  }
+
+  def from1(newsRow: VideoRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
+    val base = newsRow.base
+    val incr = newsRow.incr
+    val syst = newsRow.syst
+    //修改评论数
+    var commentnum = incr.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, Some(base.videourl), Some(syst.thumbnail))
   }
 }
 

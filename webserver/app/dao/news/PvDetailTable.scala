@@ -21,8 +21,9 @@ trait PvDetailTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def uid = column[Long]("uid")
     def method = column[String]("method")
     def ctime = column[LocalDateTime]("ctime")
+    def ipaddress = column[Option[String]]("ipaddress")
 
-    def * = (uid, method, ctime) <> ((PvDetail.apply _).tupled, PvDetail.unapply)
+    def * = (uid, method, ctime, ipaddress) <> ((PvDetail.apply _).tupled, PvDetail.unapply)
   }
 }
 

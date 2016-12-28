@@ -110,4 +110,25 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     if (reqTimeCursor.isBefore(oldTimeCursor) || reqTimeCursor.isAfter(nowTimeCursor)) oldTimeCursor else reqTimeCursor
   }
 
+  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
+    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+      case None => videoDAO.findByNid(nid).map {
+        case Some(row) =>
+          var detail = NewsDetailsResponse.from1(row)
+          detail.content.\\("imag")
+          Some(NewsDetailsResponse.from1(row))
+        case _ => None
+      }
+      case Some(uid) => videoDAO.findByNidWithProfile(nid, uid).map {
+        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from1(row, Some(c1), Some(c2), Some(c3)))
+        case _                       => None
+      }
+    }
+    result.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+        None
+    }
+  }
+
 }

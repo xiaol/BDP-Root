@@ -30,7 +30,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     extends Controller with AuthElement with AuthConfigImpl {
 
   def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
-    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.loadFeedNew", LocalDateTime.now()))
+    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.loadFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
     if (count > 14) {
       newcount = 14
@@ -48,10 +48,10 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   }
 
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
-    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.refreshFeedNew", LocalDateTime.now()))
+    pvdetailService.insert(PvDetail(uid, "NewsRecommendController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
-    if (count > 7) {
-      newcount = 7
+    if (count > 14) {
+      newcount = 14
     }
     cid match {
       case 1L => newsRecommendService.refreshFeedByRecommendsNew(uid, page, newcount, tcursor, t).map {
@@ -69,7 +69,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.loadFeedWithAd", LocalDateTime.now()))
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.loadFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
         var newcount: Long = requestParams.c.getOrElse(14)
         if (newcount > 14) {
           newcount = 14
@@ -96,10 +96,10 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.refreshFeedWithAd", LocalDateTime.now()))
-        var newcount: Long = requestParams.c.getOrElse(7)
-        if (newcount > 7) {
-          newcount = 7
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.refreshFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+        var newcount: Long = requestParams.c.getOrElse(14)
+        if (newcount > 14) {
+          newcount = 14
         }
         requestParams.cid match {
           case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
@@ -130,11 +130,11 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   //美女频道,图片需大于1
   final private def removeOnePicChin26(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
     news.filter { news =>
-      if (news.channel == 26 && news.imgs.isEmpty)
+      if (news.channel == 26 && news.imgs.isEmpty) {
         false
-      else if (news.imgs.nonEmpty && news.imgs.get.size <= 1)
+      } else if (news.channel == 26 && news.imgs.nonEmpty && news.imgs.get.size <= 1) {
         false
-      else
+      } else
         true
     }
   }

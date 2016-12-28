@@ -3,6 +3,7 @@ package dao.video
 import javax.inject.{ Inject, Singleton }
 
 import commons.models.video._
+import dao.userprofiles.{ ConcernPublisherTable, ConcernTable, CollectTable }
 import org.joda.time._
 import play.api.db.slick._
 import utils.MyPostgresDriver
@@ -65,13 +66,16 @@ object VideoDAO {
 }
 
 @Singleton
-class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends VideoTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends VideoTable with CollectTable with ConcernTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
   import VideoDAO._
 
   type VideoTableQuery = Query[VideoTable, VideoTable#TableElementType, Seq]
 
   val videoList = TableQuery[VideoTable]
+  val collectList = TableQuery[CollectTable]
+  val concernList = TableQuery[ConcernTable]
+  val concernPublisherList = TableQuery[ConcernPublisherTable]
 
   def refreshVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
     db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
@@ -79,6 +83,25 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
 
   def loadVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
     db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  def findByNid(nid: Long): Future[Option[VideoRow]] = {
+    db.run(videoList.filter(_.nid === nid).result.headOption)
+  }
+
+  // TODO: join newspublisherlist
+  def findByNidWithProfile(nid: Long, uid: Long): Future[Option[(VideoRow, Int, Int, Int)]] = {
+    val joinQuery = (for {
+      (((news, collects), concerns), conpubs) <- videoList.filter(_.nid === nid)
+        .joinLeft(collectList.filter(_.uid === uid)).on(_.nid === _.nid)
+        .joinLeft(concernList.filter(_.uid === uid)).on(_._1.nid === _.nid)
+        .joinLeft(concernPublisherList.filter(_.uid === uid)).on(_._1._1.pname === _.pname)
+    } yield (news, collects.map(_.id), concerns.map(_.id), conpubs.map(_.id))).groupBy(_._1).map {
+      case (n, joins) =>
+        (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
+    }
+
+    db.run(joinQuery.result.headOption)
   }
 
 }

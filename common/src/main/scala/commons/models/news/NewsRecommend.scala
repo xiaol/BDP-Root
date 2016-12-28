@@ -255,18 +255,21 @@ object NewsRecommendLike {
 
 case class PvDetail(uid: Long,
                     method: String,
-                    ctime: LocalDateTime)
+                    ctime: LocalDateTime,
+                    ipaddress: Option[String] = None)
 
 object PvDetail {
   implicit val PvDetailWrites: Writes[PvDetail] = (
     (JsPath \ "uid").write[Long] ~
     (JsPath \ "method").write[String] ~
-    (JsPath \ "ctime").write[LocalDateTime]
+    (JsPath \ "ctime").write[LocalDateTime] ~
+    (JsPath \ "ipaddress").writeNullable[String]
   )(unlift(PvDetail.unapply))
 
   implicit val PvDetailReads: Reads[PvDetail] = (
     (JsPath \ "uid").read[Long] ~
     (JsPath \ "method").read[String] ~
-    (JsPath \ "ctime").read[LocalDateTime]
+    (JsPath \ "ctime").read[LocalDateTime] ~
+    (JsPath \ "ipaddress").readNullable[String]
   )(PvDetail.apply _)
 }
