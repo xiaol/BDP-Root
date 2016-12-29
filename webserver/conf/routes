@@ -39,20 +39,20 @@ GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(n
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
-GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1)
-GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
+GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
 
-GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
-GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0)
+GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
 
 POST    /v2/ns/fed/ra               controllers.NewsRecommendController.refreshFeedWithAd()
 POST    /v2/ns/fed/la               controllers.NewsRecommendController.loadFeedWithAd()
 
-GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
-GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String])
+GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String], nid: Option[Long])
+GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String], nid: Option[Long])
 
-GET     /v2/ns/src/r                controllers.NewsController.refreshSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
-GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1)
+GET     /v2/ns/src/r                controllers.NewsController.refreshSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
+GET     /v2/ns/src/l                controllers.NewsController.loadSourceFeed(sid:Long, p:Long ?= 1, c:Long ?= 20, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
 
 # News from Elasticsearch
 GET     /v2/ns/es/s                 controllers.NewsSearchController.search(keywords: String, pn: Option[String],ch: Option[Long], uid:Option[Long], p:Int ?= 1, c:Int ?= 20)

@@ -13,7 +13,7 @@ import play.api.libs.json._
 trait JodaUtils {
   val timeFormat = DateTimeFormat.forPattern("HH:mm:ss")
   val dateFormat = DateTimeFormat.forPattern("yyyy-MM-dd")
-  val datetimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSS")
+  val datetimeFormat = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss")
 
   def getDateNow(): String = LocalDateTime.now.toString(dateFormat)
   def getTimeNow(): String = LocalDateTime.now.toString(timeFormat)

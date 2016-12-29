@@ -77,12 +77,27 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]
 
-  def refreshVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def refreshVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
+    val queryList = refreshByNid(nid)
+    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def loadVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  def loadVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
+    val queryList = loadByNid(nid)
+    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  private def refreshByNid(nid: Option[Long]) = {
+    nid match {
+      case Some(p) => videoList.filter(_.nid > nid)
+      case None    => videoList
+    }
+  }
+  private def loadByNid(nid: Option[Long]) = {
+    nid match {
+      case Some(p) => videoList.filter(_.nid < nid)
+      case None    => videoList
+    }
   }
 
   def findByNid(nid: Long): Future[Option[VideoRow]] = {

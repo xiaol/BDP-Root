@@ -29,7 +29,7 @@ import commons.utils.Base64Utils.decodeBase64
 class NewsRecommendController @Inject() (val userService: UserService, val newsRecommendService: NewsRecommendService, val videoService: VideoService, val newsService: NewsService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
-  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
+  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid, "NewsRecommendController.loadFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
     if (count > 14) {
@@ -40,14 +40,14 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
-      case _ => newsService.loadFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor).map {
+      case _ => newsService.loadFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
     }
   }
 
-  def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int) = Action.async { implicit request =>
+  def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid, "NewsRecommendController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
     if (count > 14) {
@@ -58,7 +58,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
-      case _ => newsService.refreshFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor).map {
+      case _ => newsService.refreshFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
       }
@@ -80,11 +80,11 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
             case _                                            => DataEmptyError(s"$requestParams")
           }
           //视频
-          case 42L => videoService.loadFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+          case 42L => videoService.loadFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }
-          case _ => newsService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+          case _ => newsService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }
@@ -107,11 +107,11 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
             case _                                            => DataEmptyError(s"$requestParams")
           }
           //视频
-          case 42L => videoService.refreshFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+          case 42L => videoService.refreshFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
             case _                                            => DataEmptyError(s"$requestParams")
           }
-          case _ => newsService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+          case _ => newsService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }

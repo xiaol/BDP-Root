@@ -26,10 +26,10 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[NewsService])
 trait INewsService {
   def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]]
-  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
-  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]]
-  def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
-  def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]]
+  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
   def insert(newsRow: NewsRow): Future[Option[Long]]
   def delete(nid: Long): Future[Option[Long]]
   def updateCollect(nid: Long, collect: Int): Future[Option[Int]]
@@ -73,10 +73,10 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByRecommends(page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByRecommends(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
-      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
+      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
+      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
       for {
         hots <- loadHotFO
         colds <- lostColdFO
@@ -92,10 +92,10 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsRecommendResponse]] = {
+  def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsRecommendResponse]] = {
     {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
-      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor))
+      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
+      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
       //人工推荐新闻,每个推荐等级依次一条条显示
       val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
       //取一条大图新闻,作为头条
@@ -120,11 +120,11 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByRecommends(page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByRecommends(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 2, newTimeCursor)
-      val refreshColdFO: Future[Seq[NewsRow]] = newsDAO.refreshByCold((page - 1) * count, count / 2, newTimeCursor)
+      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 2, newTimeCursor, nid)
+      val refreshColdFO: Future[Seq[NewsRow]] = newsDAO.refreshByCold((page - 1) * count, count / 2, newTimeCursor, nid)
       for {
         hots <- refreshHotFO
         colds <- refreshColdFO
@@ -140,10 +140,10 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     val result: Future[Seq[NewsRow]] = sechidOpt match {
-      case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
-      case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+      case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
+      case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
     }
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
@@ -159,12 +159,12 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
     val result: Future[Seq[NewsRow]] = sechidOpt match {
-      case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor)
-      case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
+      case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
+      case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
     }
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
@@ -180,11 +180,11 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
-        case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor))
+        case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
+        case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
       }
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
@@ -221,15 +221,15 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
       val date = new Date(timeCursor)
       val localDateTime = LocalDateTime.fromDateFields(date)
 
       val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor)
-        case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor)
+        case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
+        case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
       }
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
@@ -266,8 +266,8 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]] = {
-    newsDAO.loadByLocation((page - 1) * count, count, msecondsToDatetime(timeCursor), province, city, district).map {
+  def loadFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+    newsDAO.loadByLocation((page - 1) * count, count, msecondsToDatetime(timeCursor), province, city, district, nid).map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>
@@ -276,9 +276,9 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-    newsDAO.refreshByLocation((page - 1) * count, count, newTimeCursor, province, city, district).map {
+    newsDAO.refreshByLocation((page - 1) * count, count, newTimeCursor, province, city, district, nid).map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>
@@ -287,8 +287,8 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedBySource(source: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
-    newsDAO.loadBySource(source, (page - 1) * count, count, msecondsToDatetime(timeCursor)).map {
+  def loadFeedBySource(source: Long, page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+    newsDAO.loadBySource(source, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid).map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>
@@ -297,9 +297,9 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def refreshFeedBySource(source: Long, page: Long, count: Long, timeCursor: Long): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedBySource(source: Long, page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-    newsDAO.refreshBySource(source, (page - 1) * count, count, newTimeCursor).map {
+    newsDAO.refreshBySource(source, (page - 1) * count, count, newTimeCursor, nid).map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
     }.recover {
       case NonFatal(e) =>

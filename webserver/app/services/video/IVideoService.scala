@@ -26,18 +26,18 @@ import scala.util.control.NonFatal
  */
 @ImplementedBy(classOf[VideoService])
 trait IVideoService {
-  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
+  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
 }
 
 class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
-  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(chid, (page - 1) * count, count, newTimeCursor)
+      val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
@@ -68,11 +68,11 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     }
   }
 
-  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.loadVideoByChannel(chid, (page - 1) * count, count, newTimeCursor)
+      val result: Future[Seq[VideoRow]] = videoDAO.loadVideoByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {

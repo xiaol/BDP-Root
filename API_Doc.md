@@ -2374,6 +2374,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最大新闻ID                                |
 _Response_
 
 ```json
@@ -2430,6 +2431,7 @@ Host: bdp.deeporiginalx.com
 | t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最小新闻ID                                |
 
 ----
 #### 专题详情
@@ -2658,6 +2660,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最大视频ID                                |
 _Response_
 
 ```json
@@ -2716,6 +2719,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最小新闻ID                                |
 _Response_
 
 ```json

@@ -499,7 +499,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         }
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((count / 5).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).take(18)
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).take(count.toInt + 2)
       }
       val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
 
@@ -663,7 +663,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         hatePnameWithChid <- hateNews
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((level2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).filter { feed =>
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)

@@ -87,67 +87,67 @@ class NewsController @Inject() (val userService: UserService, val channelService
   }
 
   //AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
-  def loadFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+  def loadFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.loadFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     chid match {
-      case 1L => newsService.loadFeedByRecommends(page, count, tcursor).map {
+      case 1L => newsService.loadFeedByRecommends(page, count, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
-      case _ => newsService.loadFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor).map {
+      case _ => newsService.loadFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
     }
   }
 
-  def refreshFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+  def refreshFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.refreshFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     chid match {
-      case 1L => newsService.refreshFeedByRecommends(page, count, tcursor).map {
+      case 1L => newsService.refreshFeedByRecommends(page, count, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
-      case _ => newsService.refreshFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor).map {
+      case _ => newsService.refreshFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
       }
     }
   }
 
-  def loadLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = Action.async { implicit request =>
+  def loadLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(0, "NewsController.loadLocationFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     (province, city, district) match {
       case (None, None, None) => Future.successful(DataInvalidError("Not all location fields are empty"))
-      case _ => newsService.loadFeedByLocation(page, count, tcursor, province, city, district).map {
+      case _ => newsService.loadFeedByLocation(page, count, tcursor, province, city, district, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$page, $count, $tcursor, $province, $city, $district")
       }
     }
   }
 
-  def refreshLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String]) = Action.async { implicit request =>
+  def refreshLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(0, "NewsController.refreshLocationFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     (province, city, district) match {
       case (None, None, None) => Future.successful(DataInvalidError("Not all location fields are empty"))
-      case _ => newsService.refreshFeedByLocation(page, count, tcursor, province, city, district).map {
+      case _ => newsService.refreshFeedByLocation(page, count, tcursor, province, city, district, nid).map {
         case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
         case _                                            => DataEmptyError(s"$page, $count, $tcursor, $province, $city, $district")
       }
     }
   }
 
-  def loadSourceFeed(sid: Long, page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+  def loadSourceFeed(sid: Long, page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(0, "NewsController.loadSourceFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-    newsService.loadFeedBySource(sid, page, count, tcursor).map {
+    newsService.loadFeedBySource(sid, page, count, tcursor, nid).map {
       case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
       case _                                            => DataEmptyError(s"$sid, $page, $count, $tcursor")
     }
   }
 
-  def refreshSourceFeed(sid: Long, page: Long, count: Long, tcursor: Long, tmock: Int) = Action.async { implicit request =>
+  def refreshSourceFeed(sid: Long, page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(0, "NewsController.refreshSourceFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-    newsService.refreshFeedBySource(sid, page, count, tcursor).map {
+    newsService.refreshFeedBySource(sid, page, count, tcursor, nid).map {
       case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
       case _                                            => DataEmptyError(s"$sid, $page, $count, $tcursor")
     }
