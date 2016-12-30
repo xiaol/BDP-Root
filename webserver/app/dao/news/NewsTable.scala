@@ -2,6 +2,7 @@ package dao.news
 
 import javax.inject.{ Inject, Singleton }
 
+import dao.video.VideoTable
 import org.joda.time._
 import play.api.db.slick._
 import utils.MyPostgresDriver
@@ -72,7 +73,7 @@ object NewsDAO {
 }
 
 @Singleton
-class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with CollectTable with ConcernTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
+class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with CollectTable with ConcernTable with VideoTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import driver.api._
   import NewsDAO._
 
@@ -82,6 +83,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   val collectList = TableQuery[CollectTable]
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]
+  val videoList = TableQuery[VideoTable]
 
   def findByNid(nid: Long): Future[Option[NewsRow]] = {
     db.run(newsList.filter(_.nid === nid).result.headOption)
@@ -243,6 +245,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   }
 
   def updateComment(docid: String, comment: Int): Future[Option[Int]] = {
+    //有可能是对新闻评论,也有可能是对视频评论,由于新闻和视频不在同一张表,所以都要查
     val queryComment = newsList.filter(_.docid === docid).map(_.comment)
     val commentOpt: Future[Option[Int]] = db.run(queryComment.result.headOption)
     commentOpt.flatMap {
@@ -250,7 +253,16 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
         case 0 => None
         case _ => Some(c + comment)
       })
-      case _ => Future.successful(None)
+      case _ =>
+        val queryCommentvideo = videoList.filter(_.docid === docid).map(_.comment)
+        val commentvideoOpt: Future[Option[Int]] = db.run(queryCommentvideo.result.headOption)
+        commentvideoOpt.flatMap {
+          case Some(c) => db.run(queryCommentvideo.update(c + comment).map {
+            case 0 => None
+            case _ => Some(c + comment)
+          })
+          case _ => Future.successful(None)
+        }
     }
   }
 }

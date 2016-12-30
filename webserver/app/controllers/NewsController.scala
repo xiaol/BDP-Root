@@ -16,7 +16,7 @@ import services.community.ASearchService
 import scala.concurrent.{ ExecutionContext, Future }
 import commons.utils.Base64Utils.decodeBase64
 import commons.models.channels.{ ChannelResponse, ChannelRow }
-import commons.models.community.ASearchRow
+import commons.models.community.{ ASearch, ASearchRow }
 import commons.models.news._
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
@@ -79,9 +79,10 @@ class NewsController @Inject() (val userService: UserService, val channelService
     detail.copy(content = Json.toJson(list))
   }
 
-  def listASearch(nid: Long, page: Long, count: Long) = Action.async { implicit request =>
+  def listASearch(nid: Long, page: Long, count: Long, s: Int) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(0, "NewsController.listASearch", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     aSearchService.listByRefer(nid.toString, page, count).map {
-      case searchs: Seq[ASearchRow] if searchs.nonEmpty => ServerSucced(searchs.map(_.asearch))
+      case searchs: Seq[ASearchRow] if searchs.nonEmpty => ServerSucced(if (s == 1) https(searchs.map(_.asearch)) else searchs.map(_.asearch))
       case _                                            => DataEmptyError(s"$nid")
     }
   }
@@ -161,29 +162,29 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def listCommentCommon(did: String, uid: Option[Long], page: Long, count: Long) = Action.async { implicit request =>
+  def listCommentCommon(did: String, uid: Option[Long], page: Long, count: Long, s: Int) = Action.async { implicit request =>
     uid match {
       case Some(uuid) =>
         commentService.listByDocidAndUid(decodeBase64(did), uuid, page, count).map {
-          case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(cs)
+          case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(if (s == 1) https1(cs) else cs)
           case _                                       => DataEmptyError(s"$did, $page, $count")
         }
       case None =>
         commentService.listByDocid(decodeBase64(did), page, count).map {
-          case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(cs)
+          case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(if (s == 1) https1(cs) else cs)
           case _                                       => DataEmptyError(s"$did, $page, $count")
         }
     }
   }
 
-  def listCommentHot(did: String, uid: Option[Long], page: Long, count: Long) = Action.async { implicit request =>
+  def listCommentHot(did: String, uid: Option[Long], page: Long, count: Long, s: Int) = Action.async { implicit request =>
     uid match {
       case Some(uuid) => commentService.listByDocidAndUidHot(decodeBase64(did), uuid, page, count).map {
-        case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(cs)
+        case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(if (s == 1) https1(cs) else cs)
         case _                                       => DataEmptyError(s"$did, $uid, $page, $count")
       }
       case None => commentService.listByDocidHot(decodeBase64(did), page, count).map {
-        case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(cs)
+        case cs: Seq[CommentResponse] if cs.nonEmpty => ServerSucced(if (s == 1) https1(cs) else cs)
         case _                                       => DataEmptyError(s"$did, $uid, $page, $count")
       }
     }
@@ -195,5 +196,35 @@ class NewsController @Inject() (val userService: UserService, val channelService
       case Right(newsFeedWithPublisherResponse) => ServerSucced(newsFeedWithPublisherResponse)
       case Left(exceptionMessage)               => ServerFailure(exceptionMessage)
     }
+  }
+
+  //http改https
+  final private def https(aSearch: Seq[ASearch]): Seq[ASearch] = {
+    aSearch.map { aSearch =>
+      aSearch.img match {
+        case Some(imag: String) => aSearch.copy(img = Some(https(imag)))
+        case None               => aSearch
+      }
+    }
+  }
+
+  final private def https(imag: String): String = {
+    imag.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com").replace("http://bdp-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com")
+  }
+
+  final private def https1(comment: Seq[CommentResponse]): Seq[CommentResponse] = {
+    comment.map { comment =>
+      comment.avatar match {
+        case Some(imag: String) => comment.copy(avatar = Some(https1(imag)))
+        case None               => comment
+      }
+    }
+  }
+
+  final private def https1(imag: String): String = {
+    if (imag.indexOf("http://pro-pic.deeporiginalx.com") == 0 || imag.indexOf("http://bdp-pic.deeporiginalx.com") == 0)
+      imag.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com").replace("http://bdp-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com")
+    else
+      imag.replace("http", "https")
   }
 }

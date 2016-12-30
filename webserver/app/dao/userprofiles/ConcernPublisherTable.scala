@@ -101,7 +101,7 @@ class ConcernPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseCon
   private val loadNewsByConcernedPublishersCompiled = Compiled(loadNewsByConcernedPublishersAction _)
 
   def loadNewsByConcernedPublishers(uid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    val timeWindow: LocalDateTime = timeCursor.plusDays(-30)
+    val timeWindow: LocalDateTime = timeCursor.plusDays(-7)
     db.run(loadNewsByConcernedPublishersCompiled(uid, offset, limit, timeCursor, timeWindow).result).map {
       case ns: Seq[Option[NewsRow]] => ns.filter(_.isDefined).map(_.get)
     }

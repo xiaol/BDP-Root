@@ -150,7 +150,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
   }
 
   final private def https(imags: List[String]): List[String] = {
-    imags.map { url => url.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com") }
+    imags.map { url => url.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com").replace("http://bdp-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com") }
   }
 
   //  implicit val rds = (

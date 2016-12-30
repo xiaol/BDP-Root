@@ -36,7 +36,7 @@ GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Lo
 GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(nid:Long, uid:Option[Long])
 
 #GET     /v2/ns/con/com              ???
-GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20)
+GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
 GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
@@ -65,8 +65,8 @@ GET     /v2/nsr/l                   controllers.NewsSearchController.listNewsByR
 GET     /v2/nsr/es/l                controllers.NewsSearchController.listNewsBySearch(keywords: String, pn: Option[String],ch: Option[Long], p:Int ?= 1, c:Int ?= 20)
 
 # Base64.encode(did)
-GET     /v2/ns/coms/c               controllers.NewsController.listCommentCommon(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 20)
-GET     /v2/ns/coms/h               controllers.NewsController.listCommentHot(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 5)
+GET     /v2/ns/coms/c               controllers.NewsController.listCommentCommon(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)
+GET     /v2/ns/coms/h               controllers.NewsController.listCommentHot(did:String, uid:Option[Long], p:Long ?= 1, c:Long ?= 5, s:Int ?= 0)
 POST    /v2/ns/coms                 controllers.UserProfileController.addComment()
 #其他系统插入评论接口
 POST    /v2/ns/coms/add             controllers.UserProfileController.addCommentOut()
@@ -80,7 +80,7 @@ DELETE  /v2/ns/cols                 controllers.UserProfileController.remCollect
 POST    /v2/ns/cocs                 controllers.UserProfileController.addConcerns(nid:Long,uid:Long)
 DELETE  /v2/ns/cocs                 controllers.UserProfileController.remConcerns(nid:Long,uid:Long)
 
-GET     /v2/ns/au/coms              controllers.UserProfileController.listComments(uid:Long,p:Long ?= 1, c:Long ?= 20)
+GET     /v2/ns/au/coms              controllers.UserProfileController.listComments(uid:Long,p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)
 DELETE  /v2/ns/au/coms              controllers.UserProfileController.remComment(cid:Long,did:String)
 
 GET     /v2/ns/au/cols              controllers.UserProfileController.listCollects(uid:Long,p:Long ?= 1, c:Long ?= 20)
