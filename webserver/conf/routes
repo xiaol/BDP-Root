@@ -151,6 +151,7 @@ GET     /v2/persist/:msg                     controllers.PersistanceController.t
 
 #insert apps
 POST    /v2/au/app                  controllers.UserProfilesAppController.insert()
+POST    /v2/au/phone                controllers.UserProfilesAppController.phone()
 
 #记录转发、不感兴趣日志
 POST    /v2/ns/replay               controllers.UserProfileController.addRelay()

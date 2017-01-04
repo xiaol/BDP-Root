@@ -3,10 +3,13 @@ package services.userprofiles
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
+import commons.models.advertisement.{ Device, AdRequest }
 import commons.models.userprofiles._
+import dao.userprofiles.UserDeviceDAO
 import dao.users.{ AppInfoDAO, UserProfilesInfoDAO }
 import org.joda.time.LocalDateTime
 import play.api.Logger
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,7 +26,7 @@ trait IUserProfileService {
   def delete(uid: Long): Future[Option[Long]]
 }
 
-class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, val appInfoDAO: AppInfoDAO)
+class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, val appInfoDAO: AppInfoDAO, val userDeviceDAO: UserDeviceDAO)
     extends IUserProfileService {
 
   def insert(userProfiles: UserProfiles): Future[Long] = {
@@ -44,6 +47,21 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
         Logger.error(s"Within UserProfileService.delete($uid): ${e.getMessage}")
         None
     }
+  }
+
+  def phone(uid: Long, body: String): Future[Long] = {
+    val adRequest: AdRequest = Json.parse(body).as[AdRequest]
+    val device: Device = adRequest.device
+    userDeviceDAO.findByuid(uid.toString).map {
+      _ match {
+        case None => userDeviceDAO.insert(UserDevice.from(device, uid)).map { uid => uid.toLong }
+        case _    =>
+      }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within UserProfileService.phone($uid): ${e.getMessage}")
+    }
+    Future.successful(uid)
   }
 
 }

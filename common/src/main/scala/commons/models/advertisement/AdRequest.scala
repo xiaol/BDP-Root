@@ -136,3 +136,16 @@ object Device {
     (JsPath \ "screen_orientation").readNullable[String]
   )(Device.apply _)
 }
+
+case class Phone(uid: Long, b: String)
+object Phone {
+  implicit val PhoneWrites: Writes[Phone] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "b").write[String]
+  )(unlift(Phone.unapply))
+
+  implicit val PhoneReads: Reads[Phone] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "b").read[String]
+  )(Phone.apply _)
+}

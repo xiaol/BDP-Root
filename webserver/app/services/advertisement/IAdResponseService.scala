@@ -43,7 +43,6 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
           userDeviceDAO.findByuid(uid.toString).map {
             _ match {
               case None =>
-                println(UserDevice.from(device, uid))
                 userDeviceDAO.insert(UserDevice.from(device, uid))
               case _ =>
             }

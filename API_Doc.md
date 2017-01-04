@@ -14,6 +14,7 @@
 3. 频道加载加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
 4. 添加接口:
 	视频频道(刷新)， 视频频道(加载)， 视频详情页
+5. 添加接口(每次启动应用时调用): 用户手机信息(广告)
 
 *V3.3:*
 
@@ -2569,6 +2570,34 @@ Content-Type: application/json
 {
   "code": 2000,
   "data": 634788
+}
+```
+
+
+----
+#### 用户手机信息(广告)
+
+_Request_
+
+```json
+POST /v2/au/phone
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 634788   --uid
 }
 ```
 
