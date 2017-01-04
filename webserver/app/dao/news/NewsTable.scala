@@ -57,10 +57,11 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def plog = column[Option[JsValue]]("plog")
     def sechid = column[Option[Long]]("sechid")
     def icon = column[Option[String]]("icon")
+    def rtype = column[Option[Int]]("rtype")
 
     def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
-    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
+    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, rtype) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsRow.apply _).tupled, NewsRow.unapply)
   }
 }
@@ -79,7 +80,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
 
   type NewsTableQuery = Query[NewsTable, NewsTable#TableElementType, Seq]
 
-  val newsList = TableQuery[NewsTable]
+  val newsList = TableQuery[NewsTable].filter(_.rtype.isEmpty)
   val collectList = TableQuery[CollectTable]
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]

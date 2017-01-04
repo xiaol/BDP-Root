@@ -135,7 +135,7 @@ object NewsFeedResponse {
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
       base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      base.tags, base.province, base.city, base.district, Some(6), None, syst.icon, Some(base.videourl), Some(syst.thumbnail))
+      base.tags, base.province, base.city, base.district, Some(6), None, syst.icon, syst.videourl, syst.thumbnail)
   }
 
   def from(creative: Creative): NewsFeedResponse = {
@@ -264,7 +264,7 @@ object NewsDetailsResponse {
     } else if (commentnum > 200) {
       commentnum = commentnum * 61
     }
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, Some(base.videourl), Some(syst.thumbnail))
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, syst.videourl, syst.thumbnail)
   }
 }
 

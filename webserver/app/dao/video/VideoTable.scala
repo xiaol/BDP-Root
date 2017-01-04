@@ -15,11 +15,10 @@ import commons.utils.JodaOderingImplicits
 trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
   import driver.api._
 
-  class VideoTable(tag: Tag) extends Table[VideoRow](tag, "videolist") {
+  class VideoTable(tag: Tag) extends Table[VideoRow](tag, "newslist_v2") {
 
     def nid = column[Long]("nid", O.PrimaryKey, O.AutoInc)
     def url = column[String]("url")
-    def videourl = column[String]("videourl")
     def docid = column[String]("docid")
     def title = column[String]("title")
     def content = column[JsValue]("content")
@@ -52,11 +51,14 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def plog = column[Option[JsValue]]("plog")
     def sechid = column[Option[Long]]("sechid")
     def icon = column[Option[String]]("icon")
-    def thumbnail = column[String]("thumbnail")
+    def videourl = column[Option[String]]("videourl")
+    def thumbnail = column[Option[String]]("thumbnail")
+    def duration = column[Option[Int]]("duration")
+    def rtype = column[Option[Int]]("rtype")
 
-    def base = (nid.?, url, videourl, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((VideoRowBase.apply _).tupled, VideoRowBase.unapply)
+    def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((VideoRowBase.apply _).tupled, VideoRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((VideoRowIncr.apply _).tupled, VideoRowIncr.unapply)
-    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, thumbnail) <> ((VideoRowSyst.apply _).tupled, VideoRowSyst.unapply)
+    def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, videourl, thumbnail, duration, rtype) <> ((VideoRowSyst.apply _).tupled, VideoRowSyst.unapply)
     def * = (base, incr, syst) <> ((VideoRow.apply _).tupled, VideoRow.unapply)
   }
 }
@@ -72,7 +74,7 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
 
   type VideoTableQuery = Query[VideoTable, VideoTable#TableElementType, Seq]
 
-  val videoList = TableQuery[VideoTable]
+  val videoList = TableQuery[VideoTable].filter(_.rtype === 6)
   val collectList = TableQuery[CollectTable]
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]

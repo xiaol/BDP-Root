@@ -108,7 +108,8 @@ case class NewsRowSyst(
   srstate: Int,
   pconf: Option[JsValue] = None,
   plog: Option[JsValue] = None,
-  icon: Option[String] = None)
+  icon: Option[String] = None,
+  rtype: Option[Int] = None)
 
 object NewsRowSyst {
   implicit val NewsRowSystWrites: Writes[NewsRowSyst] = (
@@ -120,7 +121,8 @@ object NewsRowSyst {
     (JsPath \ "srstate").write[Int] ~
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "plog").writeNullable[JsValue] ~
-    (JsPath \ "icon").writeNullable[String]
+    (JsPath \ "icon").writeNullable[String] ~
+    (JsPath \ "rtype").writeNullable[Int]
   )(unlift(NewsRowSyst.unapply))
 
   implicit val NewsRowSystReads: Reads[NewsRowSyst] = (
@@ -132,7 +134,8 @@ object NewsRowSyst {
     (JsPath \ "srstate").read[Int] ~
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "plog").readNullable[JsValue] ~
-    (JsPath \ "icon").readNullable[String]
+    (JsPath \ "icon").readNullable[String] ~
+    (JsPath \ "rtype").readNullable[Int]
   )(NewsRowSyst.apply _)
 }
 

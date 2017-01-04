@@ -8,7 +8,6 @@ import play.api.libs.json._
 case class VideoRowBase(
   nid: Option[Long] = None,
   url: String,
-  videourl: String,
   docid: String,
   title: String,
   content: JsValue,
@@ -27,7 +26,6 @@ object VideoRowBase {
   implicit val VideoRowBaseWrites: Writes[VideoRowBase] = (
     (JsPath \ "nid").writeNullable[Long] ~
     (JsPath \ "url").write[String] ~
-    (JsPath \ "videourl").write[String] ~
     (JsPath \ "docid").write[String] ~
     (JsPath \ "title").write[String] ~
     (JsPath \ "content").write[JsValue] ~
@@ -46,7 +44,6 @@ object VideoRowBase {
   implicit val VideoRowBaseReads: Reads[VideoRowBase] = (
     (JsPath \ "nid").readNullable[Long] ~
     (JsPath \ "url").read[String] ~
-    (JsPath \ "videourl").read[String] ~
     (JsPath \ "docid").read[String] ~
     (JsPath \ "title").read[String] ~
     (JsPath \ "content").read[JsValue] ~
@@ -107,7 +104,10 @@ case class VideoRowSyst(
   pconf: Option[JsValue] = None,
   plog: Option[JsValue] = None,
   icon: Option[String] = None,
-  thumbnail: String)
+  videourl: Option[String] = None,
+  thumbnail: Option[String] = None,
+  duration: Option[Int] = None,
+  rtype: Option[Int] = None)
 
 object VideoRowSyst {
   implicit val VideoRowSystWrites: Writes[VideoRowSyst] = (
@@ -120,7 +120,10 @@ object VideoRowSyst {
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "plog").writeNullable[JsValue] ~
     (JsPath \ "icon").writeNullable[String] ~
-    (JsPath \ "thumbnail").write[String]
+    (JsPath \ "videourl").writeNullable[String] ~
+    (JsPath \ "thumbnail").writeNullable[String] ~
+    (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "rtype").writeNullable[Int]
   )(unlift(VideoRowSyst.unapply))
 
   implicit val VideoRowSystReads: Reads[VideoRowSyst] = (
@@ -133,7 +136,10 @@ object VideoRowSyst {
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "plog").readNullable[JsValue] ~
     (JsPath \ "icon").readNullable[String] ~
-    (JsPath \ "thumbnail").read[String]
+    (JsPath \ "videourl").readNullable[String] ~
+    (JsPath \ "thumbnail").readNullable[String] ~
+    (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "rtype").readNullable[Int]
   )(VideoRowSyst.apply _)
 }
 

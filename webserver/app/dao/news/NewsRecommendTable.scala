@@ -70,7 +70,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
   val newsRecommendForUserList = TableQuery[NewsRecommendForUserTable]
   val newsRecommendHotList = TableQuery[NewsRecommendHotTable]
-  val newsList = TableQuery[NewsTable]
+  val newsList = TableQuery[NewsTable].filter(_.rtype.isEmpty)
   val concernPubList = TableQuery[ConcernPublisherTable]
   val publisherList = TableQuery[NewsPublisherTable]
   val newsClickList = TableQuery[NewsClickTable]
