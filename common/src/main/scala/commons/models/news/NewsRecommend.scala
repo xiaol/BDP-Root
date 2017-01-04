@@ -49,9 +49,9 @@ case class NewsRecommendResponse(
   comment: Int,
   style: Int,
   imgs: Option[List[String]] = None,
-  province: Option[String] = None,
-  city: Option[String] = None,
-  district: Option[String] = None,
+  //  province: Option[String] = None,
+  //  city: Option[String] = None,
+  //  district: Option[String] = None,
 
   rtime: Option[LocalDateTime] = None,
   level: Option[Double] = None,
@@ -77,9 +77,9 @@ object NewsRecommendResponse {
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "style").write[Int] ~
     (JsPath \ "imgs").writeNullable[List[String]] ~
-    (JsPath \ "province").writeNullable[String] ~
-    (JsPath \ "city").writeNullable[String] ~
-    (JsPath \ "district").writeNullable[String] ~
+    //    (JsPath \ "province").writeNullable[String] ~
+    //    (JsPath \ "city").writeNullable[String] ~
+    //    (JsPath \ "district").writeNullable[String] ~
 
     (JsPath \ "rtime").writeNullable[LocalDateTime] ~
     (JsPath \ "level").writeNullable[Double] ~
@@ -104,9 +104,9 @@ object NewsRecommendResponse {
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "style").read[Int] ~
     (JsPath \ "imgs").readNullable[List[String]] ~
-    (JsPath \ "province").readNullable[String] ~
-    (JsPath \ "city").readNullable[String] ~
-    (JsPath \ "district").readNullable[String] ~
+    //    (JsPath \ "province").readNullable[String] ~
+    //    (JsPath \ "city").readNullable[String] ~
+    //    (JsPath \ "district").readNullable[String] ~
 
     (JsPath \ "rtime").readNullable[LocalDateTime] ~
     (JsPath \ "level").readNullable[Double] ~
@@ -118,10 +118,11 @@ object NewsRecommendResponse {
   )(NewsRecommendResponse.apply _)
 
   def from(newsFeedResponse: NewsFeedResponse): NewsRecommendResponse = {
-    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district)
+    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs) //, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district)
   }
   def from(newsFeedResponse: NewsFeedResponse, newsRecommend: NewsRecommend): NewsRecommendResponse = {
-    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district, newsRecommend.rtime, newsRecommend.level, newsRecommend.bigimg, newsRecommend.status)
+    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, //newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district,
+      newsRecommend.rtime, newsRecommend.level, newsRecommend.bigimg, newsRecommend.status)
   }
 }
 

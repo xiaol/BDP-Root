@@ -27,7 +27,7 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def ptime = column[LocalDateTime]("ptime")
     def pname = column[Option[String]]("pname")
     def purl = column[Option[String]]("purl")
-    def descr = column[Option[String]]("icon")
+    def descr = column[Option[String]]("descr")
     def tags = column[Option[List[String]]]("tags")
     def province = column[Option[String]]("province")
     def city = column[Option[String]]("city")
@@ -64,7 +64,7 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 object VideoDAO {
-  final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-7)
+  final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-1)
 }
 
 @Singleton

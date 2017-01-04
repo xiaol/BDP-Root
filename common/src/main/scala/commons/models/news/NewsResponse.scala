@@ -30,14 +30,15 @@ case class NewsFeedResponse(
   style: Int,
   imgs: Option[List[String]] = None,
   tags: Option[List[String]] = None,
-  province: Option[String] = None,
-  city: Option[String] = None,
-  district: Option[String] = None,
+  //  province: Option[String] = None,
+  //  city: Option[String] = None,
+  //  district: Option[String] = None,
   rtype: Option[Int] = None,
   adimpression: Option[List[String]] = None,
   icon: Option[String] = None,
   videourl: Option[String] = None,
-  thumbnail: Option[String] = None)
+  thumbnail: Option[String] = None,
+  duration: Option[Int] = None)
 
 object NewsFeedResponse {
 
@@ -67,14 +68,15 @@ object NewsFeedResponse {
     (JsPath \ "style").write[Int] ~
     (JsPath \ "imgs").writeNullable[List[String]] ~
     (JsPath \ "tags").writeNullable[List[String]] ~
-    (JsPath \ "province").writeNullable[String] ~
-    (JsPath \ "city").writeNullable[String] ~
-    (JsPath \ "district").writeNullable[String] ~
+    //    (JsPath \ "province").writeNullable[String] ~
+    //    (JsPath \ "city").writeNullable[String] ~
+    //    (JsPath \ "district").writeNullable[String] ~
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "adimpression").writeNullable[List[String]] ~
     (JsPath \ "icon").writeNullable[String] ~
     (JsPath \ "videourl").writeNullable[String] ~
-    (JsPath \ "thumbnail").writeNullable[String]
+    (JsPath \ "thumbnail").writeNullable[String] ~
+    (JsPath \ "duration").writeNullable[Int]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -92,14 +94,15 @@ object NewsFeedResponse {
     (JsPath \ "style").read[Int] ~
     (JsPath \ "imgs").readNullable[List[String]] ~
     (JsPath \ "tags").readNullable[List[String]] ~
-    (JsPath \ "province").readNullable[String] ~
-    (JsPath \ "city").readNullable[String] ~
-    (JsPath \ "district").readNullable[String] ~
+    //    (JsPath \ "province").readNullable[String] ~
+    //    (JsPath \ "city").readNullable[String] ~
+    //    (JsPath \ "district").readNullable[String] ~
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "adimpression").readNullable[List[String]] ~
     (JsPath \ "icon").readNullable[String] ~
     (JsPath \ "videourl").readNullable[String] ~
-    (JsPath \ "thumbnail").readNullable[String]
+    (JsPath \ "thumbnail").readNullable[String] ~
+    (JsPath \ "duration").readNullable[Int]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {
@@ -117,7 +120,8 @@ object NewsFeedResponse {
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
       base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      base.tags, base.province, base.city, base.district, None, None, syst.icon)
+      base.tags, //base.province, base.city, base.district,
+      None, None, syst.icon)
   }
 
   def from(videoRow: VideoRow): NewsFeedResponse = {
@@ -135,7 +139,8 @@ object NewsFeedResponse {
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
       base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      base.tags, base.province, base.city, base.district, Some(6), None, syst.icon, syst.videourl, syst.thumbnail)
+      base.tags, //base.province, base.city, base.district,
+      Some(6), None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
   }
 
   def from(creative: Creative): NewsFeedResponse = {
@@ -157,7 +162,8 @@ object NewsFeedResponse {
     }
     val title: String = ad_native.filter(_.required_field.get == 1).head.required_value.getOrElse("")
 
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs, None, None, None, None, Some(3), creative.impression)
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs, None, //None, None, None,
+      Some(3), creative.impression)
   }
 
   def from(topic: TopicList): NewsFeedResponse = {
@@ -165,7 +171,8 @@ object NewsFeedResponse {
       case 1 => 41 //置顶
       case _ => 4 //普通专题
     }
-    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), None, None, None, None, Some(rtype))
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), None, //None, None, None,
+      Some(rtype))
   }
 }
 

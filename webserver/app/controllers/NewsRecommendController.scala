@@ -75,7 +75,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
           newcount = 14
         }
         requestParams.cid match {
-          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+          case 1L => newsRecommendService.loadFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP"), requestParams.v).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }
@@ -102,7 +102,7 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
           newcount = 14
         }
         requestParams.cid match {
-          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP")).map {
+          case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP"), requestParams.v).map {
             case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
             case _                                            => DataEmptyError(s"$requestParams")
           }

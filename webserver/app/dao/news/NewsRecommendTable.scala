@@ -3,7 +3,9 @@ package dao.news
 import javax.inject.{ Inject, Singleton }
 
 import commons.models.news._
+import commons.models.video.VideoRow
 import dao.userprofiles.ConcernPublisherTable
+import dao.video.VideoTable
 import org.joda.time._
 import play.api.db.slick._
 import utils.MyPostgresDriver
@@ -48,18 +50,21 @@ trait NewsRecommendAPPTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 object NewsRecommendDAO {
-  final private val newstimeWindow: Int = -7 //只从近7天的新闻中取
+  final private val newstimeWindow: Int = -3 //只从近7天的新闻中取
   final private val recommendtimeWindow: Int = -3 //只从近3天系统推荐的新闻
   final private val newsrecommendtimeWindow: Int = -24 //只取近24小时人工推荐的新闻
   final private val newsWindow: Int = -6 //没新闻的时候,主要是6小时内没看过的新闻都可以
   final private val shieldedCid: Long = 28L // 本地频道
   final private val panemFilterSet = Set("就是逗你笑", "bomb01")
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
+  final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-1)
 }
 
 @Singleton
 class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable with NewsRecommendHotTable with ConcernPublisherTable with NewsPublisherTable with NewsClickTable with NewsRecommendLikeTable
+    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable
+    with NewsRecommendHotTable with ConcernPublisherTable with NewsPublisherTable with NewsClickTable with NewsRecommendLikeTable
+    with VideoTable
     with HasDatabaseConfigProvider[MyPostgresDriver] {
 
   import driver.api._
@@ -75,6 +80,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val publisherList = TableQuery[NewsPublisherTable]
   val newsClickList = TableQuery[NewsClickTable]
   val newsRecommendLikeList = TableQuery[NewsRecommendLikeTable]
+  val videoList = TableQuery[VideoTable].filter(_.rtype === 6)
 
   def insert(newsRecommend: NewsRecommend): Future[Long] = {
     db.run(newsRecommendList returning newsRecommendList.map(_.nid) += newsRecommend)
@@ -309,6 +315,14 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
 
   def refreshByLike(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendLikeList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+  }
+
+  def refreshVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[VideoRow]] = {
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  }
+
+  def loadVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[VideoRow]] = {
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
 }

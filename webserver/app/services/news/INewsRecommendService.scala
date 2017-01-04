@@ -6,6 +6,7 @@ import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
 import commons.models.news.{ NewsRecommendResponse, _ }
+import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
@@ -438,7 +439,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  def loadFeedWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String], v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
     {
       val level1 = count / 2
       val level2 = count / 5
@@ -457,6 +458,10 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val refreshBigImgFO5: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg5(uid, 0, level4)
       val refreshBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, level4)
 
+      val videoFO: Future[Seq[VideoRow]] = v match {
+        case Some(1) => newsRecommendDAO.loadVideo((page - 1) * count, level4, msecondsToDatetime(timeCursor), uid)
+        case _       => Future.successful(Seq[VideoRow]())
+      }
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val r: Future[Seq[NewsFeedResponse]] = for {
@@ -497,9 +502,10 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
             }
           }
         }
+        video <- videoFO.map { case newsRow: Seq[VideoRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).take(count.toInt + 2)
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: video ++: (moderRecommend ++: peopleRecommend ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).take(count.toInt + 2)
       }
       val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
 
@@ -560,8 +566,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
     }
   }
 
-  //加上广告
-  def refreshFeedWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String], v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
@@ -610,6 +615,11 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
       //感兴趣新闻,收藏、关心、关注、转发、搜索
       val refreshByLikeFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByLike((page - 1) * count, level4, newTimeCursor, uid)
+
+      val videoFO: Future[Seq[VideoRow]] = v match {
+        case Some(1) => newsRecommendDAO.refreshVideo((page - 1) * count, level4, newTimeCursor, uid)
+        case _       => Future.successful(Seq[VideoRow]())
+      }
 
       val body: String = adbody
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(body, remoteAddress, uid)
@@ -661,16 +671,19 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         }
         topics <- topicsFO.map { case seq: Seq[TopicList] => seq.map { topic => NewsFeedResponse.from(topic) } }
         hatePnameWithChid <- hateNews
+        video <- videoFO.map { case newsRow: Seq[VideoRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt) ++: commons).filter { feed =>
-          var flag = true
-          hatePnameWithChid.foreach { news =>
-            if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)
-              flag = false
-          }
-          flag
-        }.take(count.toInt + 2)
+        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(level4) ++: level5 ++: topics ++: ad
+          ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: video ++: (moderRecommend ++: peopleRecommend ++: refreshByLike ++: refreshByClick ++: recommends).take(count.toInt)
+          ++: commons).filter { feed =>
+            var flag = true
+            hatePnameWithChid.foreach { news =>
+              if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2")) && news.syst.chid == feed.channel)
+                flag = false
+            }
+            flag
+          }.take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
