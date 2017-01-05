@@ -109,7 +109,10 @@ case class NewsRowSyst(
   pconf: Option[JsValue] = None,
   plog: Option[JsValue] = None,
   icon: Option[String] = None,
-  rtype: Option[Int] = None)
+  rtype: Option[Int] = None,
+  videourl: Option[String] = None,
+  thumbnail: Option[String] = None,
+  duration: Option[Int] = None)
 
 object NewsRowSyst {
   implicit val NewsRowSystWrites: Writes[NewsRowSyst] = (
@@ -122,7 +125,10 @@ object NewsRowSyst {
     (JsPath \ "pconf").writeNullable[JsValue] ~
     (JsPath \ "plog").writeNullable[JsValue] ~
     (JsPath \ "icon").writeNullable[String] ~
-    (JsPath \ "rtype").writeNullable[Int]
+    (JsPath \ "rtype").writeNullable[Int] ~
+    (JsPath \ "videourl").writeNullable[String] ~
+    (JsPath \ "thumbnail").writeNullable[String] ~
+    (JsPath \ "duration").writeNullable[Int]
   )(unlift(NewsRowSyst.unapply))
 
   implicit val NewsRowSystReads: Reads[NewsRowSyst] = (
@@ -135,7 +141,10 @@ object NewsRowSyst {
     (JsPath \ "pconf").readNullable[JsValue] ~
     (JsPath \ "plog").readNullable[JsValue] ~
     (JsPath \ "icon").readNullable[String] ~
-    (JsPath \ "rtype").readNullable[Int]
+    (JsPath \ "rtype").readNullable[Int] ~
+    (JsPath \ "videourl").readNullable[String] ~
+    (JsPath \ "thumbnail").readNullable[String] ~
+    (JsPath \ "duration").readNullable[Int]
   )(NewsRowSyst.apply _)
 }
 

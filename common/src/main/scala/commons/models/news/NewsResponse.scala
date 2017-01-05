@@ -121,7 +121,7 @@ object NewsFeedResponse {
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
       base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
       base.tags, //base.province, base.city, base.district,
-      syst.rtype, None, syst.icon)
+      syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
   }
 
   def from(videoRow: VideoRow): NewsFeedResponse = {
