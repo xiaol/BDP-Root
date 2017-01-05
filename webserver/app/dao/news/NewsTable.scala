@@ -80,7 +80,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
 
   type NewsTableQuery = Query[NewsTable, NewsTable#TableElementType, Seq]
 
-  val newsList = TableQuery[NewsTable].filter(_.rtype.isEmpty)
+  val newsList = TableQuery[NewsTable]
   val collectList = TableQuery[CollectTable]
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]
