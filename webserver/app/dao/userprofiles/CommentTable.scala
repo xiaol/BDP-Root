@@ -51,16 +51,16 @@ class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
     db.run(commentList.filter(_.uid === uid).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def listByUidWithNewsInfo(uid: Long, offset: Long, limit: Long): Future[Seq[(CommentRow, Long, String)]] = {
+  def listByUidWithNewsInfo(uid: Long, offset: Long, limit: Long): Future[Seq[(CommentRow, Long, String, Option[Int])]] = {
     val joinQuery = for {
       (comment, news) <- commentList.filter(_.uid === uid).sortBy(_.ctime.desc).drop(offset).take(limit)
         .joinLeft(newsList).on(_.docid === _.docid)
-    } yield (comment, news.map(_.nid), news.map(_.title))
+    } yield (comment, news.map(_.nid), news.map(_.title), news.map(_.rtype))
 
     for (pairs <- db.run(joinQuery.result)) yield {
       for (pair <- pairs) yield {
         pair match {
-          case (comment, nids, titles) => (comment, nids.get, titles.get)
+          case (comment, nids, titles, rtype) => (comment, nids.get, titles.get, rtype.get)
         }
       }
     }

@@ -59,7 +59,9 @@ case class ASearch(
   pname: String,
   ptime: LocalDateTime,
   img: Option[String] = None,
-  abs: Option[String] = None)
+  abs: Option[String] = None,
+  nid: Option[Long] = None,
+  duration: Option[Int] = None)
 
 object ASearch {
   implicit val ASearchWrites: Writes[ASearch] = (
@@ -70,7 +72,9 @@ object ASearch {
     (JsPath \ "pname").write[String] ~
     (JsPath \ "ptime").write[LocalDateTime] ~
     (JsPath \ "img").writeNullable[String] ~
-    (JsPath \ "abs").writeNullable[String]
+    (JsPath \ "abs").writeNullable[String] ~
+    (JsPath \ "nid").writeNullable[Long] ~
+    (JsPath \ "duration").writeNullable[Int]
   )(unlift(ASearch.unapply))
 
   implicit val ASearchReads: Reads[ASearch] = (
@@ -81,7 +85,9 @@ object ASearch {
     (JsPath \ "pname").read[String] ~
     (JsPath \ "ptime").read[LocalDateTime] ~
     (JsPath \ "img").readNullable[String] ~
-    (JsPath \ "abs").readNullable[String]
+    (JsPath \ "abs").readNullable[String] ~
+    (JsPath \ "nid").readNullable[Long] ~
+    (JsPath \ "duration").readNullable[Int]
   )(ASearch.apply _)
 
   def from(temp: ASearchTemp): ASearch = {

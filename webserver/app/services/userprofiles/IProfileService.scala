@@ -92,7 +92,7 @@ class ProfileService @Inject() (val commentDAO: CommentDAO, val newsDAO: NewsDAO
 
   def listCommentsWithNewsInfo(uid: Long, page: Long, count: Long): Future[Seq[CommentResponse]] = {
     commentDAO.listByUidWithNewsInfo(uid, (page - 1) * count, count).map { pairs =>
-      pairs.sortBy(_._1.ctime).map { pair => CommentResponse.from(pair._1, 1, Some(pair._2), Some(pair._3)) }
+      pairs.sortBy(_._1.ctime).map { pair => CommentResponse.from(pair._1, 1, Some(pair._2), Some(pair._3), pair._4) }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within ProfileService.listCommentsWithNewsInfo($uid, $page, $count): ${e.getMessage}")
