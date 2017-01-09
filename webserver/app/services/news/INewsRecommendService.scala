@@ -511,16 +511,24 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
         val date = new Date(timeCursor)
         val localDateTime = LocalDateTime.fromDateFields(date)
-
+        var flag = true
         //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内
         seq.map { n =>
           if (n.rtype.getOrElse(0) == 999) {
             n.copy(ptime = localDateTime.plusSeconds(-1))
           } else if (n.rtype.getOrElse(0) == 4) {
             n.copy(ptime = localDateTime.plusSeconds(-2))
+          } else if (n.rtype.getOrElse(0) == 3) {
+            n.copy(ptime = localDateTime.plusSeconds(-3))
           } else {
-            var newtime = localDateTime.plusSeconds(Random.nextInt(3) - 10)
-            n.copy(ptime = newtime)
+            if (flag) {
+              flag = false
+              n.copy(ptime = localDateTime.plusSeconds(-2))
+            } else {
+              var newtime = localDateTime.plusSeconds(Random.nextInt(3) - 10)
+              n.copy(ptime = newtime)
+            }
+
           }
         }
       }.map { seq =>
@@ -692,6 +700,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
         //将推荐新闻、普通新闻时间,伪造为热点时间前后3秒内,同一来源时间不能一样,否则后端排好序,APP端重排序时可能排在一起
         var nums: Map[String, LocalDateTime] = Map()
+        var flag = true
         seq.map { n =>
           if (n.rtype.getOrElse(0) == 41) {
             //专题置顶
@@ -702,8 +711,17 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
           } else if (n.rtype.getOrElse(0) == 999) {
             //5等级非大图
             n.copy(ptime = newTimeCursor.plusSeconds(8))
+          } else if (n.rtype.getOrElse(0) == 3) {
+            //广告
+            n.copy(ptime = newTimeCursor.plusSeconds(6))
           } else {
-            n.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(7)))
+            if (flag) {
+              flag = false
+              n.copy(ptime = newTimeCursor.plusSeconds(7))
+            } else {
+              n.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(6)))
+            }
+
           }
         }
       }.map { seq =>
