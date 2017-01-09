@@ -166,3 +166,6 @@ GET     /v2/us/urc/fg               controllers.UserReferenceController.findByGl
 
 #获取用户画像
 GET     /v2/us/urc/fp               controllers.UserReferenceController.getPersonaByUid(uid: Long)
+
+#pvuv
+GET     /v2/pvuv/q                  controllers.PvUvController.pvuv(p:Long ?= 1, c:Long ?= 30)

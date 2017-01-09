@@ -7,6 +7,10 @@
 
 ----
 ## 更新日志
+*V3.5:*
+
+1. 添加接口: pvuv统计
+
 *V3.4:*
 
 1. 新闻详情页: 添加参数s， 详情页图片地址是否http改https
@@ -1131,6 +1135,7 @@ Host: bdp.deeporiginalx.com
 | uid  | String | 是    | 用户ID |
 
 _Response：新闻列表页数据格式_
+返回格式与feed流一样
 
 #### 新闻关心
 
@@ -1214,7 +1219,7 @@ Host: bdp.deeporiginalx.com
 | uid  | String | 是    | 用户ID |
 
 **Response：新闻列表页数据格式**
-
+返回格式与feed流一样
 ----
 #### 新闻发布源关心
 
@@ -2842,5 +2847,45 @@ Content-Type: application/json
 	"videourl": "http://gslb.miaopai.com/stream/sHLX8Z6pr0hAKyK6SDucXA__.mp4?yx=&refer=weibo_app&Expires=1482375610&ssig=MtRxNEvf0N&KID=unistore,video", -视频url
     "thumbnail": "http://bdp-pic.deeporiginalx.com/W0JAMjIzZmZhZGQ.jpg" -背景图
   }
+}
+```
+
+----
+#### pvuv统计
+
+_Request_
+
+```json
+GET /v2/pvuv/q
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 30) | 条数                                  |
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+          "id": 790,
+          "pv": 335199,                                 --总pv (说明:总pv > 安卓pv + ios pv, 因为有些操作没有用户id,无法判断是什么类型用户)
+          "data_time_count": "2017-01-09 00:00:00",     --统计时间(统计前一天数据)
+          "androidpv": 162370,                          --安卓pv
+          "iospv": 36659,                               --ios pv
+          "androiduv": 27106,                           --安卓uv
+          "iosuv": 23115                                --ios uv  
+                                                        --(总uv = 安卓uv + ios uv)
+        },
+    …
+  ]
 }
 ```
