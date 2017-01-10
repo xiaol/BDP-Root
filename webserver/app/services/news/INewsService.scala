@@ -73,6 +73,48 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
+  def findNextDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], chid: Long): Future[Option[NewsDetailsResponse]] = {
+    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+      case None => newsDAO.findNextByNid(nid, chid: Long).map {
+        case Some(row) =>
+          var detail = NewsDetailsResponse.from(row)
+          detail.content.\\("imag")
+          Some(NewsDetailsResponse.from(row))
+        case _ => None
+      }
+      case Some(uid) => newsDAO.findNextByNidWithProfile(nid, uid, chid).map {
+        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
+        case _                       => None
+      }
+    }
+    result.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.findNextDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+        None
+    }
+  }
+
+  def findLastDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], chid: Long): Future[Option[NewsDetailsResponse]] = {
+    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+      case None => newsDAO.findLastByNid(nid, chid: Long).map {
+        case Some(row) =>
+          var detail = NewsDetailsResponse.from(row)
+          detail.content.\\("imag")
+          Some(NewsDetailsResponse.from(row))
+        case _ => None
+      }
+      case Some(uid) => newsDAO.findLastByNidWithProfile(nid, uid, chid).map {
+        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
+        case _                       => None
+      }
+    }
+    result.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.findLastDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+        None
+    }
+  }
+
   def loadFeedByRecommends(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)

@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.4
+# 数据平台接口文档_V3.5
 
 ## 目录
 
@@ -10,6 +10,8 @@
 *V3.5:*
 
 1. 添加接口: pvuv统计
+2. 添加接口: 详情往下一条
+3. 添加接口: 详情往上一条
 
 *V3.4:*
 
@@ -2889,3 +2891,83 @@ Content-Type: application/json
   ]
 }
 ```
+
+----
+### 新闻详情页下一条
+
+_Request_
+
+```json
+GET /v2/ns/next
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须          | 参数解释 |
+| ---- | :----- | :------------ | :--- |
+| nid  | Long | 是              | 新闻ID |
+| uid  | Long | 是              | 用户ID |
+| chid | Long | 是              | 频道ID |
+| s    | Int  | 否(默认 0)       | 显示https图片地址  是(1)否(0) |
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": {
+    "nid": 10680478,
+    "docid": "https://buluo.qq.com/p/detail.html?bid=271345&pid=2469059-1484015459",
+    "title": "可爱女人",
+    "ptime": "2017-01-10 10:36:54",
+    "pname": "兴趣部落",
+    "channel": 26,
+    "inum": 9,
+    "tags": [
+      ""
+    ],
+    "content": [
+      {
+        "txt": "所谓门槛，能力够了就是门，能力不够就是槛。人生的沟沟坎坎，多半是能力不足所致"
+      },
+      {
+        "img": "https://bdp-images.oss-cn-hangzhou.aliyuncs.com/201701101036404a0b6be8af7606570ccb036c2efbd6cba7463d9b896412063bc6b568160e8198_656X960.jpg"
+      },
+      {
+        "img": "https://bdp-images.oss-cn-hangzhou.aliyuncs.com/20170110103642a02fcc8e538efab9bb15630621a191e5b8b35c520a7b282bebb5b07f55e51e79_666X960.jpg"
+      },
+      {
+        "img": "https://bdp-images.oss-cn-hangzhou.aliyuncs.com/20170110103643d2708281bc483877479924381a6d2d62ba2bfd24591aa81dff8389498e3cbadc_663X960.jpg"
+      }
+    ],
+    "collect": 0,
+    "concern": 0,
+    "comment": 0,
+    "colflag": 0,
+    "conflag": 0,
+    "conpubflag": 0
+  }
+}
+```
+
+
+----
+### 新闻详情页上一条
+
+_Request_
+
+```json
+GET /v2/ns/last
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须          | 参数解释 |
+| ---- | :----- | :------------ | :--- |
+| nid  | Long | 是              | 新闻ID |
+| uid  | Long | 是              | 用户ID |
+| chid | Long | 是              | 频道ID |
+| s    | Int  | 否(默认 0)       | 显示https图片地址  是(1)否(0) |
+

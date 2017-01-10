@@ -60,6 +60,22 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
+  def getNextDetails(nid: Long, uid: Option[Long], s: Int, chid: Long) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getNextDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    newsService.findNextDetailsWithProfileByNid(nid, uid, chid).map {
+      case Some(news) => ServerSucced(if (s == 1) https(news) else news)
+      case _          => DataEmptyError(s"$nid")
+    }
+  }
+
+  def getLastDetails(nid: Long, uid: Option[Long], s: Int, chid: Long) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getLastDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    newsService.findLastDetailsWithProfileByNid(nid, uid, chid).map {
+      case Some(news) => ServerSucced(if (s == 1) https(news) else news)
+      case _          => DataEmptyError(s"$nid")
+    }
+  }
+
   def getVideoDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getVideoDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     videoService.findDetailsWithProfileByNid(nid, uid).map {

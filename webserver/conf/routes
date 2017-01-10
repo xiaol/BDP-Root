@@ -169,3 +169,8 @@ GET     /v2/us/urc/fp               controllers.UserReferenceController.getPerso
 
 #pvuv
 GET     /v2/pvuv/q                  controllers.PvUvController.pvuv(p:Long ?= 1, c:Long ?= 30)
+
+#详情往下一条
+GET     /v2/ns/next                 controllers.NewsController.getNextDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
+#详情往上一条
+GET     /v2/ns/last                 controllers.NewsController.getLastDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
