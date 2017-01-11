@@ -1,16 +1,13 @@
 package services.video
 
-import java.util
-import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.news.{ NewsRecommendResponse, _ }
+import commons.models.news._
 import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
-import dao.userprofiles.HateNewsDAO
 import dao.video.VideoDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -27,9 +24,10 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[VideoService])
 trait IVideoService {
   def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
 }
 
-class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService) extends IVideoService {
+class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -37,7 +35,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+      val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
@@ -47,6 +45,13 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
         r ++: ad
       }
 
+      //插入已浏览表
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }.recover {
+        case NonFatal(e) =>
+          Logger.error(s"Within VideoService.refreshFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
+      }
       response.map { seq =>
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
@@ -56,14 +61,14 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
             else
               r
-          }.sortBy(_.ptime)
+          }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within VideoService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within VideoService.refreshFeedWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -72,7 +77,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.loadVideoByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+      val result: Future[Seq[VideoRow]] = videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
@@ -80,6 +85,14 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
         ad <- adFO
       } yield {
         r ++: ad
+      }
+
+      //插入已浏览表
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }.recover {
+        case NonFatal(e) =>
+          Logger.error(s"Within VideoService.loadFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
       }
 
       response.map { seq =>
@@ -91,14 +104,14 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
             else
               r
-          }.sortBy(_.ptime)
+          }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within VideoService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within VideoService.loadFeedWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -126,7 +139,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     }
     result.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+        Logger.error(s"Within VideoService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
         None
     }
   }

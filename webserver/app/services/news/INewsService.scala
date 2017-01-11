@@ -251,7 +251,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
             else
               r
-          }.sortBy(_.ptime)
+          }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }
@@ -296,7 +296,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
               r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
             else
               r
-          }.sortBy(_.ptime)
+          }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }

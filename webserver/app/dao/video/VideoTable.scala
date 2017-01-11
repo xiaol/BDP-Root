@@ -3,14 +3,14 @@ package dao.video
 import javax.inject.{ Inject, Singleton }
 
 import commons.models.video._
-import dao.userprofiles.{ ConcernPublisherTable, ConcernTable, CollectTable }
+import dao.news.NewsRecommendReadTable
+import dao.userprofiles.{ CollectTable, ConcernPublisherTable, ConcernTable }
 import org.joda.time._
 import play.api.db.slick._
+import play.api.libs.json.JsValue
 import utils.MyPostgresDriver
 
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.json.JsValue
-import commons.utils.JodaOderingImplicits
 
 trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
   import driver.api._
@@ -64,13 +64,15 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 object VideoDAO {
-  final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-1)
+  final private val timeWindow1 = (timeCursor: LocalDateTime) => timeCursor.plusDays(-1)
+  final private val timeWindow3 = (timeCursor: LocalDateTime) => timeCursor.plusDays(-3)
 }
 
 @Singleton
-class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends VideoTable with CollectTable with ConcernTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
-  import driver.api._
+class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends VideoTable with CollectTable
+    with ConcernTable with ConcernPublisherTable with NewsRecommendReadTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import VideoDAO._
+  import driver.api._
 
   type VideoTableQuery = Query[VideoTable, VideoTable#TableElementType, Seq]
 
@@ -78,15 +80,16 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   val collectList = TableQuery[CollectTable]
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]
+  val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
 
-  def refreshVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
+  def refreshVideoByChannel(uid: Long, chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
     val queryList = refreshByNid(nid)
-    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow1(timeCursor)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow1(timeCursor)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def loadVideoByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
+  def loadVideoByChannel(uid: Long, chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
     val queryList = loadByNid(nid)
-    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(queryList.filter(_.state === 0).filter(_.ctime > timeWindow3(timeCursor)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow3(timeCursor)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   private def refreshByNid(nid: Option[Long]) = {

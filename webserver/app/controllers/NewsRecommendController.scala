@@ -97,9 +97,9 @@ class NewsRecommendController @Inject() (val userService: UserService, val newsR
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.refreshFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-        var newcount: Long = requestParams.c.getOrElse(14)
-        if (newcount > 14) {
-          newcount = 14
+        var newcount: Long = requestParams.c.getOrElse(9)
+        if (newcount > 9) {
+          newcount = 9
         }
         requestParams.cid match {
           case 1L => newsRecommendService.refreshFeedWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP"), requestParams.v).map {
