@@ -2,16 +2,15 @@ package dao.news
 
 import javax.inject.{ Inject, Singleton }
 
+import commons.models.news._
+import dao.userprofiles._
 import dao.video.VideoTable
 import org.joda.time._
 import play.api.db.slick._
+import play.api.libs.json.JsValue
 import utils.MyPostgresDriver
 
 import scala.concurrent.{ ExecutionContext, Future }
-import play.api.libs.json.JsValue
-import commons.models.news._
-import commons.utils.JodaOderingImplicits
-import dao.userprofiles._
 
 /**
  * Created by zhange on 2016-05-10.
@@ -71,15 +70,15 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
 object NewsDAO {
   final private val timeWindow = (timeCursor: LocalDateTime) => timeCursor.plusDays(-7)
-
+  final private val dayWindow = LocalDateTime.now().plusDays(-1)
   final private val shieldedCid: Long = 28L // 本地频道
   final private val filterSet = Set("就是逗你笑", "bomb01")
 }
 
 @Singleton
-class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with CollectTable with ConcernTable with VideoTable with ConcernPublisherTable with HasDatabaseConfigProvider[MyPostgresDriver] {
-  import driver.api._
+class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) extends NewsTable with CollectTable with ConcernTable with VideoTable with ConcernPublisherTable with NewsRecommendReadTable with HasDatabaseConfigProvider[MyPostgresDriver] {
   import NewsDAO._
+  import driver.api._
 
   type NewsTableQuery = Query[NewsTable, NewsTable#TableElementType, Seq]
 
@@ -88,6 +87,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   val concernList = TableQuery[ConcernTable]
   val concernPublisherList = TableQuery[ConcernPublisherTable]
   val videoList = TableQuery[VideoTable]
+  val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
 
   def findByNid(nid: Long): Future[Option[NewsRow]] = {
     db.run(newsList.filter(_.nid === nid).result.headOption)
@@ -192,6 +192,14 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   def refreshByChannel(chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {
     val queryList = refreshByNid(nid)
     db.run(queryList.filter(_.chid === chid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
+  }
+
+  def queryByChannel(uid: Long, chid: Long, limit: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.state === 0).filterNot(_.pname inSet filterSet).filter(_.ctime > dayWindow).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > dayWindow).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
+  }
+
+  def queryBySeChannel(uid: Long, chid: Long, sechid: Long, limit: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid === chid).filter(_.state === 0).filter(_.sechid === sechid).filter(_.ctime > dayWindow).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > dayWindow).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
   }
 
   def loadBySeChannel(chid: Long, sechid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {

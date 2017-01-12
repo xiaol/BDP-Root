@@ -4,6 +4,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
+import dao.kmeans.NewsKmeansDAO
 import dao.news.{ NewsPublisherDAO, NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
@@ -37,7 +38,8 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO, val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO) extends INewsService {
+class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO,
+                             val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO) extends INewsService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -225,9 +227,11 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
-        case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
+        case Some(sechid) => newsDAO.queryBySeChannel(uid, chid, sechid, count)
+        case None         => newsDAO.queryByChannel(uid, chid, count)
       }
+
+      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2 + 2)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
@@ -247,10 +251,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
-            if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
-            else
-              r
+            r.copy(ptime = msecondsToDatetime(timeCursor).plusSeconds(Random.nextInt(-5)))
           }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
@@ -270,17 +271,20 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val localDateTime = LocalDateTime.fromDateFields(date)
 
       val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
-        case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+        case Some(sechid) => newsDAO.queryBySeChannel(uid, chid, sechid, count)
+        case None         => newsDAO.queryByChannel(uid, chid, count)
       }
+
+      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2 + 2)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
         r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        rkm <- resultKM.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        r ++: ad
+        (rkm ++: ad ++: r).take(count.toInt)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
@@ -292,11 +296,8 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
-            if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
-            else
-              r
-          }.sortBy(_.ptime).take(count.toInt)
+            r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
+          }.sortBy(_.ptime)
         } else {
           Seq[NewsFeedResponse]()
         }
