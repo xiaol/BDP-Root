@@ -14,13 +14,14 @@ trait SlideCountTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
   class SlideCountTable(tag: Tag) extends Table[Slide](tag, "slide_count") {
 
+    def mid = column[String]("mid")
     def uid = column[Long]("uid")
     def ctype = column[Int]("ctype")
     def ptype = column[Int]("ptype")
     def ctime = column[Option[LocalDateTime]]("ctime")
     def ipaddress = column[Option[String]]("ipaddress")
 
-    def * = (uid, ctype, ptype, ctime, ipaddress) <> ((Slide.apply _).tupled, Slide.unapply)
+    def * = (mid, uid, ctype, ptype, ctime, ipaddress) <> ((Slide.apply _).tupled, Slide.unapply)
   }
 }
 

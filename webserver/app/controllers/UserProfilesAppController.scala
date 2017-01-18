@@ -41,8 +41,8 @@ class UserProfilesAppController @Inject() (val userProfileService: UserProfileSe
     }
   }
 
-  def insertSlide(uid: Long, ctype: Int, ptype: Int) = Action.async { implicit request =>
-    userProfileService.insertSlide(Slide(uid, ctype, ptype, Some(LocalDateTime.now()), request.headers.get("X-Real-IP"))).map {
+  def insertSlide(mid: String, uid: Long, ctype: Int, ptype: Int) = Action.async { implicit request =>
+    userProfileService.insertSlide(Slide(mid, uid, ctype, ptype, Some(LocalDateTime.now()), request.headers.get("X-Real-IP"))).map {
       case 0L => DataCreateError(s"UserProfilesAppController.insertSlide: $uid, $ctype, $ptype")
       case _  => ServerSucced(uid)
     }

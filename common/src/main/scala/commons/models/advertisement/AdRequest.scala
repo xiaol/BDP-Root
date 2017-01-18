@@ -157,7 +157,8 @@ object Phone {
   )(Phone.apply _)
 }
 
-case class Slide(uid: Long,
+case class Slide(mid: String,
+                 uid: Long,
                  ctype: Int,
                  ptype: Int,
                  ctime: Option[LocalDateTime] = None,
