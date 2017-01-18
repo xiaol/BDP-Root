@@ -112,82 +112,31 @@ object AppInfo {
 }
 
 case class UserDevice(uid: String,
-                      imei: Option[String] = None,
-                      imeiori: Option[String] = None,
-                      mac: Option[String] = None,
-                      macori: Option[String] = None,
-                      mac1: Option[String] = None,
-                      idfa: Option[String] = None,
-                      idfaori: Option[String] = None,
-                      aaid: Option[String] = None,
-                      anid: Option[String] = None,
-                      anidori: Option[String] = None,
-                      udid: Option[String] = None,
-                      brand: Option[String] = None,
-                      platform: Option[String] = None,
-                      os: Option[String] = None,
-                      os_version: Option[String] = None,
-                      device_size: Option[String] = None,
-                      network: Option[String] = None,
-                      operator: Option[String] = None,
-                      longitude: Option[String] = None,
-                      latitude: Option[String] = None,
-                      screen_orientation: Option[String] = None)
+                      device: Device,
+                      ctype: Option[Int] = None,
+                      province: Option[String] = None,
+                      city: Option[String] = None,
+                      area: Option[String] = None,
+                      ptype: Option[Int] = None)
 
 object UserDevice {
-  implicit val DeviceWrites: Writes[UserDevice] = (
+  implicit val UserDeviceWrites: Writes[UserDevice] = (
     (JsPath \ "uid").write[String] ~
-    (JsPath \ "imei").writeNullable[String] ~
-    (JsPath \ "imeiori").writeNullable[String] ~
-    (JsPath \ "mac").writeNullable[String] ~
-    (JsPath \ "macori").writeNullable[String] ~
-    (JsPath \ "mac1").writeNullable[String] ~
-    (JsPath \ "idfa").writeNullable[String] ~
-    (JsPath \ "idfaori").writeNullable[String] ~
-    (JsPath \ "aaid").writeNullable[String] ~
-    (JsPath \ "anid").writeNullable[String] ~
-    (JsPath \ "anidori").writeNullable[String] ~
-    (JsPath \ "udid").writeNullable[String] ~
-    (JsPath \ "brand").writeNullable[String] ~
-    (JsPath \ "platform").writeNullable[String] ~
-    (JsPath \ "os").writeNullable[String] ~
-    (JsPath \ "os_version").writeNullable[String] ~
-    (JsPath \ "device_size").writeNullable[String] ~
-    (JsPath \ "network").writeNullable[String] ~
-    (JsPath \ "operator").writeNullable[String] ~
-    (JsPath \ "longitude").writeNullable[String] ~
-    (JsPath \ "latitude").writeNullable[String] ~
-    (JsPath \ "screen_orientation").writeNullable[String]
+    (JsPath \ "device").write[Device] ~
+    (JsPath \ "ctype").writeNullable[Int] ~
+    (JsPath \ "province").writeNullable[String] ~
+    (JsPath \ "city").writeNullable[String] ~
+    (JsPath \ "area").writeNullable[String] ~
+    (JsPath \ "ptype").writeNullable[Int]
   )(unlift(UserDevice.unapply))
 
-  implicit val DeviceReads: Reads[UserDevice] = (
+  implicit val UserDeviceReads: Reads[UserDevice] = (
     (JsPath \ "uid").read[String] ~
-    (JsPath \ "imei").readNullable[String] ~
-    (JsPath \ "imeiori").readNullable[String] ~
-    (JsPath \ "mac").readNullable[String] ~
-    (JsPath \ "macori").readNullable[String] ~
-    (JsPath \ "mac1").readNullable[String] ~
-    (JsPath \ "idfa").readNullable[String] ~
-    (JsPath \ "idfaori").readNullable[String] ~
-    (JsPath \ "aaid").readNullable[String] ~
-    (JsPath \ "anid").readNullable[String] ~
-    (JsPath \ "anidori").readNullable[String] ~
-    (JsPath \ "udid").readNullable[String] ~
-    (JsPath \ "brand").readNullable[String] ~
-    (JsPath \ "platform").readNullable[String] ~
-    (JsPath \ "os").readNullable[String] ~
-    (JsPath \ "os_version").readNullable[String] ~
-    (JsPath \ "device_size").readNullable[String] ~
-    (JsPath \ "network").readNullable[String] ~
-    (JsPath \ "operator").readNullable[String] ~
-    (JsPath \ "longitude").readNullable[String] ~
-    (JsPath \ "latitude").readNullable[String] ~
-    (JsPath \ "screen_orientation").readNullable[String]
+    (JsPath \ "device").read[Device] ~
+    (JsPath \ "ctype").readNullable[Int] ~
+    (JsPath \ "province").readNullable[String] ~
+    (JsPath \ "city").readNullable[String] ~
+    (JsPath \ "area").readNullable[String] ~
+    (JsPath \ "ptype").readNullable[Int]
   )(UserDevice.apply _)
-
-  def from(device: Device, uid: Long): UserDevice = {
-    UserDevice(uid.toString, device.imei, device.imeiori, device.mac, device.macori, device.mac1, device.idfa, device.idfaori,
-      device.aaid, device.anid, device.anidori, device.udid, device.brand, device.platform, device.os, device.os_version,
-      device.device_size, device.network, device.operator, device.longitude, device.latitude, device.screen_orientation)
-  }
 }

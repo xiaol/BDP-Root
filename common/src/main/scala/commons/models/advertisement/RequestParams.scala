@@ -52,3 +52,24 @@ object RequestParams {
     (JsPath \ "nid").readNullable[Long]
   )(RequestParams.apply _)
 }
+
+case class RequestAdvertiseParams(uid: Long,
+                                  b: String,
+                                  s: Option[Int] = None,
+                                  nid: Option[Long] = None)
+
+object RequestAdvertiseParams {
+  implicit val RequestAdvertiseParamsWrites: Writes[RequestAdvertiseParams] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "b").write[String] ~
+    (JsPath \ "s").writeNullable[Int] ~
+    (JsPath \ "nid").writeNullable[Long]
+  )(unlift(RequestAdvertiseParams.unapply))
+
+  implicit val RequestAdvertiseParamsReads: Reads[RequestAdvertiseParams] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "b").read[String] ~
+    (JsPath \ "s").readNullable[Int] ~
+    (JsPath \ "nid").readNullable[Long]
+  )(RequestAdvertiseParams.apply _)
+}

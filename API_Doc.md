@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.5
+# 数据平台接口文档_V3.7
 
 ## 目录
 
@@ -7,6 +7,15 @@
 
 ----
 ## 更新日志
+*V3.7:*
+
+1. 添加接口: 滑动统计接口
+2. 添加接口: 详情页广告
+
+*V3.6:*
+
+1. 添加接口(每次启动应用时调用): 用户信息
+
 *V3.5:*
 
 1. 添加接口: pvuv统计
@@ -20,7 +29,6 @@
 3. 频道加载加上广告: 添加参数s， feed流图片地址是否http改https;  添加参数v，是否显示视频
 4. 添加接口:
 	视频频道(刷新)， 视频频道(加载)， 视频详情页
-5. 添加接口(每次启动应用时调用): 用户手机信息(广告)
 
 *V3.3:*
 
@@ -2581,34 +2589,6 @@ Content-Type: application/json
 }
 ```
 
-
-----
-#### 用户手机信息(广告)
-
-_Request_
-
-```json
-POST /v2/au/phone
-Host: bdp.deeporiginalx.com
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| uid  | Long   | 是        | 用户ID                                |
-| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-
-_Response_
-
-```json
-HTTP/1.1 200 OK
-Content-Type: application/json
-
-{
-  "code": 2000,
-  "data": 634788   --uid
-}
-```
-
 ----
 ##### 转发记录
 
@@ -2971,3 +2951,107 @@ Host: bdp.deeporiginalx.com
 | chid | Long | 是              | 频道ID |
 | s    | Int  | 否(默认 0)       | 显示https图片地址  是(1)否(0) |
 
+----
+#### 用户信息
+
+_Request_
+
+```json
+POST /v2/au/phone
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| province    | String | 否         | 省（手机信号地理位置）|
+| city    | String | 否         | 市|
+| area    | String | 否         | 区|
+| ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 634788   --uid
+}
+```
+
+#### 滑动接口(做好接口不存在异常处理, 以后不通过接口统计滑动数, 直接通过nginx日志分析统计)
+
+_Request_
+
+```json
+GET /v2/sl/ins
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 634788   --uid
+}
+```
+
+#### 详情页广告
+
+_Request_
+
+```json
+POST /v2/ns/ad
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| s    | Int  | 否(默认 0)       | 显示https图片地址  是(1)否(0) |
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 0,
+      "docid": "0",
+      "title": "走！去滑雪！满200减100",
+      "ptime": "2017-01-18 14:20:02",
+      "pname": " ",
+      "purl": "http://c.gdt.qq.com/gdt_mclick.fcg?viewid=3zeyBuN!Sfr0OTbn_JziawNBUXB9a189HufqCn3tppKE3PlycbsBypCBuq1VTWife3JAyQ0BjqfDDuv4IzGOSBzYLg9fnz6AQwPhwcHhVhk2AT_YiIYHU_L0wfeztXsagWv1L_yl!JvhiXz0L_IQ_Sgk8m31agR_Z4Xr2HfcXFAt7R40F3s2cUFaHmLg!N4paGC1WWDCHv9Oi9aCQKXpxHtqiQ_e2yZi&jtype=0&i=1&os=2&acttype=&s={\"down_x\":-999,\"down_y\":-999,\"up_x\":-999,\"up_y\":-999}",
+      "channel": 9999,
+      "collect": 0,
+      "concern": 0,
+      "comment": 0,
+      "style": 1,
+      "imgs": [
+        "https://pgdt.gtimg.cn/gdt/0/DAABYMtAUAALQABXBYfsxzAU7tY5EH.jpg/0?ck=b497aed2f491d4768f106639edfc2fe0"
+      ],
+      "rtype": 3,
+      "adimpression": [
+        "http://v.gdt.qq.com/gdt_stats.fcg?count=1&viewid0=3zeyBuN!Sfr0OTbn_JziawNBUXB9a189HufqCn3tppKE3PlycbsBypCBuq1VTWife3JAyQ0BjqfDDuv4IzGOSBzYLg9fnz6AQwPhwcHhVhk2AT_YiIYHU_L0wfeztXsagWv1L_yl!JvhiXz0L_IQ_Sgk8m31agR_Z4Xr2HfcXFAt7R40F3s2cUFaHmLg!N4paGC1WWDCHv9Oi9aCQKXpxHtqiQ_e2yZi"
+      ]
+    }
+  ]
+}
+```

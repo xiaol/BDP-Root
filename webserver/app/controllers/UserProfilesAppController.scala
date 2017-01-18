@@ -2,9 +2,10 @@ package controllers
 
 import javax.inject.Inject
 
-import commons.models.advertisement.Phone
+import commons.models.advertisement.{ Slide, Phone }
 import commons.models.userprofiles.UserProfiles
 import commons.utils.Base64Utils._
+import org.joda.time.LocalDateTime
 import play.api.libs.json.{ JsError, JsSuccess }
 import play.api.mvc.{ Action, Controller }
 import services.userprofiles.UserProfileService
@@ -33,10 +34,17 @@ class UserProfilesAppController @Inject() (val userProfileService: UserProfileSe
   def phone = Action.async(parse.json) { implicit request =>
     request.body.validate[Phone] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
-      case JsSuccess(phone, _) => userProfileService.phone(phone.uid, decodeBase64(phone.b)).map {
+      case JsSuccess(phone, _) => userProfileService.phone(phone.uid, decodeBase64(phone.b), phone.ctype, phone.province, phone.city, phone.area, phone.ptype, request.headers.get("X-Real-IP")).map {
         case id: Long if id > 0 => ServerSucced(id)
         case _                  => DataCreateError(s"${phone.toString}")
       }
+    }
+  }
+
+  def insertSlide(uid: Long, ctype: Int, ptype: Int) = Action.async { implicit request =>
+    userProfileService.insertSlide(Slide(uid, ctype, ptype, Some(LocalDateTime.now()), request.headers.get("X-Real-IP"))).map {
+      case 0L => DataCreateError(s"UserProfilesAppController.insertSlide: $uid, $ctype, $ptype")
+      case _  => ServerSucced(uid)
     }
   }
 }

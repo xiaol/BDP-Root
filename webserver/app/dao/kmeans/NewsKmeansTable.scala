@@ -46,10 +46,11 @@ class NewsKmeansDAO @Inject() (protected val dbConfigProvider: DatabaseConfigPro
   val newsList = TableQuery[NewsTable]
 
   def queryByChannelWithKmeans(uid: Long, chid: Long, limit: Long): Future[Seq[NewsRow]] = {
+    val rand = SimpleFunction.nullary[Double]("random")
     val joinQuery = (for {
       (((userKmeans, newsKmeans), news)) <- userKmeansClusterList.filter(_.uid === uid).filter(_.chid === chid).sortBy(_.times.desc).take(3)
         .join(newsKmeansList.filter(_.chid === chid).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow).map(_.nid))).on(_.cluster_id === _.cluster_id)
-        .join(newsList.filter(_.chid === chid).filter(_.state === 0).filter(_.ctime > timeWindow)).on(_._2.nid === _.nid).take(limit)
+        .join(newsList.filter(_.chid === chid).filter(_.state === 0).filter(_.ctime > timeWindow)).on(_._2.nid === _.nid).sortBy(x => rand).take(limit)
     } yield (news))
 
     db.run(joinQuery.result)

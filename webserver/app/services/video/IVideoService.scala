@@ -58,7 +58,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
             if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
+              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime).copy(style = 11)
             else
               r
           }.sortBy(_.ptime).take(count.toInt)
@@ -101,7 +101,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
             if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime)
+              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime).copy(style = 11)
             else
               r
           }.sortBy(_.ptime).take(count.toInt)

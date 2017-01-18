@@ -3,8 +3,9 @@ package services.userprofiles
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.advertisement.{ Device, AdRequest }
+import commons.models.advertisement.{ Slide, Device, AdRequest }
 import commons.models.userprofiles._
+import dao.pvuvcount.SlideCountDAO
 import dao.userprofiles.UserDeviceDAO
 import dao.users.{ AppInfoDAO, UserProfilesInfoDAO }
 import org.joda.time.LocalDateTime
@@ -26,7 +27,7 @@ trait IUserProfileService {
   def delete(uid: Long): Future[Option[Long]]
 }
 
-class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, val appInfoDAO: AppInfoDAO, val userDeviceDAO: UserDeviceDAO)
+class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, val appInfoDAO: AppInfoDAO, val userDeviceDAO: UserDeviceDAO, val slideCountDAO: SlideCountDAO)
     extends IUserProfileService {
 
   def insert(userProfiles: UserProfiles): Future[Long] = {
@@ -49,19 +50,30 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
     }
   }
 
-  def phone(uid: Long, body: String): Future[Long] = {
+  def phone(uid: Long, body: String, ctype: Int, province: Option[String], city: Option[String], area: Option[String], ptype: Int, remoteAddress: Option[String]): Future[Long] = {
     val adRequest: AdRequest = Json.parse(body).as[AdRequest]
-    val device: Device = adRequest.device
+    val device: Device = remoteAddress match {
+      case Some(ip) => adRequest.device.copy(ip = remoteAddress)
+      case _        => adRequest.device
+    }
     userDeviceDAO.findByuid(uid.toString).map {
       _ match {
-        case None => userDeviceDAO.insert(UserDevice.from(device, uid)).map { uid => uid.toLong }
-        case _    =>
+        case None => userDeviceDAO.insert(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype))).map { uid => uid.toLong }
+        case _    => userDeviceDAO.update(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype))).map { uid => uid.toLong }
       }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within UserProfileService.phone($uid): ${e.getMessage}")
     }
     Future.successful(uid)
+  }
+
+  def insertSlide(slide: Slide): Future[Long] = {
+    slideCountDAO.insert(slide).recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within UserProfileService.insertSlide(${slide.toString}): ${e.getMessage}")
+        0L
+    }
   }
 
 }

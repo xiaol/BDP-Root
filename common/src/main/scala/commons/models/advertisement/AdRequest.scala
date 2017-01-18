@@ -1,5 +1,6 @@
 package commons.models.advertisement
 
+import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json.{ Reads, JsPath, Writes }
@@ -59,7 +60,7 @@ object Impression {
   )(Impression.apply _)
 }
 
-case class Device(ip: String,
+case class Device(ip: Option[String] = None,
                   imei: Option[String] = None,
                   imeiori: Option[String] = None,
                   mac: Option[String] = None,
@@ -85,7 +86,7 @@ case class Device(ip: String,
 
 object Device {
   implicit val DeviceWrites: Writes[Device] = (
-    (JsPath \ "ip").write[String] ~
+    (JsPath \ "ip").writeNullable[String] ~
     (JsPath \ "imei").writeNullable[String] ~
     (JsPath \ "imeiori").writeNullable[String] ~
     (JsPath \ "mac").writeNullable[String] ~
@@ -111,7 +112,7 @@ object Device {
   )(unlift(Device.unapply))
 
   implicit val DeviceReads: Reads[Device] = (
-    (JsPath \ "ip").read[String] ~
+    (JsPath \ "ip").readNullable[String] ~
     (JsPath \ "imei").readNullable[String] ~
     (JsPath \ "imeiori").readNullable[String] ~
     (JsPath \ "mac").readNullable[String] ~
@@ -137,15 +138,27 @@ object Device {
   )(Device.apply _)
 }
 
-case class Phone(uid: Long, b: String)
+case class Phone(uid: Long,
+                 b: String,
+                 ctype: Int,
+                 province: Option[String] = None,
+                 city: Option[String] = None,
+                 area: Option[String] = None,
+                 ptype: Int)
 object Phone {
-  implicit val PhoneWrites: Writes[Phone] = (
-    (JsPath \ "uid").write[Long] ~
-    (JsPath \ "b").write[String]
-  )(unlift(Phone.unapply))
-
   implicit val PhoneReads: Reads[Phone] = (
     (JsPath \ "uid").read[Long] ~
-    (JsPath \ "b").read[String]
+    (JsPath \ "b").read[String] ~
+    (JsPath \ "ctype").read[Int] ~
+    (JsPath \ "province").readNullable[String] ~
+    (JsPath \ "city").readNullable[String] ~
+    (JsPath \ "area").readNullable[String] ~
+    (JsPath \ "ptype").read[Int]
   )(Phone.apply _)
 }
+
+case class Slide(uid: Long,
+                 ctype: Int,
+                 ptype: Int,
+                 ctime: Option[LocalDateTime] = None,
+                 ipaddress: Option[String])

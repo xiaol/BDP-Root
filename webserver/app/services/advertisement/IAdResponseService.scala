@@ -38,17 +38,17 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
       val requestbody: String = remoteAddress match {
         case Some(ip) =>
           val request: AdRequest = Json.parse(body).as[AdRequest]
-          val adRequest = request.copy(device = request.device.copy(ip = ip))
-          val device: Device = adRequest.device
-          userDeviceDAO.findByuid(uid.toString).map {
-            _ match {
-              case None =>
-                userDeviceDAO.insert(UserDevice.from(device, uid))
-              case _ =>
-            }
-          }.recover {
-            case _ => Logger.error(s"Within userDeviceDAO.insert(UserDevice.from(device, uid))")
-          }
+          val adRequest = request.copy(device = request.device.copy(ip = Some(ip)))
+          //          val device: Device = adRequest.device
+          //          userDeviceDAO.findByuid(uid.toString).map {
+          //            _ match {
+          //              case None =>
+          //                userDeviceDAO.insert(UserDevice.from(device, uid))
+          //              case _ =>
+          //            }
+          //          }.recover {
+          //            case _ => Logger.error(s"Within userDeviceDAO.insert(UserDevice.from(device, uid))")
+          //          }
 
           Json.toJson(adRequest).toString()
         case _ => body

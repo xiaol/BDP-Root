@@ -297,8 +297,12 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
-  def refreshByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 1).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+  def refreshByLDARecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filter(_.sourcetype === 1).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
+  }
+
+  def refreshByKMeansRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {
+    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filter(_.sourcetype === 2).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
   }
 
   //  def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsRow]] = {

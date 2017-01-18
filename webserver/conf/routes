@@ -174,3 +174,11 @@ GET     /v2/pvuv/q                  controllers.PvUvController.pvuv(p:Long ?= 1,
 GET     /v2/ns/next                 controllers.NewsController.getNextDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
 #详情往上一条
 GET     /v2/ns/last                 controllers.NewsController.getLastDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
+
+GET     /v2/ns/news                 controllers.NewsResponseController.news()
+
+#滑动统计
+GET     /v2/sl/ins                  controllers.UserProfilesAppController.insertSlide(uid:Long, ctype:Int, ptype:Int)
+
+#详情页广告
+POST     /v2/ns/ad                  controllers.AdvertiseController.getAd()

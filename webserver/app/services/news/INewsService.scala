@@ -231,15 +231,16 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         case None         => newsDAO.queryByChannel(uid, chid, count)
       }
 
-      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2 + 2)
+      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
         r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        rkm <- resultKM.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        r ++: ad
+        (rkm ++: ad ++: r).take(count.toInt)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
@@ -251,7 +252,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
-            r.copy(ptime = msecondsToDatetime(timeCursor).plusSeconds(Random.nextInt(-5)))
+            r.copy(ptime = msecondsToDatetime(timeCursor).plusSeconds(Random.nextInt(5) - 5))
           }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
@@ -275,7 +276,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         case None         => newsDAO.queryByChannel(uid, chid, count)
       }
 
-      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2 + 2)
+      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
