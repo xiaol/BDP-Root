@@ -144,14 +144,12 @@ object NewsFeedResponse {
   }
 
   def from(creative: Creative): NewsFeedResponse = {
-    val app = creative.app
-    var app_name: Option[String] = Some(" ")
-    if (app.isDefined) {
-      app_name = app.get.app_name
-    }
     val event = creative.event.get.head
     val ad_native = creative.ad_native.get
-    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
+    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get) ++: ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get)).toOption
+    val icon: Option[String] = Try(ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "icon").map(_.required_value.get).head).toOption
+
+    //    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
     val number: Option[Int] = imgs.map(_.size).map { num =>
       if (num > 3)
         3
@@ -160,10 +158,11 @@ object NewsFeedResponse {
       else
         num
     }
-    val title: String = ad_native.filter(_.required_field.get == 1).head.required_value.getOrElse("")
+    val title: String = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "description").head.required_value.get).toOption.getOrElse("")
+    val pname: Option[String] = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "title").head.required_value.get).toOption
 
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), app_name, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs, None, //None, None, None,
-      Some(3), creative.impression)
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), pname, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs, None,
+      Some(3), creative.impression, icon)
   }
 
   def from(topic: TopicList): NewsFeedResponse = {

@@ -2965,7 +2965,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | ---- | :----- | :------- | :---------------------------------- |
 | uid  | Long   | 是        | 用户ID                                |
 | b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌，6：纹字主题  |
 | province    | String | 否         | 省（手机信号地理位置）|
 | city    | String | 否         | 市|
 | area    | String | 否         | 区|

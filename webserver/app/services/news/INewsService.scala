@@ -248,11 +248,21 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
+        var flag = true
+        val localDateTime = msecondsToDatetime(timeCursor)
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-          //将广告时间随机成任意一条新闻时间
+          //将广告时间放第二条
           seq.map { r =>
-            r.copy(ptime = msecondsToDatetime(timeCursor).plusSeconds(Random.nextInt(5) - 5))
+            if (r.rtype.getOrElse(0) == 3) {
+              r.copy(ptime = localDateTime.plusSeconds(-2))
+            } else if (flag) {
+              flag = false
+              r.copy(ptime = localDateTime.plusSeconds(-1))
+            } else {
+              r.copy(ptime = localDateTime.plusSeconds(Random.nextInt(5) - 7))
+            }
+
           }.sortBy(_.ptime).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
@@ -293,11 +303,20 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
 
       response.map { seq =>
+        var flag = true
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
           //将广告时间随机成任意一条新闻时间
           seq.map { r =>
-            r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
+            if (r.rtype.getOrElse(0) == 3) {
+              r.copy(ptime = newTimeCursor.plusSeconds(6))
+            } else if (flag) {
+              flag = false
+              r.copy(ptime = newTimeCursor.plusSeconds(7))
+            } else {
+              r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
+            }
+
           }.sortBy(_.ptime)
         } else {
           Seq[NewsFeedResponse]()

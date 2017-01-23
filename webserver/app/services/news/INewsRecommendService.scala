@@ -454,7 +454,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, level1)
       val refreshByClickFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByClick((page - 1) * count, level1, msecondsToDatetime(timeCursor), uid)
 
-      val refreshByPeopleRecommendBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.refreshByPeopleRecommendBigImg(uid, 0, level4)
+      //      val refreshByPeopleRecommendBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.refreshByPeopleRecommendBigImg(uid, 0, level4)
       val refreshBigImgFO5: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg5(uid, 0, level4)
       val refreshBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, level4)
 
@@ -482,16 +482,16 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
             }
           }
         }
-        peopleRecommendBigImg <- refreshByPeopleRecommendBigImgFO.map {
-          case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
-            val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
-            if (r._2.bigimg.getOrElse(0) > 0) {
-              feed.copy(style = 10 + r._2.bigimg.getOrElse(1))
-            } else {
-              feed
-            }
-          }
-        }
+        //        peopleRecommendBigImg <- refreshByPeopleRecommendBigImgFO.map {
+        //          case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
+        //            val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
+        //            if (r._2.bigimg.getOrElse(0) > 0) {
+        //              feed.copy(style = 10 + r._2.bigimg.getOrElse(1))
+        //            } else {
+        //              feed
+        //            }
+        //          }
+        //        }
         bigimg <- refreshBigImgFO.map {
           case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
             val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
@@ -505,7 +505,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         video <- videoFO.map { case newsRow: Seq[VideoRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: video ++: (moderRecommend ++: (peopleRecommend ++: recommends).take((level2 * 2).toInt) ++: refreshByClick).take(count.toInt) ++: commons).take(count.toInt + 2)
+        ((bigimg5 ++: peopleRecommend ++: moderRecommend ++: bigimg).take(1) ++: ad ++: (hotWords ++: hots).take((level2 * 2).toInt) ++: video ++: (moderRecommend ++: (peopleRecommend ++: recommends).take((level2 * 2).toInt) ++: refreshByClick).take(count.toInt) ++: commons).take(count.toInt + 2)
       }
       val result: Future[Seq[NewsFeedResponse]] = r.map { seq =>
 
@@ -593,7 +593,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
       //主题模型推荐
       val refreshLDARecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByLDARecommend((page - 1) * count, level1 / 2, newTimeCursor, uid)
       val refreshKMeansRecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByKMeansRecommend((page - 1) * count, level1, newTimeCursor, uid)
-      //线性模型从人工推荐数据中选取推荐
+      //模型从人工推荐数据中选取推荐
       val refreshByPeopleRecommendFO: Future[Seq[NewsRow]] = newsRecommendDAO.refreshByPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
       //人工推荐(没有推荐模型时,直接出人工推荐)
       val refreshRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, level1 + 1)
@@ -605,7 +605,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
 
       //----大图部分----
       //系统人工推荐大图
-      val refreshByPeopleRecommendBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.refreshByPeopleRecommendBigImg(uid, 0, level4)
+      //      val refreshByPeopleRecommendBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.refreshByPeopleRecommendBigImg(uid, 0, level4)
       //等级为5大图新闻
       val refreshBigImgFO5: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg5(uid, 0, level4)
       //等级为5新闻
@@ -661,16 +661,16 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
             NewsFeedResponse.from(r._1).copy(rtype = Some(999))
           }
         }
-        peopleRecommendBigImg <- refreshByPeopleRecommendBigImgFO.map {
-          case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
-            val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
-            if (r._2.bigimg.getOrElse(0) > 0) {
-              feed.copy(style = 10 + r._2.bigimg.getOrElse(1))
-            } else {
-              feed
-            }
-          }
-        }
+        //        peopleRecommendBigImg <- refreshByPeopleRecommendBigImgFO.map {
+        //          case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
+        //            val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
+        //            if (r._2.bigimg.getOrElse(0) > 0) {
+        //              feed.copy(style = 10 + r._2.bigimg.getOrElse(1))
+        //            } else {
+        //              feed
+        //            }
+        //          }
+        //        }
         bigimg <- refreshBigImgFO.map {
           case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r =>
             val feed = NewsFeedResponse.from(r._1).copy(rtype = Some(2))
@@ -686,7 +686,7 @@ class NewsRecommendService @Inject() (val newsRecommendDAO: NewsRecommendDAO, va
         video <- videoFO.map { case newsRow: Seq[VideoRow] => newsRow.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
         ad <- adFO
       } yield {
-        ((bigimg5 ++: peopleRecommendBigImg ++: level5 ++: bigimg).take(level4) ++: topics ++: ad
+        ((bigimg5 ++: level5 ++: bigimg).take(level4) ++: topics ++: ad
           ++: (hotWords ++: hots).take((level2).toInt) ++: video ++: ((lDARecommend ++: kMeansRecommend).take(level1.toInt) ++: (peopleRecommend ++: recommends).take((level2 * 2).toInt)).take(count.toInt)
           ++: commons).filter { feed =>
             var flag = true

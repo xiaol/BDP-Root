@@ -63,7 +63,8 @@ case class Ad_native(template_id: Option[Int] = None,
                      action_type: Option[Int] = None,
                      action_value: Option[String] = None,
                      required_value: Option[String] = None,
-                     ptype: Option[String] = None)
+                     ptype: Option[String] = None,
+                     index_value: Option[String] = None)
 object Ad_native {
   implicit val Ad_nativeWrites: Writes[Ad_native] = (
     (JsPath \ "template_id").writeNullable[Int] ~
@@ -73,7 +74,8 @@ object Ad_native {
     (JsPath \ "action_type").writeNullable[Int] ~
     (JsPath \ "action_value").writeNullable[String] ~
     (JsPath \ "required_value").writeNullable[String] ~
-    (JsPath \ "type").writeNullable[String]
+    (JsPath \ "type").writeNullable[String] ~
+    (JsPath \ "index_value").writeNullable[String]
   )(unlift(Ad_native.unapply))
 
   implicit val Ad_nativeReads: Reads[Ad_native] = (
@@ -84,7 +86,8 @@ object Ad_native {
     (JsPath \ "action_type").readNullable[Int] ~
     (JsPath \ "action_value").readNullable[String] ~
     (JsPath \ "required_value").readNullable[String] ~
-    (JsPath \ "type").readNullable[String]
+    (JsPath \ "type").readNullable[String] ~
+    (JsPath \ "index_value").readNullable[String]
   )(Ad_native.apply _)
 }
 
