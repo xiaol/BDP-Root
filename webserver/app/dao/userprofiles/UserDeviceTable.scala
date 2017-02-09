@@ -4,6 +4,7 @@ import javax.inject.{ Inject, Singleton }
 
 import commons.models.advertisement.Device
 import commons.models.userprofiles.UserDevice
+import org.joda.time.LocalDateTime
 import play.api.db.slick._
 import utils.MyPostgresDriver
 
@@ -48,12 +49,13 @@ trait UserDeviceTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def city = column[Option[String]]("city")
     def area = column[Option[String]]("area")
     def ptype = column[Option[Int]]("ptype")
+    def ctime = column[Option[LocalDateTime]]("ctime")
 
     def device = (ip, imei, imeiori, mac, macori, mac1, idfa, idfaori,
       aaid, anid, anidori, udid, brand, platform, os, os_version,
       device_size, network, operator, longitude, latitude, screen_orientation) <> ((Device.apply _).tupled, Device.unapply)
 
-    def * = (uid, device, ctype, province, city, area, ptype) <> ((UserDevice.apply _).tupled, UserDevice.unapply)
+    def * = (uid, device, ctype, province, city, area, ptype, ctime) <> ((UserDevice.apply _).tupled, UserDevice.unapply)
   }
 }
 

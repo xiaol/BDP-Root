@@ -10,15 +10,17 @@ import commons.utils.Joda4PlayJsonImplicits._
  * Created by zhangshl on 16/11/16.
  */
 case class UserProfiles(
-  id: Option[Long] = None,
-  uid: Long,
-  province: Option[String],
-  city: Option[String],
-  area: Option[String],
-  brand: Option[String],
-  model: Option[String],
-  apps: Option[List[AppInfo]],
-  ctime: Option[LocalDateTime])
+    id: Option[Long] = None,
+    uid: Long,
+    province: Option[String],
+    city: Option[String],
+    area: Option[String],
+    brand: Option[String],
+    model: Option[String],
+    apps: Option[List[AppInfo]],
+    ctime: Option[LocalDateTime]) {
+  require(!uid.>(0), "uid must be non empty.")
+}
 
 object UserProfiles {
   implicit val UserProfilesWrites: Writes[UserProfiles] = (
@@ -117,7 +119,8 @@ case class UserDevice(uid: String,
                       province: Option[String] = None,
                       city: Option[String] = None,
                       area: Option[String] = None,
-                      ptype: Option[Int] = None)
+                      ptype: Option[Int] = None,
+                      ctime: Option[LocalDateTime] = None)
 
 object UserDevice {
   implicit val UserDeviceWrites: Writes[UserDevice] = (
@@ -127,7 +130,8 @@ object UserDevice {
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "area").writeNullable[String] ~
-    (JsPath \ "ptype").writeNullable[Int]
+    (JsPath \ "ptype").writeNullable[Int] ~
+    (JsPath \ "ctime").writeNullable[LocalDateTime]
   )(unlift(UserDevice.unapply))
 
   implicit val UserDeviceReads: Reads[UserDevice] = (
@@ -137,6 +141,7 @@ object UserDevice {
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "area").readNullable[String] ~
-    (JsPath \ "ptype").readNullable[Int]
+    (JsPath \ "ptype").readNullable[Int] ~
+    (JsPath \ "ctime").readNullable[LocalDateTime]
   )(UserDevice.apply _)
 }

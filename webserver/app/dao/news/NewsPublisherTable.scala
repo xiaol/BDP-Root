@@ -59,12 +59,12 @@ class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   }
 
   def listNewsByPublisher(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[Seq[NewsRow]] = {
-    val timeWindows = timeWindow(timeCursor, -30)
+    val timeWindows = timeWindow(timeCursor, -3)
     db.run(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
   def listNewsByPublisherWithPubInfo(pname: String, offset: Long, limit: Long, timeCursor: LocalDateTime): Future[(NewsPublisherRow, Seq[NewsRow])] = {
-    val timeWindows = timeWindow(timeCursor, -30)
+    val timeWindows = timeWindow(timeCursor, -3)
     val queryAction = for {
       (pub, news) <- publisherList.filter(_.name === pname)
         .joinLeft(newsList.filter(_.pname === pname).filter(_.ctime > timeWindows).filter(_.ctime < timeCursor)).on(_.name === _.pname).sortBy(_._2.map(_.ctime).desc).drop(offset).take(limit)

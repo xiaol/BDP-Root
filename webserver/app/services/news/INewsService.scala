@@ -141,14 +141,14 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
       val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
       //人工推荐新闻,每个推荐等级依次一条条显示
-      val loadRecommendFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
+      val loadRecommendFO: Future[Seq[(NewsSimpleRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
       //取一条大图新闻,作为头条
-      val loadBigImgFO: Future[Seq[(NewsRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
+      val loadBigImgFO: Future[Seq[(NewsSimpleRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
       val r: Future[Seq[NewsRecommendResponse]] = for {
         hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r)) }.sortBy(_.ptime) }
         colds <- lostColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r)) }.sortBy(_.ptime) }
-        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
-        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
+        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsSimpleRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
+        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsSimpleRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
       } yield {
         bigimg ++: recommends ++: hots ++: colds
       }

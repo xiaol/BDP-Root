@@ -31,15 +31,20 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
     extends IUserProfileService {
 
   def insert(userProfiles: UserProfiles): Future[Long] = {
-    appInfoDAO.delete(userProfiles.uid)
-    userProfiles.apps.map { list => list.map { info => appInfoDAO.insert(info.copy(uid = Some(userProfiles.uid)).copy(ctime = Some(LocalDateTime.now()))) } }
+    if (userProfiles.uid > 0) {
+      appInfoDAO.delete(userProfiles.uid)
+      userProfiles.apps.map { list => list.map { info => appInfoDAO.insert(info.copy(uid = Some(userProfiles.uid)).copy(ctime = Some(LocalDateTime.now()))) } }
 
-    userProfilesDAO.delete(userProfiles.uid)
-    userProfilesDAO.insert(UserProfilesInfo.from(userProfiles).copy(ctime = Some(LocalDateTime.now()))).recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within UserProfileService.insert(${userProfiles.toString}): ${e.getMessage}")
-        0L
+      userProfilesDAO.delete(userProfiles.uid)
+      userProfilesDAO.insert(UserProfilesInfo.from(userProfiles).copy(ctime = Some(LocalDateTime.now()))).recover {
+        case NonFatal(e) =>
+          Logger.error(s"Within UserProfileService.insert(${userProfiles.toString}): ${e.getMessage}")
+          0L
+      }
+    } else {
+      Future.successful(0L)
     }
+
   }
 
   def delete(uid: Long): Future[Option[Long]] = {
@@ -58,8 +63,8 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
     }
     userDeviceDAO.findByuid(uid.toString).map {
       _ match {
-        case None => userDeviceDAO.insert(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype))).map { uid => uid.toLong }
-        case _    => userDeviceDAO.update(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype))).map { uid => uid.toLong }
+        case None => userDeviceDAO.insert(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
+        case _    => userDeviceDAO.update(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
       }
     }.recover {
       case NonFatal(e) =>

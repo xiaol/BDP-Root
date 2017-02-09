@@ -124,6 +124,25 @@ object NewsFeedResponse {
       syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
   }
 
+  def from(newsRow: NewsSimpleRow): NewsFeedResponse = {
+    val base = newsRow.base
+    val incr = newsRow.incr
+    val syst = newsRow.syst
+    //修改评论数
+    var commentnum = incr.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
+      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
+      base.tags, //base.province, base.city, base.district,
+      syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
+  }
+
   def from(videoRow: VideoRow): NewsFeedResponse = {
     val base = videoRow.base
     val incr = videoRow.incr

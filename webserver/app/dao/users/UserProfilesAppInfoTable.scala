@@ -41,10 +41,13 @@ class AppInfoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
   }
 
   def delete(uid: Long): Future[Option[Long]] = {
-    db.run(appInfoList.filter(_.uid === uid).delete.map {
-      case 0 => None
-      case _ => Some(uid)
-    })
+    uid match {
+      case uid: Long if uid > 0 => db.run(appInfoList.filter(_.uid === uid).delete.map {
+        case 0 => None
+        case _ => Some(uid)
+      })
+      case _ => Future.successful(None)
+    }
   }
 
   def findByUid(uid: Long): Future[Seq[AppInfo]] = {
