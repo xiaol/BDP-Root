@@ -113,7 +113,7 @@ object AppInfo {
   )(AppInfo.apply _)
 }
 
-case class UserDevice(uid: String,
+case class UserDevice(uid: Long,
                       device: Device,
                       ctype: Option[Int] = None,
                       province: Option[String] = None,
@@ -124,7 +124,7 @@ case class UserDevice(uid: String,
 
 object UserDevice {
   implicit val UserDeviceWrites: Writes[UserDevice] = (
-    (JsPath \ "uid").write[String] ~
+    (JsPath \ "uid").write[Long] ~
     (JsPath \ "device").write[Device] ~
     (JsPath \ "ctype").writeNullable[Int] ~
     (JsPath \ "province").writeNullable[String] ~
@@ -135,7 +135,7 @@ object UserDevice {
   )(unlift(UserDevice.unapply))
 
   implicit val UserDeviceReads: Reads[UserDevice] = (
-    (JsPath \ "uid").read[String] ~
+    (JsPath \ "uid").read[Long] ~
     (JsPath \ "device").read[Device] ~
     (JsPath \ "ctype").readNullable[Int] ~
     (JsPath \ "province").readNullable[String] ~

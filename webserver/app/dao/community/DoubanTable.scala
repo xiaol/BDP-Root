@@ -38,7 +38,7 @@ class DoubanDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvide
   val doubanList = TableQuery[DoubanTable]
 
   def findByRefer(refer: String): Future[Option[DoubanRow]] = {
-    db.run(doubanList.filter(_.refer === refer).result.headOption)
+    db.run(doubanList.filter(_.refer === refer).result.map(_.headOption))
   }
 
   def deleteByRefer(refer: String): Future[Option[String]] = {

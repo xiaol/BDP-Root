@@ -91,7 +91,7 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   }
 
   def findByNid(nid: Long): Future[Option[VideoRow]] = {
-    db.run(videoList.filter(_.nid === nid).result.headOption)
+    db.run(videoList.filter(_.nid === nid).result.map(_.headOption))
   }
 
   // TODO: join newspublisherlist
@@ -106,7 +106,7 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
         (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
     }
 
-    db.run(joinQuery.result.headOption)
+    db.run(joinQuery.result.map(_.headOption))
   }
 
 }

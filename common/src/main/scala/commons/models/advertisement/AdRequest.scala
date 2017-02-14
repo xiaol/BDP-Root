@@ -145,6 +145,7 @@ case class Phone(uid: Long,
                  city: Option[String] = None,
                  area: Option[String] = None,
                  ptype: Int)
+
 object Phone {
   implicit val PhoneReads: Reads[Phone] = (
     (JsPath \ "uid").read[Long] ~

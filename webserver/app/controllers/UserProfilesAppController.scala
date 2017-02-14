@@ -11,7 +11,7 @@ import play.api.mvc.{ Action, Controller }
 import services.userprofiles.UserProfileService
 import utils.Response._
 
-import scala.concurrent.{ ExecutionContext, Future }
+import scala.concurrent.{ Future, ExecutionContext }
 
 /**
  * Created by zhange on 2016-05-17.
@@ -34,10 +34,15 @@ class UserProfilesAppController @Inject() (val userProfileService: UserProfileSe
   def phone = Action.async(parse.json) { implicit request =>
     request.body.validate[Phone] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
-      case JsSuccess(phone, _) => userProfileService.phone(phone.uid, decodeBase64(phone.b), phone.ctype, phone.province, phone.city, phone.area, phone.ptype, request.headers.get("X-Real-IP")).map {
-        case id: Long if id > 0 => ServerSucced(id)
-        case _                  => DataCreateError(s"${phone.toString}")
+      case JsSuccess(phone, _) => phone match {
+        case phone: Phone if phone.uid > 0 =>
+          userProfileService.phone(phone.uid, decodeBase64(phone.b), phone.ctype, phone.province, phone.city, phone.area, phone.ptype, request.headers.get("X-Real-IP")).map {
+            case id: Long if id > 0 => ServerSucced(id)
+            case _                  => DataCreateError(s"${phone.toString}")
+          }
+        case _ => Future.successful(DataCreateError(s"${phone.toString}"))
       }
+
     }
   }
 

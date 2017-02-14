@@ -38,13 +38,13 @@ class NewsPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val newsList = TableQuery[NewsTable]
 
   def findByName(name: String): Future[Option[NewsPublisherRow]] =
-    db.run(publisherList.filter(_.name === name).result.headOption)
+    db.run(publisherList.filter(_.name === name).result.map(_.headOption))
 
   def insert(newsPublisherRow: NewsPublisherRow): Future[Long] =
     db.run(publisherList returning publisherList.map(_.id) += newsPublisherRow)
 
   def insertOrDiscard(newsPublisherRow: NewsPublisherRow): Future[Long] = {
-    val queryAction = publisherList.filter(_.name === newsPublisherRow.name).map(_.id).result.headOption.flatMap {
+    val queryAction = publisherList.filter(_.name === newsPublisherRow.name).map(_.id).result.map(_.headOption).flatMap {
       case Some(id) => throw PGDBException(AlreadyExist("publisherList", newsPublisherRow.name))
       case None     => publisherList returning publisherList.map(_.id) += newsPublisherRow
     }.transactionally

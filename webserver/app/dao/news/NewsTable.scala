@@ -27,7 +27,7 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def docid = column[String]("docid")
     def title = column[String]("title")
     def content = column[JsValue]("content")
-    def html = column[String]("html")
+    //    def html = column[String]("html")
     def author = column[Option[String]]("author")
     def ptime = column[LocalDateTime]("ptime")
     def pname = column[Option[String]]("pname")
@@ -61,7 +61,7 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def thumbnail = column[Option[String]]("thumbnail")
     def duration = column[Option[Int]]("duration")
 
-    def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
+    def base = (nid.?, url, docid, title, content, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
     def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, rtype, videourl, thumbnail, duration) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsRow.apply _).tupled, NewsRow.unapply)
@@ -90,15 +90,15 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
 
   def findByNid(nid: Long): Future[Option[NewsRow]] = {
-    db.run(newsList.filter(_.nid === nid).result.headOption)
+    db.run(newsList.filter(_.nid === nid).result.map(_.headOption))
   }
 
   def findNextByNid(nid: Long, chid: Long): Future[Option[NewsRow]] = {
-    db.run(newsList.filter(_.chid === chid).filter(_.nid < nid).sortBy(_.ctime.desc).take(1).result.headOption)
+    db.run(newsList.filter(_.chid === chid).filter(_.nid < nid).sortBy(_.ctime.desc).take(1).result.map(_.headOption))
   }
 
   def findLastByNid(nid: Long, chid: Long): Future[Option[NewsRow]] = {
-    db.run(newsList.filter(_.chid === chid).filter(_.nid > nid).sortBy(_.ctime.asc).take(1).result.headOption)
+    db.run(newsList.filter(_.chid === chid).filter(_.nid > nid).sortBy(_.ctime.asc).take(1).result.map(_.headOption))
   }
 
   // TODO: join newspublisherlist
@@ -113,7 +113,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
         (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
     }
 
-    db.run(joinQuery.result.headOption)
+    db.run(joinQuery.result.map(_.headOption))
   }
 
   def findNextByNidWithProfile(nid: Long, uid: Long, chid: Long): Future[Option[(NewsRow, Int, Int, Int)]] = {
@@ -127,7 +127,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
         (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
     }
 
-    db.run(joinQuery.result.headOption)
+    db.run(joinQuery.result.map(_.headOption))
   }
 
   def findLastByNidWithProfile(nid: Long, uid: Long, chid: Long): Future[Option[(NewsRow, Int, Int, Int)]] = {
@@ -141,11 +141,11 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
         (n, joins.map(_._2).countDefined, joins.map(_._3).countDefined, joins.map(_._4).countDefined)
     }
 
-    db.run(joinQuery.result.headOption)
+    db.run(joinQuery.result.map(_.headOption))
   }
 
   def findByDocid(docid: String): Future[Option[NewsRow]] = {
-    db.run(newsList.filter(_.docid === docid).result.headOption)
+    db.run(newsList.filter(_.docid === docid).result.map(_.headOption))
   }
 
   def insert(newsRow: NewsRow): Future[Long] = {
@@ -270,7 +270,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
 
   def updateCollect(nid: Long, collect: Int): Future[Option[Int]] = {
     val queryCollect = newsList.filter(_.nid === nid).map(_.collect)
-    val collectOpt: Future[Option[Int]] = db.run(queryCollect.result.headOption)
+    val collectOpt: Future[Option[Int]] = db.run(queryCollect.result.map(_.headOption))
     collectOpt.flatMap {
       case Some(c) => db.run(queryCollect.update(c + collect).map {
         case 0 => None
@@ -282,7 +282,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
 
   def updateConcern(nid: Long, concern: Int): Future[Option[Int]] = {
     val queryConcern = newsList.filter(_.nid === nid).map(_.concern)
-    val concernOpt: Future[Option[Int]] = db.run(queryConcern.result.headOption)
+    val concernOpt: Future[Option[Int]] = db.run(queryConcern.result.map(_.headOption))
     concernOpt.flatMap {
       case Some(c) => db.run(queryConcern.update(c + concern).map {
         case 0 => None
@@ -295,7 +295,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   def updateComment(docid: String, comment: Int): Future[Option[Int]] = {
     //有可能是对新闻评论,也有可能是对视频评论,由于新闻和视频不在同一张表,所以都要查
     val queryComment = newsList.filter(_.docid === docid).map(_.comment)
-    val commentOpt: Future[Option[Int]] = db.run(queryComment.result.headOption)
+    val commentOpt: Future[Option[Int]] = db.run(queryComment.result.map(_.headOption))
     commentOpt.flatMap {
       case Some(c) => db.run(queryComment.update(c + comment).map {
         case 0 => None
@@ -303,7 +303,7 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
       })
       case _ =>
         val queryCommentvideo = videoList.filter(_.docid === docid).map(_.comment)
-        val commentvideoOpt: Future[Option[Int]] = db.run(queryCommentvideo.result.headOption)
+        val commentvideoOpt: Future[Option[Int]] = db.run(queryCommentvideo.result.map(_.headOption))
         commentvideoOpt.flatMap {
           case Some(c) => db.run(queryCommentvideo.update(c + comment).map {
             case 0 => None

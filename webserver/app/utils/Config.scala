@@ -13,6 +13,7 @@ trait Config {
   val redisConfig = config.getConfig("redis")
   val redisHost = redisConfig.getString("host")
   val redisPort = redisConfig.getInt("port")
+  val redisDB = redisConfig.getInt("database")
   val tryPassword = redisConfig.getString("password")
   val redisPassword: Option[String] = if (tryPassword.nonEmpty) Some(tryPassword) else None
 

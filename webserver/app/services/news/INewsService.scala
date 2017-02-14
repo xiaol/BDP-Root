@@ -39,7 +39,7 @@ trait INewsService {
 }
 
 class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO,
-                             val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO) extends INewsService {
+                             val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO) extends INewsService with NewsCacheService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -55,19 +55,41 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   }
 
   def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
-    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
-      case None => newsDAO.findByNid(nid).map {
+    val result = uidOpt match {
+      case None => getNewsRowCache(nid).flatMap {
         case Some(row) =>
-          var detail = NewsDetailsResponse.from(row)
-          detail.content.\\("imag")
-          Some(NewsDetailsResponse.from(row))
-        case _ => None
+          Logger.info("拿到缓存数据=============" + row.base.title)
+          Future.successful(Some(NewsDetailsResponse.from(row)))
+        case _ =>
+          Logger.info("未拿到缓存数据=============" + nid)
+          newsDAO.findByNid(nid).map {
+            case Some(row) =>
+              //存入缓存
+              setNewsRowCache(row)
+              Some(NewsDetailsResponse.from(row))
+            case _ => None
+          }
       }
+      //有用户id情况,需要查询此用户对本条新闻的关心等情况,每个用户都不一样,用缓存作用不大
       case Some(uid) => newsDAO.findByNidWithProfile(nid, uid).map {
         case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
         case _                       => None
       }
     }
+
+    //    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+    //      case None => newsDAO.findByNid(nid).map {
+    //        case Some(row) =>
+    //          var detail = NewsDetailsResponse.from(row)
+    //          detail.content.\\("imag")
+    //          Some(NewsDetailsResponse.from(row))
+    //        case _ => None
+    //      }
+    //      case Some(uid) => newsDAO.findByNidWithProfile(nid, uid).map {
+    //        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
+    //        case _                       => None
+    //      }
+    //    }
     result.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")

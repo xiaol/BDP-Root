@@ -10,7 +10,7 @@ import redis.RedisClient
 
 trait RedisDriver extends Config {
   implicit val systemRedisClient = akka.actor.ActorSystem("RedisClient", ConfigFactory.load("redis-akka"))
-  val redisClient = RedisClient(redisHost, redisPort, redisPassword)
+  val redisClient = RedisClient(redisHost, redisPort, redisPassword, Some(redisDB))
 }
 
 object RedisDriver extends RedisDriver {

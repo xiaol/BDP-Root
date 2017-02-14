@@ -53,7 +53,7 @@ class ConcernPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseCon
   }
 
   private def updateConcernQuery(pname: String, concernValue: Int): DBIO[Int] = {
-    publisherList.filter(_.name === pname).map(_.concern).result.headOption.flatMap {
+    publisherList.filter(_.name === pname).map(_.concern).result.map(_.headOption).flatMap {
       case Some(cc) => publisherList.filter(_.name === pname).map(_.concern).update(cc + concernValue).map {
         case 0 => throw PGDBException(NotFound("publisherList", ("name", pname)))
         case _ => cc + concernValue
@@ -66,7 +66,7 @@ class ConcernPublisherDAO @Inject() (protected val dbConfigProvider: DatabaseCon
     val concernValue: Int = 1
     val concernPublisherRow: ConcernPublisherRow = ConcernPublisherRow(None, LocalDateTime.now().withMillisOfSecond(0), uid, pname)
 
-    val insertConcernAction: DBIO[Long] = concernPubList.filter(_.uid === uid).filter(_.pname === pname).map(_.id).result.headOption.flatMap {
+    val insertConcernAction: DBIO[Long] = concernPubList.filter(_.uid === uid).filter(_.pname === pname).map(_.id).result.map(_.headOption).flatMap {
       case Some(id) => throw PGDBException(AlreadyExist("concernPubList-iiiii", concernPublisherRow.toString))
       case None     => concernPubList returning concernPubList.map(_.id) += concernPublisherRow
     }

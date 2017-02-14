@@ -60,19 +60,19 @@ class UserDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   val userList = TableQuery[UserTable]
 
   def findByUid(uid: Long): Future[Option[UserRow]] = {
-    db.run(userList.filter(_.uid === uid).result.headOption)
+    db.run(userList.filter(_.uid === uid).result.map(_.headOption))
   }
 
   def findByEmail(email: String): Future[Option[UserRow]] = {
-    db.run(userList.filter(_.email === email).result.headOption)
+    db.run(userList.filter(_.email === email).result.map(_.headOption))
   }
 
   def findByUname(uname: String): Future[Option[UserRow]] = {
-    db.run(userList.filter(_.uname === uname).result.headOption)
+    db.run(userList.filter(_.uname === uname).result.map(_.headOption))
   }
 
   def findBySuid(suid: String): Future[Option[UserRow]] = {
-    db.run(userList.filter(_.suid === suid).result.headOption)
+    db.run(userList.filter(_.suid === suid).result.map(_.headOption))
   }
 
   def list(offset: Long, limit: Long): Future[Seq[UserRow]] = {
@@ -88,7 +88,7 @@ class UserDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   }
 
   def getChannel(uid: Long): Future[Option[List[String]]] = {
-    db.run(userList.filter(_.uid === uid).map(_.channel).result.headOption).map { chOpt =>
+    db.run(userList.filter(_.uid === uid).map(_.channel).result.map(_.headOption)).map { chOpt =>
       chOpt.flatMap {
         case ch @ Some(_) => ch
         case _            => None

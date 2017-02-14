@@ -53,8 +53,7 @@ class NewsResponseDao @Inject() (protected val dbConfigProvider: DatabaseConfigP
 
   def news(): Future[Seq[(Long, String, Option[String])]] = {
     val tablename = "newslist_v" + 2 % 10
-    println(tablename)
-    val action = sql"select nid, title, imgs from #$tablename limit 10 ".as[(Long, String, Option[String])]
+    val action = sql"select nid, title, imgs from #$tablename where imgs is not null limit 10 ".as[(Long, String, Option[String])]
     db.run(action)
   }
 

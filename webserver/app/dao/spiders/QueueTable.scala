@@ -34,7 +34,7 @@ class QueueDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   }
 
   def findByQueue(queue: String): Future[Option[QueueRow]] = {
-    db.run(queueList.filter(_.queue === queue).result.headOption)
+    db.run(queueList.filter(_.queue === queue).result.map(_.headOption))
   }
 
   def listBySpider(spider: String, offset: Long, limit: Long): Future[Seq[QueueRow]] = {

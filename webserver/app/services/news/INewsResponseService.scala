@@ -29,8 +29,9 @@ class NewsResponseService @Inject() (val newsDAO: NewsResponseDao) extends INews
       val reuslt: Future[Seq[SimpleNewsRow]] = newsDAO.news().map { seq =>
         seq.map { news =>
           val imgs = news._3 match {
-            case Some(str) => Some(str.substring(1, str.length - 1).substring(0, str.length - 2).split(",").toList)
-            case _         => None
+            case Some(str) =>
+              Some(str.replace("{", "").replace("}", "").split(",").toList)
+            case _ => None
           }
           SimpleNewsRow(news._1, news._2, imgs)
         }

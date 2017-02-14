@@ -44,7 +44,7 @@ class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
   val newsList = TableQuery[NewsTable]
 
   def findById(id: Long): Future[Option[CommentRow]] = {
-    db.run(commentList.filter(_.id === id).result.headOption)
+    db.run(commentList.filter(_.id === id).result.map(_.headOption))
   }
 
   def listByUid(uid: Long, offset: Long, limit: Long): Future[Seq[CommentRow]] = {
@@ -127,7 +127,7 @@ class CommentDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
 
   def updateCommend(id: Long, uid: Long, commend: Int): Future[Option[Int]] = {
     val queryCommend = commentList.filter(_.id === id).map(_.commend) //.filter(_.uid =!= Some(uid))
-    val commendOpt: Future[Option[Int]] = db.run(queryCommend.result.headOption)
+    val commendOpt: Future[Option[Int]] = db.run(queryCommend.result.map(_.headOption))
     commendOpt.flatMap {
       case Some(c) => db.run(queryCommend.update(c + commend).map {
         case 0 => None

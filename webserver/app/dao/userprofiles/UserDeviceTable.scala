@@ -19,7 +19,7 @@ trait UserDeviceTable { self: HasDatabaseConfig[MyPostgresDriver] =>
   import driver.api._
 
   class UserDeviceTable(tag: Tag) extends Table[UserDevice](tag, "user_device") {
-    def uid = column[String]("uid")
+    def uid = column[Long]("uid")
 
     def ip = column[Option[String]]("ip")
     def imei = column[Option[String]]("imei")
@@ -66,19 +66,19 @@ class UserDeviceDAO @Inject() (protected val dbConfigProvider: DatabaseConfigPro
 
   val userDeviceList = TableQuery[UserDeviceTable]
 
-  def insert(userDevice: UserDevice): Future[String] = {
+  def insert(userDevice: UserDevice): Future[Long] = {
     db.run(userDeviceList returning userDeviceList.map(_.uid) += userDevice)
   }
 
-  def update(userDevice: UserDevice): Future[String] = {
+  def update(userDevice: UserDevice): Future[Long] = {
     db.run(userDeviceList.filter(_.uid === userDevice.uid).update(userDevice).map {
-      case 0 => "0"
+      case 0 => 0L
       case _ => userDevice.uid
     })
   }
 
-  def findByuid(uid: String): Future[Option[UserDevice]] = {
-    db.run(userDeviceList.filter(_.uid === uid).result.headOption)
+  def findByuid(uid: Long): Future[Option[UserDevice]] = {
+    db.run(userDeviceList.filter(_.uid === uid).result.map(_.headOption))
   }
 
 }

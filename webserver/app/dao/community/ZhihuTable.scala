@@ -39,7 +39,7 @@ class ZhihuDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   val zhihuList = TableQuery[ZhihuTable]
 
   def findByRefer(refer: String): Future[Option[ZhihuRow]] = {
-    db.run(zhihuList.filter(_.refer === refer).result.headOption)
+    db.run(zhihuList.filter(_.refer === refer).result.map(_.headOption))
   }
 
   def deleteByRefer(refer: String): Future[Option[String]] = {

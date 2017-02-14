@@ -63,7 +63,7 @@ class SourceDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvide
   }
 
   def findById(id: Long): Future[Option[SourceRow]] = {
-    db.run(sourceList.filter(_.id === id).result.headOption)
+    db.run(sourceList.filter(_.id === id).result.map(_.headOption))
   }
 
   def update(id: Long, sourceRow: SourceRow): Future[Option[SourceRow]] = {

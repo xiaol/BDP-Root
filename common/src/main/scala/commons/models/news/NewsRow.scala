@@ -16,7 +16,7 @@ case class NewsRowBase(
   docid: String,
   title: String,
   content: JsValue,
-  html: String,
+  //  html: String,
   author: Option[String] = None,
   ptime: LocalDateTime,
   pname: Option[String] = None,
@@ -34,7 +34,7 @@ object NewsRowBase {
     (JsPath \ "docid").write[String] ~
     (JsPath \ "title").write[String] ~
     (JsPath \ "content").write[JsValue] ~
-    (JsPath \ "html").write[String] ~
+    //    (JsPath \ "html").write[String] ~
     (JsPath \ "author").writeNullable[String] ~
     (JsPath \ "ptime").write[LocalDateTime] ~
     (JsPath \ "pname").writeNullable[String] ~
@@ -52,7 +52,7 @@ object NewsRowBase {
     (JsPath \ "docid").read[String] ~
     (JsPath \ "title").read[String] ~
     (JsPath \ "content").read[JsValue] ~
-    (JsPath \ "html").read[String] ~
+    //    (JsPath \ "html").read[String] ~
     (JsPath \ "author").readNullable[String] ~
     (JsPath \ "ptime").read[LocalDateTime] ~
     (JsPath \ "pname").readNullable[String] ~

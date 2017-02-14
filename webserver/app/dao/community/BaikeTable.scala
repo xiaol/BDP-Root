@@ -40,7 +40,7 @@ class BaikeDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   val baikeList = TableQuery[BaikeTable]
 
   def findByRefer(refer: String): Future[Option[BaikeRow]] = {
-    db.run(baikeList.filter(_.refer === refer).result.headOption)
+    db.run(baikeList.filter(_.refer === refer).result.map(_.headOption))
   }
 
   def deleteByRefer(refer: String): Future[Option[String]] = {

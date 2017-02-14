@@ -36,11 +36,11 @@ class UserReferenceDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val userReferenceList = TableQuery[UserReferenceTable]
 
   def findByUid(uid: String, sys_source: String): Future[Option[UserReferenceRow]] = {
-    db.run(userReferenceList.filter(_.uid === uid).filter(_.sys_source === sys_source).result.headOption)
+    db.run(userReferenceList.filter(_.uid === uid).filter(_.sys_source === sys_source).result.map(_.headOption))
   }
 
   def findByGlobal_id(global_id: String): Future[Option[UserReferenceRow]] = {
-    db.run(userReferenceList.filter(_.global_id === global_id).result.headOption)
+    db.run(userReferenceList.filter(_.global_id === global_id).result.map(_.headOption))
   }
 
   def insert(userReferenceRow: UserReferenceRow): Future[String] = {

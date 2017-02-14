@@ -61,10 +61,10 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
       case Some(ip) => adRequest.device.copy(ip = remoteAddress)
       case _        => adRequest.device
     }
-    userDeviceDAO.findByuid(uid.toString).map {
+    userDeviceDAO.findByuid(uid).map {
       _ match {
-        case None => userDeviceDAO.insert(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
-        case _    => userDeviceDAO.update(UserDevice(uid.toString, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
+        case None => userDeviceDAO.insert(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
+        case _    => userDeviceDAO.update(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
       }
     }.recover {
       case NonFatal(e) =>
