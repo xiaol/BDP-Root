@@ -9,6 +9,7 @@ import dao.news.{ NewsPublisherDAO, NewsDAO, NewsRecommendDAO, NewsRecommendRead
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
+import dao.newsfeed.NewsFeedDao
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import play.api.libs.json.Json
@@ -39,7 +40,8 @@ trait INewsService {
 }
 
 class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO,
-                             val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO) extends INewsService with NewsCacheService {
+                             val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO,
+                             val newsFeedDao: NewsFeedDao) extends INewsService with NewsCacheService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -58,10 +60,8 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     val result = uidOpt match {
       case None => getNewsRowCache(nid).flatMap {
         case Some(row) =>
-          Logger.info("拿到缓存数据=============" + row.base.title)
           Future.successful(Some(NewsDetailsResponse.from(row)))
         case _ =>
-          Logger.info("未拿到缓存数据=============" + nid)
           newsDAO.findByNid(nid).map {
             case Some(row) =>
               //存入缓存
@@ -178,6 +178,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
       result
     }.recover {
       case NonFatal(e) =>
@@ -215,6 +216,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+    newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
@@ -236,6 +238,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+    newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     result.map {
       case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
@@ -268,6 +271,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
         var flag = true
@@ -323,6 +327,7 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
         var flag = true

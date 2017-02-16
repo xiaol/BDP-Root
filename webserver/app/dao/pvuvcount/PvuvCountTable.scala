@@ -15,14 +15,16 @@ trait PvuvCountTable { self: HasDatabaseConfig[MyPostgresDriver] =>
   class PvuvCountTable(tag: Tag) extends Table[PvUvofDay](tag, "pvuvcount") {
 
     def id = column[Int]("id")
-    def pv = column[Long]("pv")
+    def pv = column[Option[Long]]("pv")
     def data_time_count = column[LocalDateTime]("data_time_count")
-    def androidpv = column[Long]("androidpv")
-    def iospv = column[Long]("iospv")
-    def androiduv = column[Long]("androiduv")
-    def iosuv = column[Long]("iosuv")
+    def androidpv = column[Option[Long]]("androidpv")
+    def iospv = column[Option[Long]]("iospv")
+    def androiduv = column[Option[Long]]("androiduv")
+    def iosuv = column[Option[Long]]("iosuv")
+    def adpv = column[Option[Long]]("adpv")
+    def ctype = column[Option[Int]]("ctype")
 
-    def * = (id, pv, data_time_count, androidpv, iospv, androiduv, iosuv) <> ((PvUvofDay.apply _).tupled, PvUvofDay.unapply)
+    def * = (id, pv, data_time_count, androidpv, iospv, androiduv, iosuv, adpv, ctype) <> ((PvUvofDay.apply _).tupled, PvUvofDay.unapply)
   }
 }
 
@@ -33,7 +35,7 @@ class PvuvCountDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProv
   val pvuvCountList = TableQuery[PvuvCountTable]
 
   def pvuvCount(offset: Long, limit: Long): Future[Seq[PvUvofDay]] = {
-    db.run(pvuvCountList.sortBy(_.data_time_count.desc).drop(offset).take(limit).result)
+    db.run(pvuvCountList.sortBy(r => (r.data_time_count.desc, r.ctype.asc)).drop(offset).take(limit).result)
   }
 
 }

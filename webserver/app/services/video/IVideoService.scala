@@ -8,6 +8,7 @@ import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
+import dao.newsfeed.NewsFeedDao
 import dao.video.VideoDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -27,7 +28,7 @@ trait IVideoService {
   def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
 }
 
-class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IVideoService {
+class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService, val newsRecommendReadDAO: NewsRecommendReadDAO, val newsFeedDao: NewsFeedDao) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -52,6 +53,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
         case NonFatal(e) =>
           Logger.error(s"Within VideoService.refreshFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
       }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
       response.map { seq =>
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
@@ -94,6 +96,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
         case NonFatal(e) =>
           Logger.error(s"Within VideoService.loadFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
       }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
         //若只有广告,返回空
