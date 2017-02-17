@@ -34,7 +34,7 @@ trait TopicListTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 }
 
 object TopicListDAO {
-  final private val newstimeWindow: Int = -7
+  final private val newstimeWindow: Int = -3
   final private val newsrecommendtimeWindow: Int = -24
 }
 

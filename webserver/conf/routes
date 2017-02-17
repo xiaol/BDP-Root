@@ -39,14 +39,14 @@ GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(n
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)
 #GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
 
-GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
+GET     /v2/ns/fed/r                controllers.NewsController.refreshFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 10, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
 GET     /v2/ns/fed/l                controllers.NewsController.loadFeed(uid: Option[Long], cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, nid: Option[Long])
 
-GET     /v2/ns/fed/rn               controllers.NewsRecommendController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/ln               controllers.NewsRecommendController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+GET     /v2/ns/fed/rn               controllers.NewsResponseController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+GET     /v2/ns/fed/ln               controllers.NewsResponseController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
 
-POST    /v2/ns/fed/ra               controllers.NewsRecommendController.refreshFeedWithAd()
-POST    /v2/ns/fed/la               controllers.NewsRecommendController.loadFeedWithAd()
+POST    /v2/ns/fed/ra               controllers.NewsResponseController.refreshFeedWithAd()
+POST    /v2/ns/fed/la               controllers.NewsResponseController.loadFeedWithAd()
 
 GET     /v2/ns/loc/r                controllers.NewsController.refreshLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String], nid: Option[Long])
 GET     /v2/ns/loc/l                controllers.NewsController.loadLocationFeed(p:Long ?= 1, c:Long ?= 20,tcr:Long, tmk:Int ?= 1, pr:Option[String],ci:Option[String],di:Option[String], nid: Option[Long])
@@ -176,8 +176,6 @@ GET     /v2/ns/next                 controllers.NewsController.getNextDetails(ni
 GET     /v2/ns/last                 controllers.NewsController.getLastDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
 
 GET     /v2/ns/news                 controllers.NewsResponseController.news(uid: Long)
-POST    /v2/ns/fed/ran               controllers.NewsResponseController.refreshFeedWithAd()
-POST    /v2/ns/fed/lan               controllers.NewsResponseController.loadFeedWithAd()
 
 
 #滑动统计

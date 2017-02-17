@@ -38,7 +38,7 @@ class NewsResponseController @Inject() (val userService: UserService, val newsRe
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        //        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.refreshFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsResponseController.refreshFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
         var newcount: Long = requestParams.c.getOrElse(9)
         if (newcount > 9) {
           newcount = 9
@@ -59,6 +59,7 @@ class NewsResponseController @Inject() (val userService: UserService, val newsRe
               case _                                            => DataEmptyError(s"$requestParams")
             }
           }
+          //没有用户id,只能走时间流刷新闻
           case _ => requestParams.cid match {
             case 1L => newsService.refreshFeedByRecommends(requestParams.p.getOrElse(1), newcount, requestParams.tcr, requestParams.nid).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk) mockRealTime(news) else news)
@@ -78,7 +79,7 @@ class NewsResponseController @Inject() (val userService: UserService, val newsRe
     request.body.validate[RequestParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        pvdetailService.insert(PvDetail(requestParams.uid, "NewsRecommendController.loadFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+        pvdetailService.insert(PvDetail(requestParams.uid, "NewsResponseController.loadFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
         var newcount: Long = requestParams.c.getOrElse(14)
         if (newcount > 14) {
           newcount = 14
@@ -101,8 +102,50 @@ class NewsResponseController @Inject() (val userService: UserService, val newsRe
           }
           case _ => Future.successful(DataEmptyError(s"$requestParams"))
         }
-
     }
+  }
+
+  def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    var newcount = count
+    if (newcount > 9) {
+      newcount = 9
+    }
+    uid match {
+      case uid: Long if uid > 0 => cid match {
+        case 1L => newsResponseService.refreshFeedByRecommendsNew(uid, page, newcount, tcursor, t).map {
+          case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+          case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        }
+        case _ => newsService.refreshFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor, nid).map {
+          case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+          case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        }
+      }
+      case _ => Future.successful(DataEmptyError(s"$uid"))
+    }
+  }
+
+  def loadFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
+    pvdetailService.insert(PvDetail(uid, "NewsResponseController.loadFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    var newcount = count
+    if (count > 14) {
+      newcount = 14
+    }
+    uid match {
+      case uid: Long if uid > 0 => cid match {
+        case 1L => newsResponseService.loadFeedByRecommendsNew(uid, page, newcount, tcursor, t).map {
+          case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+          case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        }
+        case _ => newsService.loadFeedByChannel(uid: Long, cid, sechidOpt, page, newcount, tcursor, nid).map {
+          case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
+          case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+        }
+      }
+      case _ => Future.successful(DataEmptyError(s"$uid"))
+    }
+
   }
 
   final private def mockRealTime(news: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {

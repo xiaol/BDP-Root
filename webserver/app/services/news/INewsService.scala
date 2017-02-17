@@ -1,11 +1,12 @@
 package services.news
 
+import java.sql.Timestamp
 import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
 import dao.kmeans.NewsKmeansDAO
-import dao.news.{ NewsPublisherDAO, NewsDAO, NewsRecommendDAO, NewsRecommendReadDAO }
+import dao.news._
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
@@ -39,9 +40,9 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsRecommendReadDAO: NewsRecommendReadDAO,
+class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO,
                              val adResponseService: AdResponseService, val newsPublisherDAO: NewsPublisherDAO, val newsKmeansDAO: NewsKmeansDAO,
-                             val newsFeedDao: NewsFeedDao) extends INewsService with NewsCacheService {
+                             val newsFeedDao: NewsFeedDao, val newsResponseDao: NewsResponseDao) extends INewsService with NewsCacheService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -158,35 +159,6 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
     }
   }
 
-  def loadFeedByRecommendsNew(uid: Long, page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsRecommendResponse]] = {
-    {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
-      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
-      //人工推荐新闻,每个推荐等级依次一条条显示
-      val loadRecommendFO: Future[Seq[(NewsSimpleRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUid(uid, 0, count)
-      //取一条大图新闻,作为头条
-      val loadBigImgFO: Future[Seq[(NewsSimpleRow, NewsRecommend)]] = newsRecommendDAO.listNewsByRecommandUidBigImg(uid, 0, 1)
-      val r: Future[Seq[NewsRecommendResponse]] = for {
-        hots <- loadHotFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r)) }.sortBy(_.ptime) }
-        colds <- lostColdFO.map { case newsRow: Seq[NewsRow] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r)) }.sortBy(_.ptime) }
-        recommends <- loadRecommendFO.map { case newsRow: Seq[(NewsSimpleRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
-        bigimg <- loadBigImgFO.map { case newsRow: Seq[(NewsSimpleRow, NewsRecommend)] => newsRow.map { r => NewsRecommendResponse.from(NewsFeedResponse.from(r._1), r._2) } }
-      } yield {
-        bigimg ++: recommends ++: hots ++: colds
-      }
-      val result: Future[Seq[NewsRecommendResponse]] = r.map(_.take(20))
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-      //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
-      result
-    }.recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within NewsService.loadFeedByRecommendsNew($timeCursor): ${e.getMessage}")
-        Seq[NewsRecommendResponse]()
-    }
-  }
-
   def refreshFeedByRecommends(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
@@ -215,7 +187,6 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
-    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     result.map {
@@ -237,7 +208,6 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
-    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     result.map {
@@ -251,18 +221,27 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
 
   def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
-      val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.queryBySeChannel(uid, chid, sechid, count)
-        case None         => newsDAO.queryByChannel(uid, chid, count)
+      val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
+      val result = sechidOpt match {
+        case Some(sechid) => newsResponseDao.bySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+        case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
 
-      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2)
+      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
-        r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        rkm <- resultKM.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        r <- result.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
+        rkm <- resultKM.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
         ad <- adFO
       } yield {
         (rkm ++: ad ++: r).take(count.toInt)
@@ -270,7 +249,6 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -307,18 +285,26 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
       val date = new Date(timeCursor)
       val localDateTime = LocalDateTime.fromDateFields(date)
 
-      val result: Future[Seq[NewsRow]] = sechidOpt match {
-        case Some(sechid) => newsDAO.queryBySeChannel(uid, chid, sechid, count)
-        case None         => newsDAO.queryByChannel(uid, chid, count)
+      val result = sechidOpt match {
+        case Some(sechid) => newsResponseDao.bySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+        case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
 
-      val resultKM: Future[Seq[NewsRow]] = newsKmeansDAO.queryByChannelWithKmeans(uid, chid, count / 2)
+      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
-        r <- result.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
-        rkm <- resultKM.map { case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        r <- result.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
+        rkm <- resultKM.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
         ad <- adFO
       } yield {
         (rkm ++: ad ++: r).take(count.toInt)
@@ -326,7 +312,6 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -465,5 +450,23 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
         Logger.error(s"Within NewsService.updateComment($docid, $comment): ${e.getMessage}")
         None
     }
+  }
+
+  def toNewsFeedResponse(nid: Long, url: String, docid: String, title: String, pname: Option[String], purl: Option[String],
+                         collect: Int, concern: Int, comment: Int, inum: Int, style: Int, imgs: Option[String], state: Int,
+                         ctime: Timestamp, chid: Long, icon: Option[String], videourl: Option[String], thumbnail: Option[String],
+                         duration: Option[Int], rtype: Option[Int]): NewsFeedResponse = {
+    val imgsList = imgs match {
+      case Some(str) =>
+        Some(str.replace("{", "").replace("}", "").split(",").toList)
+      case _ => None
+    }
+
+    val date = new Date(ctime.getTime)
+    val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
+    val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
+    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration)
+    val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
+    NewsFeedResponse.from(newsSimpleRow)
   }
 }

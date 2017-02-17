@@ -89,6 +89,24 @@ class NewsResponseDao @Inject() (protected val dbConfigProvider: DatabaseConfigP
     db.run(action)
   }
 
+  def byChannel(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long, chid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
+    val tablename: String = "newsrecommendread_" + uid % 100
+    val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$hourWindow24) and nv.chid=$chid and nv.ctime>#$hourWindow24  #$condition offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    db.run(action)
+  }
+
+  def bySeChannel(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long, chid: Long, sechid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
+    val tablename: String = "newsrecommendread_" + uid % 100
+    val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$hourWindow24) and nv.chid=$chid and nv.sechid=$sechid and nv.ctime>#$hourWindow24  #$condition offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    db.run(action)
+  }
+
+  def byChannelWithKmeans(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long, chid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
+    val tablename: String = "newsrecommendread_" + uid % 100
+    val action = sql" #$select where nv.chid=$chid and nv.ctime>#$dayWindow3 and nv.nid in (select nid from news_kmeans nk inner join user_kmeans_cluster ukc on nk.model_v=ukc.model_v and nk.cluster_id=ukc.cluster_id and nk.chid=ukc.chid where not exists (select 1 from #$tablename nr where nk.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and ukc.uid=$uid and nk.ctime>#$dayWindow3 and ukc.chid=$chid order by random() limit $limit) ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    db.run(action)
+  }
+
   def video(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
     val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$hourWindow24) and nv.ctime>#$hourWindow24  and nv.rtype=6 limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]

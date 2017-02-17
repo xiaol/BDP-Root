@@ -1,5 +1,7 @@
 package services.video
 
+import java.sql.Timestamp
+import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
@@ -28,7 +30,7 @@ trait IVideoService {
   def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
 }
 
-class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdResponseService, val newsRecommendReadDAO: NewsRecommendReadDAO, val newsFeedDao: NewsFeedDao) extends IVideoService {
+class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsResponseDao, val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -36,11 +38,15 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
+      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
-        r <- result.map { case newsRows: Seq[VideoRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        r <- result.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
         ad <- adFO
       } yield {
         r ++: ad
@@ -48,12 +54,8 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
 
       //插入已浏览表
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-      //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }.recover {
-        case NonFatal(e) =>
-          Logger.error(s"Within VideoService.refreshFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
-      }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
+
       response.map { seq =>
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
@@ -79,11 +81,15 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
 
-      val result: Future[Seq[VideoRow]] = videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
+      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
-        r <- result.map { case newsRows: Seq[VideoRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }
+        r <- result.map { seq =>
+          seq.map { news =>
+            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          }
+        }
         ad <- adFO
       } yield {
         r ++: ad
@@ -91,11 +97,6 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
 
       //插入已浏览表
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-      //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }.recover {
-        case NonFatal(e) =>
-          Logger.error(s"Within VideoService.loadFeedWithAd.newsRecommendReadDAO.insert($newsRecommendReads): ${e.getMessage}")
-      }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -124,6 +125,24 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val adResponseService: AdR
     val oldTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(-12))
     val nowTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(0))
     if (reqTimeCursor.isBefore(oldTimeCursor) || reqTimeCursor.isAfter(nowTimeCursor)) oldTimeCursor else reqTimeCursor
+  }
+
+  def toNewsFeedResponse(nid: Long, url: String, docid: String, title: String, pname: Option[String], purl: Option[String],
+                         collect: Int, concern: Int, comment: Int, inum: Int, style: Int, imgs: Option[String], state: Int,
+                         ctime: Timestamp, chid: Long, icon: Option[String], videourl: Option[String], thumbnail: Option[String],
+                         duration: Option[Int], rtype: Option[Int]): NewsFeedResponse = {
+    val imgsList = imgs match {
+      case Some(str) =>
+        Some(str.replace("{", "").replace("}", "").split(",").toList)
+      case _ => None
+    }
+
+    val date = new Date(ctime.getTime)
+    val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
+    val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
+    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration)
+    val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
+    NewsFeedResponse.from(newsSimpleRow)
   }
 
   def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
