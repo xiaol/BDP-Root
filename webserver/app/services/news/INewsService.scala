@@ -180,18 +180,73 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   }
 
   def loadFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
-    val result: Future[Seq[NewsRow]] = sechidOpt match {
-      case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
-      case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, msecondsToDatetime(timeCursor), nid)
+    val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
+    val result = sechidOpt match {
+      case Some(sechid) => newsResponseDao.bySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+      case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
     }
 
-    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
+    val response = result.map { seq =>
+      seq.map { news =>
+        toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+      }
+    }
+
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
-    result.map {
-      case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
+    response.map { seq =>
+      var flag = true
+      val localDateTime = msecondsToDatetime(timeCursor)
+      //若只有广告,返回空
+      if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+        //将广告时间放第二条
+        seq.map { r =>
+          if (r.rtype.getOrElse(0) == 3) {
+            r.copy(ptime = localDateTime.plusSeconds(-2))
+          } else if (flag) {
+            flag = false
+            r.copy(ptime = localDateTime.plusSeconds(-1))
+          } else {
+            r.copy(ptime = localDateTime.plusSeconds(Random.nextInt(5) - 7))
+          }
+
+        }.sortBy(_.ptime).take(count.toInt)
+      } else {
+        Seq[NewsFeedResponse]()
+      }
     }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+    val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
+
+    val result = sechidOpt match {
+      case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
+      case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+    }
+
+    result.map { newsRows => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+    val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
+
+    val result = sechidOpt match {
+      case Some(sechid) => newsDAO.loadBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
+      case None         => newsDAO.loadByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+    }
+
+    result.map { newsRows => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsService.loadFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
@@ -201,17 +256,39 @@ class NewsService @Inject() (val newsDAO: NewsDAO, val newsRecommendDAO: NewsRec
   def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-    val result: Future[Seq[NewsRow]] = sechidOpt match {
-      case Some(sechid) => newsDAO.refreshBySeChannel(chid, sechid, (page - 1) * count, count, newTimeCursor, nid)
-      case None         => newsDAO.refreshByChannel(chid, (page - 1) * count, count, newTimeCursor, nid)
+    val result = sechidOpt match {
+      case Some(sechid) => newsResponseDao.bySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+      case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
     }
 
-    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.map { v => NewsRecommendRead(uid, v.base.nid.get, LocalDateTime.now()) } }
+    val response = result.map { seq =>
+      seq.map { news =>
+        toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+      }
+    }
+
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
-    result.map {
-      case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
+    response.map { seq =>
+      var flag = true
+      //若只有广告,返回空
+      if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+        //将广告时间随机成任意一条新闻时间
+        seq.map { r =>
+          if (r.rtype.getOrElse(0) == 3) {
+            r.copy(ptime = newTimeCursor.plusSeconds(6))
+          } else if (flag) {
+            flag = false
+            r.copy(ptime = newTimeCursor.plusSeconds(7))
+          } else {
+            r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
+          }
+        }.sortBy(_.ptime)
+      } else {
+        Seq[NewsFeedResponse]()
+      }
     }.recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
