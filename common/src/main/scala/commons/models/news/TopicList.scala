@@ -19,7 +19,8 @@ case class TopicList(id: Int,
                      news_count: Int,
                      online: Int,
                      top: Int,
-                     create_time: Option[LocalDateTime])
+                     create_time: Option[LocalDateTime],
+                     rank: Int)
 
 object TopicList {
   //  implicit val getTopicListResult = GetResult(r => TopicList(r.<<, r.<<))
@@ -33,7 +34,8 @@ object TopicList {
     (JsPath \ "news_count").write[Int] ~
     (JsPath \ "online").write[Int] ~
     (JsPath \ "top").write[Int] ~
-    (JsPath \ "create_time").writeNullable[LocalDateTime]
+    (JsPath \ "create_time").writeNullable[LocalDateTime] ~
+    (JsPath \ "rank").write[Int]
   )(unlift(TopicList.unapply))
 }
 

@@ -30,7 +30,7 @@ trait IVideoService {
   def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
 }
 
-class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsResponseDao, val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao) extends IVideoService {
+class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsResponseDao, val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -54,6 +54,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
       //插入已浏览表
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -97,6 +98,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
       //插入已浏览表
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>

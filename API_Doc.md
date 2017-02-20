@@ -2229,8 +2229,10 @@ Content-Type: application/json
       "district": "山东",
       "rtime":  "2016-05-22 01:20:46",                        - 推荐时间
       "level":  2,                                            - 推荐等级
-      "bigimg": 1                                             - 第几张为大图
-      "status": 1                                             - 推荐状态1为已推荐
+      "bigimg": 1,                                            - 第几张为大图
+      "status": 1,                                            - 推荐状态1为已推荐
+      "showcount": 1,                                         - 展示次数
+      "clickcount": 1                                         - 点击次数
     },
     …
   ]

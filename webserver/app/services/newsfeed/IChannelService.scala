@@ -36,7 +36,7 @@ trait IFeedChannelService {
 
 }
 
-class FeedChannelService @Inject() (val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsResponseDao: NewsResponseDao) extends IFeedChannelService {
+class FeedChannelService @Inject() (val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsResponseDao: NewsResponseDao, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IFeedChannelService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -73,6 +73,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -97,7 +98,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within FeedChannelService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -132,6 +133,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
@@ -157,7 +159,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.loadFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within FeedChannelService.loadFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -178,6 +180,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
+    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     response.map { seq =>
@@ -200,7 +203,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within FeedChannelService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -220,6 +223,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
     val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
     //从结果中取要浏览的20条,插入已浏览表中
+    newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
     response.map { seq =>
@@ -244,7 +248,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within FeedChannelService.loadFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }

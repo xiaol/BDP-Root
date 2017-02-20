@@ -49,7 +49,7 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByRecommends($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsNoUidService.refreshQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -68,7 +68,7 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.loadFeedByRecommends($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsNoUidService.loadQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -83,7 +83,7 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
 
     result.map { newsRows => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsNoUidService.refreshFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -98,7 +98,7 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
 
     result.map { newsRows => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime) }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.loadFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
+        Logger.error(s"Within NewsNoUidService.loadFeedByChannel($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
