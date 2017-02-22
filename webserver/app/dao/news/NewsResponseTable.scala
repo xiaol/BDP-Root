@@ -3,7 +3,6 @@ package dao.news
 import java.sql.Timestamp
 import javax.inject.{ Inject, Singleton }
 
-import commons.models.news.NewsFeedResponse
 import org.joda.time.LocalDateTime
 import play.api.db.slick._
 import utils.MyPostgresDriver
@@ -24,7 +23,7 @@ object NewsResponseDao {
 
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
 
-  final private val select: String = "select nid, url, docid, title, pname, purl, collect, concern, comment, inum, style, imgs, state, ctime, chid, icon, videourl, thumbnail, duration, rtype from newslist_v2 nv"
+  final private val select: String = "select nv.nid, nv.url, nv.docid, nv.title, nv.pname, nv.purl, nv.collect, nv.concern, nv.comment, nv.inum, nv.style, nv.imgs, nv.state, nv.ctime, nv.chid, nv.icon, nv.videourl, nv.thumbnail, nv.duration, nv.rtype from newslist_v2 nv"
   final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null "
 
 }
@@ -78,21 +77,21 @@ class NewsResponseDao @Inject() (protected val dbConfigProvider: DatabaseConfigP
   //在人工1天内推荐里
   def byPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.nid in (select nid from newsrecommendlist where rtime>#$hourWindow24) and nv.ctime>#$dayWindow3 #$condition offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    val action = sql" #$select inner join newsrecommendlist nl on nv.nid=nl.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$hourWindow24) and nl.rtime>#$hourWindow24 and nv.ctime>#$dayWindow3 #$condition order by nl.level desc,nl.rtime desc offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
     db.run(action)
   }
 
   //在人工1天内推荐里,用户偏好前3的频道,3天内的新闻
   def byPeopleRecommendWithClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'30 day') group by chid order by count(1) desc limit 3) and nv.chid not in (2, 4, 6, 7, 9) and nv.nid in (select nid from newsrecommendlist where rtime>#$hourWindow24) and nv.ctime>#$dayWindow3 #$condition offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    val action = sql" #$select where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$hourWindow24) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'30 day') group by chid order by count(1) desc limit 3) and nv.chid not in (2, 4, 6, 7, 9) and nv.nid in (select nid from newsrecommendlist where rtime>#$hourWindow24) and nv.ctime>#$dayWindow3 #$condition offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
     db.run(action)
   }
 
   //在人工3天内推荐里,大图新闻
   def byBigImage(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" select nv.nid, url, docid, title, pname, purl, collect, concern, comment, inum, (10+nr.bigimg) as style, imgs, state, ctime, chid, icon, videourl, thumbnail, duration, rtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc  offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    val action = sql" select nv.nid, url, docid, title, pname, purl, collect, concern, comment, inum, (10+nr.bigimg) as style, imgs, state, ctime, chid, icon, videourl, thumbnail, duration, rtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc  offset $offset limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
     db.run(action)
   }
 

@@ -34,10 +34,10 @@ trait IQidianService {
   def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int): Future[Seq[NewsFeedResponse]]
 }
 
-class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
+class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
                                val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO) extends IQidianService {
 
-  def refreshQidianWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String], v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
+  private def qidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
@@ -47,26 +47,22 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
       val level4 = 1
 
       //----热点部分----
-      //有评论
-      val refreshHotFO = newsResponseDao.hot((page - 1) * count, level3, newTimeCursor, uid)
-      //百度热词
-      val refreshHotWordFO = newsResponseDao.baiduHotWord((page - 1) * count, level2, newTimeCursor, uid)
+      //百度热词 和 有评论
+      val refreshHotFO = newsUnionFeedDao.hot((page - 1) * count, level3, newTimeCursor, uid)
 
       //----推荐部分----
-      //模型推荐
-      val refreshLDARecommendFO = newsResponseDao.byLDA((page - 1) * count, level1 / 2, newTimeCursor, uid)
-      val refreshKMeansRecommendFO = newsResponseDao.byKmeans((page - 1) * count, level1, newTimeCursor, uid)
-      //人工推荐(没有偏好数据时使用)
-      val refreshByPeopleRecommendFO = newsResponseDao.byPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
-      //根据用户偏好从人工选取
-      val refreshByPeopleRecommendWithClickFO = newsResponseDao.byPeopleRecommendWithClick((page - 1) * count, level2 + 1, newTimeCursor, uid)
+      //模型LDA 和 Kmeans推荐
+      val refreshLDAandKmeansFO = newsUnionFeedDao.byLDAandKmeans((page - 1) * count, level1 / 2, newTimeCursor, uid)
 
-      //-------普通新闻------(可能情况:其他都没有数据,全出普通)
-      val refreshCommonFO = newsResponseDao.common((page - 1) * count, count, newTimeCursor, uid)
+      //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
+      val refreshByPeopleRecommendWithClickFO = newsUnionFeedDao.byPeopleRecommendWithClick((page - 1) * count, level2 + 1, newTimeCursor, uid)
 
-      //----大图部分----
-      //大图新闻
-      val refreshBigImgFO5 = newsResponseDao.byBigImage((page - 1) * count, level4, newTimeCursor, uid)
+      //-------补全新闻------补全流程:(LDA + Kmeans)没有时, 出点击量高的新闻 --> 普通新闻
+      val refreshCommonFO = newsUnionFeedDao.common((page - 1) * count, count, newTimeCursor, uid)
+
+      //----大图和视频部分----
+      //大图新闻 和 视频
+      val refreshBigImageAndVideo = newsUnionFeedDao.byBigImageAndVideo((page - 1) * count, level4, newTimeCursor, uid)
 
       //专题
       val topicsFO: Future[Seq[TopicList]] = t match {
@@ -74,62 +70,45 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
         case _ => Future.successful { Seq[TopicList]() }
       }
 
-      //视频
-      val videoFO = newsResponseDao.video((page - 1) * count, level4, newTimeCursor, uid)
-
-      //广告
-      val body: String = adbody
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(body, remoteAddress, uid)
-
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
-      val r: Future[Seq[NewsFeedResponse]] = for {
+      val result: Future[Seq[NewsFeedResponse]] = for {
         hots <- refreshHotFO.map { seq =>
           seq.map { news =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
+            newsFeedResponse
           }
         }
-        hotWords <- refreshHotWordFO.map { seq =>
+
+        lDAandKmeans <- refreshLDAandKmeansFO.map { seq =>
           seq.map { news =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
+            newsFeedResponse
           }
         }
-        lDARecommend <- refreshLDARecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        kMeansRecommend <- refreshKMeansRecommendFO.map {
-          seq =>
-            seq.map { news =>
-              val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-              newsFeedResponse.copy(rtype = Some(0))
-            }
-        }
-        peopleRecommend <- refreshByPeopleRecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
+
         peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
           seq.map { news =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
+            newsFeedResponse
           }
         }
         commons <- refreshCommonFO.map { seq =>
           seq.map { news =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
+            newsFeedResponse
           }
         }
-        bigimg5 <- refreshBigImgFO5.map { seq =>
-          seq.map { news =>
+        bigimg5 <- refreshBigImageAndVideo.map { seq =>
+          seq.filter(_._20 == Some(999)).map { news =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(999))
+            newsFeedResponse
+          }
+        }
+
+        video <- refreshBigImageAndVideo.map { seq =>
+          seq.filter(_._20 == Some(6)).take(v.getOrElse(0)).map { news =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            newsFeedResponse
           }
         }
 
@@ -138,17 +117,37 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
             NewsFeedResponse.from(topic)
           }
         }
-        video <- videoFO.map { seq =>
-          seq.take(v.getOrElse(0)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse
-          }
-        }
+
+      } yield {
+        (bigimg5.take(level4) ++: topics
+          ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3) ++: video ++: peopleRecommendWithClick.take((level2 * 2).toInt)
+          ++: commons).take(count.toInt + 2)
+      }
+
+      result
+
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within QidianService.qidian($timeCursor): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def refreshQidianWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String], v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
+    {
+      val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
+
+      val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
+      //广告
+      val body: String = adbody
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(body, remoteAddress, uid)
+
+      //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
+      val r: Future[Seq[NewsFeedResponse]] = for {
+        news <- newsFO
         ad <- adFO
       } yield {
-        (bigimg5.take(level4) ++: topics ++: ad
-          ++: ((lDARecommend ++: kMeansRecommend).take(level1.toInt) ++: (hotWords ++: hots).take(level3) ++: video ++: (peopleRecommend ++: peopleRecommendWithClick).take((level2 * 2).toInt)).take(count.toInt)
-          ++: commons).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -246,108 +245,17 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
-      val level1 = count / 2
-      val level2 = count / 5
-      val level3 = 2
-      val level4 = 1
-
-      //----热点部分----
-      //有评论
-      val refreshHotFO = newsResponseDao.hot((page - 1) * count, level2, newTimeCursor, uid)
-      //百度热词
-      val refreshHotWordFO = newsResponseDao.baiduHotWord((page - 1) * count, level2, newTimeCursor, uid)
-
-      //----推荐部分----
-      //模型推荐
-      val refreshLDARecommendFO = newsResponseDao.byLDA((page - 1) * count, level1 / 2, newTimeCursor, uid)
-      val refreshKMeansRecommendFO = newsResponseDao.byKmeans((page - 1) * count, level1, newTimeCursor, uid)
-      //人工推荐
-      val refreshByPeopleRecommendFO = newsResponseDao.byPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
-      val refreshByPeopleRecommendWithClickFO = newsResponseDao.byPeopleRecommendWithClick((page - 1) * count, level2 + 1, newTimeCursor, uid)
-
-      //-------普通新闻------(可能情况:其他都没有数据,全出普通)
-      val refreshCommonFO = newsResponseDao.common((page - 1) * count, count, newTimeCursor, uid)
-
-      //----大图部分----
-      //大图新闻
-      val refreshBigImgFO5 = newsResponseDao.byBigImage((page - 1) * count, level4, newTimeCursor, uid)
-
-      //专题
-      val topicsFO: Future[Seq[TopicList]] = t match {
-        case 1 => topicListDAO.topicShow(uid).map(_.take(level4))
-        case _ => Future.successful { Seq[TopicList]() }
-      }
-
-      //视频
-      val videoFO = newsResponseDao.video((page - 1) * count, level4, newTimeCursor, uid)
-
+      val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
+      //广告
       val body: String = adbody
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(body, remoteAddress, uid)
 
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
       val r: Future[Seq[NewsFeedResponse]] = for {
-        hots <- refreshHotFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        hotWords <- refreshHotWordFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        lDARecommend <- refreshLDARecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        kMeansRecommend <- refreshKMeansRecommendFO.map {
-          seq =>
-            seq.map { news =>
-              val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-              newsFeedResponse.copy(rtype = Some(0))
-            }
-        }
-        peopleRecommend <- refreshByPeopleRecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        commons <- refreshCommonFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        bigimg5 <- refreshBigImgFO5.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(999))
-          }
-        }
-
-        topics <- topicsFO.map { case seq: Seq[TopicList] => seq.map { topic => NewsFeedResponse.from(topic) } }
-        video <- videoFO.map { seq =>
-          seq.take(v.getOrElse(0)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse
-          }
-        }
+        news <- newsFO
         ad <- adFO
       } yield {
-        (bigimg5.take(level4) ++: topics ++: ad
-          ++: (hotWords ++: hots).take((level2).toInt) ++: video ++: ((lDARecommend ++: kMeansRecommend).take(level1.toInt) ++: (peopleRecommend ++: peopleRecommendWithClick).take((level2 * 2).toInt)).take(count.toInt)
-          ++: commons).take(count.toInt + 2)
+        (news ++: ad).take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -450,101 +358,8 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val level1 = count / 2
-      val level2 = count / 5
-      val level3 = 2
-      val level4 = 1
+      val r: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, Some(0)).map(_.take(count.toInt + 2))
 
-      //----热点部分----
-      //有评论
-      val refreshHotFO = newsResponseDao.hot((page - 1) * count, level3, newTimeCursor, uid)
-      //百度热词
-      val refreshHotWordFO = newsResponseDao.baiduHotWord((page - 1) * count, level2, newTimeCursor, uid)
-
-      //----推荐部分----
-      //模型推荐
-      val refreshLDARecommendFO = newsResponseDao.byLDA((page - 1) * count, level1 / 2, newTimeCursor, uid)
-      val refreshKMeansRecommendFO = newsResponseDao.byKmeans((page - 1) * count, level1, newTimeCursor, uid)
-      //人工推荐(没有偏好数据时使用)
-      val refreshByPeopleRecommendFO = newsResponseDao.byPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
-      //根据用户偏好从人工选取
-      val refreshByPeopleRecommendWithClickFO = newsResponseDao.byPeopleRecommendWithClick((page - 1) * count, level2 + 1, newTimeCursor, uid)
-
-      //-------普通新闻------(可能情况:其他都没有数据,全出普通)
-      val refreshCommonFO = newsResponseDao.common((page - 1) * count, count, newTimeCursor, uid)
-
-      //----大图部分----
-      //大图新闻
-      val refreshBigImgFO5 = newsResponseDao.byBigImage((page - 1) * count, level4, newTimeCursor, uid)
-
-      //专题
-      val topicsFO: Future[Seq[TopicList]] = t match {
-        case 1 => topicListDAO.topicShow(uid).map(_.take(level4))
-        case _ => Future.successful { Seq[TopicList]() }
-      }
-
-      //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
-      val r: Future[Seq[NewsFeedResponse]] = for {
-        hots <- refreshHotFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        hotWords <- refreshHotWordFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        lDARecommend <- refreshLDARecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        kMeansRecommend <- refreshKMeansRecommendFO.map {
-          seq =>
-            seq.map { news =>
-              val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-              newsFeedResponse.copy(rtype = Some(0))
-            }
-        }
-        peopleRecommend <- refreshByPeopleRecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        commons <- refreshCommonFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        bigimg5 <- refreshBigImgFO5.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(999))
-          }
-        }
-
-        topics <- topicsFO.map {
-          case seq: Seq[TopicList] => seq.map { topic =>
-            NewsFeedResponse.from(topic)
-          }
-        }
-      } yield {
-        (bigimg5.take(level4) ++: topics
-          ++: ((lDARecommend ++: kMeansRecommend).take(level1.toInt) ++: (hotWords ++: hots).take(level3) ++: (peopleRecommend ++: peopleRecommendWithClick).take((level2 * 2).toInt)).take(count.toInt)
-          ++: commons).take(count.toInt + 2)
-      }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
       //规则三:过滤连续重复来源
@@ -626,96 +441,7 @@ class QidianService @Inject() (val newsResponseDao: NewsResponseDao, val topicLi
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
-      val level1 = count / 2
-      val level2 = count / 5
-      val level3 = 2
-      val level4 = 1
-
-      //----热点部分----
-      //有评论
-      val refreshHotFO = newsResponseDao.hot((page - 1) * count, level2, newTimeCursor, uid)
-      //百度热词
-      val refreshHotWordFO = newsResponseDao.baiduHotWord((page - 1) * count, level2, newTimeCursor, uid)
-
-      //----推荐部分----
-      //模型推荐
-      val refreshLDARecommendFO = newsResponseDao.byLDA((page - 1) * count, level1 / 2, newTimeCursor, uid)
-      val refreshKMeansRecommendFO = newsResponseDao.byKmeans((page - 1) * count, level1, newTimeCursor, uid)
-      //人工推荐
-      val refreshByPeopleRecommendFO = newsResponseDao.byPeopleRecommend((page - 1) * count, level2 + 1, newTimeCursor, uid)
-      val refreshByPeopleRecommendWithClickFO = newsResponseDao.byPeopleRecommendWithClick((page - 1) * count, level2 + 1, newTimeCursor, uid)
-
-      //-------普通新闻------(可能情况:其他都没有数据,全出普通)
-      val refreshCommonFO = newsResponseDao.common((page - 1) * count, count, newTimeCursor, uid)
-
-      //----大图部分----
-      //大图新闻
-      val refreshBigImgFO5 = newsResponseDao.byBigImage((page - 1) * count, level4, newTimeCursor, uid)
-
-      //专题
-      val topicsFO: Future[Seq[TopicList]] = t match {
-        case 1 => topicListDAO.topicShow(uid).map(_.take(level4))
-        case _ => Future.successful { Seq[TopicList]() }
-      }
-
-      //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
-      val r: Future[Seq[NewsFeedResponse]] = for {
-        hots <- refreshHotFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        hotWords <- refreshHotWordFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(1))
-          }
-        }
-        lDARecommend <- refreshLDARecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        kMeansRecommend <- refreshKMeansRecommendFO.map {
-          seq =>
-            seq.map { news =>
-              val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-              newsFeedResponse.copy(rtype = Some(0))
-            }
-        }
-        peopleRecommend <- refreshByPeopleRecommendFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(2))
-          }
-        }
-        commons <- refreshCommonFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(0))
-          }
-        }
-        bigimg5 <- refreshBigImgFO5.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-            newsFeedResponse.copy(rtype = Some(999))
-          }
-        }
-
-        topics <- topicsFO.map { case seq: Seq[TopicList] => seq.map { topic => NewsFeedResponse.from(topic) } }
-      } yield {
-        (bigimg5.take(level4) ++: topics
-          ++: (hotWords ++: hots).take((level2).toInt) ++: ((lDARecommend ++: kMeansRecommend).take(level1.toInt) ++: (peopleRecommend ++: peopleRecommendWithClick).take((level2 * 2).toInt)).take(count.toInt)
-          ++: commons).take(count.toInt + 2)
-      }
+      val r: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, Some(0)).map(_.take(count.toInt + 2))
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
       //规则三:过滤连续重复来源

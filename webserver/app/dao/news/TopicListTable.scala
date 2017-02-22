@@ -63,7 +63,7 @@ class TopicListDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProv
   }
 
   def topicShow(uid: Long): Future[Seq[(TopicList)]] = {
-    db.run(topicList.filter(_.online === 1).filter(_.top === 1).unionAll(topicList.filter(_.id in (topicList.filter(_.online === 1).filter(_.top =!= 1).filter(_.create_time > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.id in (topicNews.filter(_.create_time > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.news in (topicNewsRead.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid))).map(_.topic))).sortBy(_.rank.desc).map(_.id).take(1)))).result)
+    db.run(topicList.filter(_.online === 1).filter(_.top === 1).unionAll(topicList.filter(_.id in (topicList.filter(_.online === 1).filter(_.top =!= 1).filter(_.create_time > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.id in (topicNews.filter(_.create_time > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.news in (topicNewsRead.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid))).map(_.topic))).sortBy(p => (p.rank.desc, p.create_time.desc)).map(_.id).take(1)))).result)
   }
 
   //  def topicShow(uid: Long): Future[Seq[(TopicList)]] = {
