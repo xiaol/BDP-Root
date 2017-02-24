@@ -10,6 +10,7 @@ import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
 import dao.newsfeed.NewsFeedDao
+import dao.userprofiles.HateNewsDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import services.advertisement.AdResponseService
@@ -36,7 +37,7 @@ trait IFeedChannelService {
 
 }
 
-class FeedChannelService @Inject() (val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsResponseDao: NewsResponseDao, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IFeedChannelService {
+class FeedChannelService @Inject() (val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsResponseDao: NewsResponseDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val hateNewsDAO: HateNewsDAO) extends IFeedChannelService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
@@ -53,6 +54,9 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
       val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
+      //不感兴趣新闻,获取来源和频道
+      val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
+
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
@@ -67,8 +71,17 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
           }
         }
         ad <- adFO
+        hatePnameWithChid <- hateNews
       } yield {
-        (rkm ++: ad ++: r).take(count.toInt)
+        ((rkm ++: r).filter { feed =>
+          var flag = true
+          hatePnameWithChid.foreach { news =>
+            if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
+              flag = false
+            }
+          }
+          flag
+        }.take(count.toInt - 1) ++: ad)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
@@ -80,18 +93,13 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         var flag = true
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-          //将广告时间随机成任意一条新闻时间
-          seq.map { r =>
-            if (r.rtype.getOrElse(0) == 3) {
-              r.copy(ptime = newTimeCursor.plusSeconds(6))
-            } else if (flag) {
-              flag = false
-              r.copy(ptime = newTimeCursor.plusSeconds(7))
-            } else {
-              r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
-            }
-
-          }.sortBy(_.ptime)
+          //将广告放在第6个
+          var seccount = 10
+          val newsfeed = seq.map { news =>
+            seccount = seccount - 1
+            news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+          }
+          changeADtime(newsfeed, newTimeCursor).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }
@@ -101,6 +109,34 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         Logger.error(s"Within FeedChannelService.refreshFeedByChannelWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
+  }
+
+  def changeADtime(feeds: Seq[NewsFeedResponse], newTimeCursor: LocalDateTime): Seq[NewsFeedResponse] = {
+    //-----------将广告放在第六个-----------
+    //第六个新闻nid和时间
+    val nid6 = feeds.take(6).lastOption match {
+      case Some(news) => news.nid
+      case _          => 0L
+    }
+    val time6 = feeds.take(6).lastOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告的时间
+    val timead = feeds.filter(_.rtype == Some(3)).headOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告时间和第六条新闻时间互换
+    feeds.map { news =>
+      if (news.rtype == Some(3)) {
+        news.copy(ptime = time6)
+      } else if (news.nid == nid6) {
+        news.copy(ptime = timead)
+      } else {
+        news
+      }
+    }.sortBy(_.ptime)
   }
 
   def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
@@ -113,6 +149,9 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
       val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
+      //不感兴趣新闻,获取来源和频道
+      val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
+
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
 
       val response = for {
@@ -127,8 +166,17 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
           }
         }
         ad <- adFO
+        hatePnameWithChid <- hateNews
       } yield {
-        (rkm ++: ad ++: r).take(count.toInt)
+        (rkm ++: ad ++: r).filter { feed =>
+          var flag = true
+          hatePnameWithChid.foreach { news =>
+            if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
+              flag = false
+            }
+          }
+          flag
+        }.take(count.toInt)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
@@ -141,18 +189,13 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         val localDateTime = msecondsToDatetime(timeCursor)
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-          //将广告时间放第二条
-          seq.map { r =>
-            if (r.rtype.getOrElse(0) == 3) {
-              r.copy(ptime = localDateTime.plusSeconds(-2))
-            } else if (flag) {
-              flag = false
-              r.copy(ptime = localDateTime.plusSeconds(-1))
-            } else {
-              r.copy(ptime = localDateTime.plusSeconds(Random.nextInt(5) - 7))
-            }
-
-          }.sortBy(_.ptime).take(count.toInt)
+          //将广告放在第6个
+          var seccount = 0
+          val newsfeed = seq.map { news =>
+            seccount = seccount - 1
+            news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+          }
+          changeADtime(newsfeed, newTimeCursor).take(count.toInt)
         } else {
           Seq[NewsFeedResponse]()
         }
@@ -187,17 +230,13 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       var flag = true
       //若只有广告,返回空
       if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-        //将广告时间随机成任意一条新闻时间
-        seq.map { r =>
-          if (r.rtype.getOrElse(0) == 3) {
-            r.copy(ptime = newTimeCursor.plusSeconds(6))
-          } else if (flag) {
-            flag = false
-            r.copy(ptime = newTimeCursor.plusSeconds(7))
-          } else {
-            r.copy(ptime = newTimeCursor.plusSeconds(Random.nextInt(5)))
-          }
-        }.sortBy(_.ptime)
+        //将广告放在第6个
+        var seccount = 10
+        val newsfeed = seq.map { news =>
+          seccount = seccount - 1
+          news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+        }
+        changeADtime(newsfeed, newTimeCursor).take(count.toInt)
       } else {
         Seq[NewsFeedResponse]()
       }
@@ -231,18 +270,13 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       val localDateTime = msecondsToDatetime(timeCursor)
       //若只有广告,返回空
       if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-        //将广告时间放第二条
-        seq.map { r =>
-          if (r.rtype.getOrElse(0) == 3) {
-            r.copy(ptime = localDateTime.plusSeconds(-2))
-          } else if (flag) {
-            flag = false
-            r.copy(ptime = localDateTime.plusSeconds(-1))
-          } else {
-            r.copy(ptime = localDateTime.plusSeconds(Random.nextInt(5) - 7))
-          }
-
-        }.sortBy(_.ptime).take(count.toInt)
+        //将广告放在第6个
+        var seccount = 0
+        val newsfeed = seq.map { news =>
+          seccount = seccount - 1
+          news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+        }
+        changeADtime(newsfeed, newTimeCursor).take(count.toInt)
       } else {
         Seq[NewsFeedResponse]()
       }

@@ -3058,3 +3058,50 @@ Content-Type: application/json
   ]
 }
 ```
+
+#### 统计报表(客户端各渠道每日单条新闻点击量排序（前100条）)
+
+_Request_
+
+```json
+GET /v2/re/top
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| ptype  | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+| page   | Int | 否         | 页数|
+| count  | Int | 否         | 每页条数|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "nid": 12374346,
+      "title": "天呐！陈伟霆一直声称不上跑男，baby一走他就来了",
+      "clickcount": 47,                 -- 点击数
+      "showcount": 14224,               -- 展示数
+      "ctype": 3,                       -- 渠道
+      "ptype": 2,                       -- 平台
+      "data_time_count": "2017-02-23 00:00:00" --数据时间
+    },
+    {
+      "nid": 12382712,
+      "title": "图集：8张图告诉你空姐真正的私人生活，原来和我们见到的差别极大",
+      "clickcount": 37,
+      "showcount": 13790,
+      "ctype": 3,
+      "ptype": 2,
+      "data_time_count": "2017-02-23 00:00:00"
+    },
+    ......
+  ]
+}
+```

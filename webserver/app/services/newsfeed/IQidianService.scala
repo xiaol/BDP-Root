@@ -10,6 +10,7 @@ import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
 import dao.newsfeed.NewsFeedDao
+import dao.userprofiles.HateNewsDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import services.advertisement.AdResponseService
@@ -35,7 +36,7 @@ trait IQidianService {
 }
 
 class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
-                               val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO) extends IQidianService {
+                               val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO, val hateNewsDAO: HateNewsDAO) extends IQidianService {
 
   private def qidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
     {
@@ -69,6 +70,9 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         case 1 => topicListDAO.topicShow(uid).map(_.take(level4))
         case _ => Future.successful { Seq[TopicList]() }
       }
+
+      //不感兴趣新闻,获取来源和频道
+      val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
 
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
       val result: Future[Seq[NewsFeedResponse]] = for {
@@ -118,10 +122,20 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
           }
         }
 
+        hatePnameWithChid <- hateNews
+
       } yield {
         (bigimg5.take(level4) ++: topics
           ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3) ++: video ++: peopleRecommendWithClick.take((level2 * 2).toInt)
-          ++: commons).take(count.toInt + 2)
+          ++: commons).filter { feed =>
+            var flag = true
+            hatePnameWithChid.foreach { news =>
+              if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
+                flag = false
+              }
+            }
+            flag
+          }.take(count.toInt + 2)
       }
 
       result
@@ -131,6 +145,34 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         Logger.error(s"Within QidianService.qidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
+  }
+
+  def changeADtime(feeds: Seq[NewsFeedResponse], newTimeCursor: LocalDateTime): Seq[NewsFeedResponse] = {
+    //-----------将广告放在第六个-----------
+    //第六个新闻nid和时间
+    val nid6 = feeds.take(6).lastOption match {
+      case Some(news) => news.nid
+      case _          => 0L
+    }
+    val time6 = feeds.take(6).lastOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告的时间
+    val timead = feeds.filter(_.rtype == Some(3)).headOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告时间和第六条新闻时间互换
+    feeds.map { news =>
+      if (news.rtype == Some(3)) {
+        news.copy(ptime = time6)
+      } else if (news.nid == nid6) {
+        news.copy(ptime = timead)
+      } else {
+        news
+      }
+    }.sortBy(_.ptime)
   }
 
   def refreshQidianWithAd(uid: Long, page: Long, count: Long, timeCursor: Long, adbody: String, t: Int, remoteAddress: Option[String], v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
@@ -188,30 +230,13 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
           }
         }
         //-----------将广告放在第六个-----------
-        //第六个新闻nid和时间
-        val nid6 = feeds.take(6).lastOption match {
-          case Some(news) => news.nid
-          case _          => 0L
+        //将广告放在第6个
+        var seccount = 10
+        val newsfeed = feeds.map { news =>
+          seccount = seccount - 1
+          news.copy(ptime = newTimeCursor.plusSeconds(seccount))
         }
-        val time6 = feeds.take(6).lastOption match {
-          case Some(news) => news.ptime
-          case _          => newTimeCursor
-        }
-        //广告的时间
-        val timead = feeds.filter(_.rtype == Some(3)).headOption match {
-          case Some(news) => news.ptime
-          case _          => newTimeCursor
-        }
-        //广告时间和第六条新闻时间互换
-        feeds.map { news =>
-          if (news.rtype == Some(3)) {
-            news.copy(ptime = time6)
-          } else if (news.nid == nid6) {
-            news.copy(ptime = timead)
-          } else {
-            news
-          }
-        }.sortBy(_.ptime)
+        changeADtime(newsfeed, newTimeCursor)
       }.map(_.take(count.toInt))
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
@@ -255,7 +280,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         news <- newsFO
         ad <- adFO
       } yield {
-        (news ++: ad).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt + 2)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -301,30 +326,13 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
           }
         }
         //-----------将广告放在第六个-----------
-        //第六个新闻nid和时间
-        val nid6 = feeds.take(6).lastOption match {
-          case Some(news) => news.nid
-          case _          => 0L
+        //将广告放在第6个
+        var seccount = 0
+        val newsfeed = feeds.map { news =>
+          seccount = seccount - 1
+          news.copy(ptime = newTimeCursor.plusSeconds(seccount))
         }
-        val time6 = feeds.take(6).lastOption match {
-          case Some(news) => news.ptime
-          case _          => newTimeCursor
-        }
-        //广告的时间
-        val timead = feeds.filter(_.rtype == Some(3)).headOption match {
-          case Some(news) => news.ptime
-          case _          => newTimeCursor
-        }
-        //广告时间和第六条新闻时间互换
-        feeds.map { news =>
-          if (news.rtype == Some(3)) {
-            news.copy(ptime = time6)
-          } else if (news.nid == nid6) {
-            news.copy(ptime = timead)
-          } else {
-            news
-          }
-        }.sortBy(_.ptime)
+        changeADtime(newsfeed, newTimeCursor)
       }.map(_.take(count.toInt))
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
       //从结果中取要浏览的20条,插入已浏览表中
