@@ -11,7 +11,7 @@ import play.api.libs.json.{ JsSuccess, JsError }
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.news._
-import services.newsfeed.{ FeedChannelService, QidianService, NewsNoUidService }
+import services.newsfeed.{ QidianWithCacheService, FeedChannelService, QidianService, NewsNoUidService }
 import services.users.UserService
 import services.video.VideoService
 import utils.Response._
@@ -24,7 +24,7 @@ import scala.util.Random
  * Created by zhange on 2016-05-16.
  *
  */
-class NewsResponseController @Inject() (val qidianService: QidianService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
+class NewsResponseController @Inject() (val qidianService: QidianWithCacheService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
                                         val userService: UserService, val videoService: VideoService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
@@ -39,7 +39,7 @@ class NewsResponseController @Inject() (val qidianService: QidianService, val fe
         }
         requestParams.uid match {
           case uid: Long if uid > 0 => requestParams.cid match {
-            case 1L => qidianService.refreshQidianWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP"), requestParams.v).map {
+            case 1L => qidianService.refreshQidian(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, requestParams.t.getOrElse(0), requestParams.v, Some(decodeBase64(requestParams.b)), request.headers.get("X-Real-IP")).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
               case _                                            => DataEmptyError(s"$requestParams")
             }
@@ -79,7 +79,7 @@ class NewsResponseController @Inject() (val qidianService: QidianService, val fe
         }
         requestParams.uid match {
           case uid: Long if uid > 0 => requestParams.cid match {
-            case 1L => qidianService.loadQidianWithAd(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), requestParams.t.getOrElse(0), request.headers.get("X-Real-IP"), requestParams.v).map {
+            case 1L => qidianService.loadQidian(requestParams.uid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, requestParams.t.getOrElse(0), requestParams.v, Some(decodeBase64(requestParams.b)), request.headers.get("X-Real-IP")).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
               case _                                            => DataEmptyError(s"$requestParams")
             }
@@ -116,7 +116,7 @@ class NewsResponseController @Inject() (val qidianService: QidianService, val fe
     }
     uid match {
       case uid: Long if uid > 0 => cid match {
-        case 1L => qidianService.refreshQidian(uid, page, newcount, tcursor, t).map {
+        case 1L => qidianService.refreshQidian(uid, page, newcount, tcursor, t, None, None, request.headers.get("X-Real-IP")).map {
           case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
           case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
         }
@@ -147,7 +147,7 @@ class NewsResponseController @Inject() (val qidianService: QidianService, val fe
     }
     uid match {
       case uid: Long if uid > 0 => cid match {
-        case 1L => qidianService.loadQidian(uid, page, newcount, tcursor, t).map {
+        case 1L => qidianService.loadQidian(uid, page, newcount, tcursor, t, None, None, request.headers.get("X-Real-IP")).map {
           case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
           case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
         }

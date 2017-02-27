@@ -181,7 +181,10 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   }
 
   def listNewsBySearch(nids: Seq[Long]): Future[Seq[NewsRecommend]] = {
-    db.run(newsRecommendList.filter(_.nid inSet nids).result)
+    val queryAction = for {
+      (recommend, news) <- newsRecommendList.filter(_.nid inSet nids).join(newsList).on(_.nid === _.nid)
+    } yield (recommend)
+    db.run(queryAction.result)
   }
 
   def listNewsByRecommandUid(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {

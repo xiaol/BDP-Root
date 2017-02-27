@@ -7,6 +7,7 @@ import javax.inject.Inject
 import com.google.inject.ImplementedBy
 import commons.models.news._
 import commons.utils.JodaOderingImplicits
+import commons.utils.JodaOderingImplicits.LocalDateTimeReverseOrdering
 import commons.utils.JodaUtils._
 import dao.news._
 import dao.newsfeed.NewsFeedDao
@@ -14,26 +15,98 @@ import dao.userprofiles.HateNewsDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
 import services.advertisement.AdResponseService
+import services.news.NewsCacheService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Random
 import scala.util.control.NonFatal
-import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
 /**
  * Created by zhange on 2016-05-09.
  *
  */
 
-@ImplementedBy(classOf[QidianService])
-trait IQidianService {
+@ImplementedBy(classOf[QidianWithCacheService])
+trait IQidianWithCacheService {
   def refreshQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
   def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
 }
 
-class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
-                               val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO, val hateNewsDAO: HateNewsDAO) extends IQidianService {
+class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
+                                        val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO, val hateNewsDAO: HateNewsDAO)
+    extends IQidianWithCacheService with NewsCacheService {
+
+  def getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+    {
+
+      //从缓存取数据
+      val cachefeed = getNewsFeedCache(uid)
+
+      val result = cachefeed.flatMap {
+        case Some(news: Seq[NewsFeedResponse]) if news.nonEmpty =>
+          //拿到之后,清除缓存,避免下次出现重复数据
+          remNewsFeedCache(uid)
+          Future.successful(news)
+        case _ => getData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
+      }
+      result
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within QidianWithCacheService.getFeedData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def setData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Boolean] = {
+    {
+
+      Thread.sleep(30)
+      val result: Future[Seq[NewsFeedResponse]] = getData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
+      result.flatMap { data =>
+        data match {
+          case data: Seq[NewsFeedResponse] if data.nonEmpty && data.length > 0 => setNewsFeedCache(uid, data)
+          case _                                                               => Future.successful(false)
+        }
+      }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within QidianWithCacheService.setData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        false
+    }
+  }
+
+  def getData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+    {
+
+      //新闻
+      val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
+      //广告
+      val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
+        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
+        case _                  => Future.successful(Seq[NewsFeedResponse]())
+      }
+
+      val result: Future[Seq[NewsFeedResponse]] = for {
+        news <- newsFO
+        ad <- adFO
+      } yield {
+        (ad ++: news).take(count.toInt + 2)
+      }
+      result.map { feed =>
+        //若只有广告,返回空
+        if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          feed
+        } else {
+          Seq[NewsFeedResponse]()
+        }
+      }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within QidianWithCacheService.getData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
 
   private def qidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int]): Future[Seq[NewsFeedResponse]] = {
     {
@@ -142,7 +215,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
 
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianService.qidian($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianWithCacheService.qidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -151,20 +224,8 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
-      //广告
-      val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
-        case _                  => Future.successful(Seq[NewsFeedResponse]())
-      }
-
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
-      val r: Future[Seq[NewsFeedResponse]] = for {
-        news <- newsFO
-        ad <- adFO
-      } yield {
-        (ad ++: news).take(count.toInt + 2)
-      }
+      val r: Future[Seq[NewsFeedResponse]] = getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
       //规则三:过滤连续重复来源
@@ -228,6 +289,8 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         }
         //若只有广告,返回空
         if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          //最后再设置下一次缓存, 避免本次新闻尚未插入已浏览记录表, 下一次取到重复新闻
+          setData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
           feed
         } else {
           Seq[NewsFeedResponse]()
@@ -235,7 +298,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianService.refresh($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianWithCacheService.refreshQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -244,20 +307,8 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
-      val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
-      //广告
-      val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
-        case _                  => Future.successful(Seq[NewsFeedResponse]())
-      }
-
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
-      val r: Future[Seq[NewsFeedResponse]] = for {
-        news <- newsFO
-        ad <- adFO
-      } yield {
-        (ad ++: news).take(count.toInt + 2)
-      }
+      val r: Future[Seq[NewsFeedResponse]] = getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
       //规则三:过滤连续重复来源
@@ -326,6 +377,8 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         }
         //若只有广告,返回空
         if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
+          //最后再设置下一次缓存, 避免本次新闻尚未插入已浏览记录表, 下一次取到重复新闻
+          setData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
           feed
         } else {
           Seq[NewsFeedResponse]()
@@ -333,7 +386,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianService.loadQidian($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianWithCacheService.loadQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }

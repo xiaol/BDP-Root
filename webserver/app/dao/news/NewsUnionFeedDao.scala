@@ -21,7 +21,7 @@ object NewsUnionFeedDao {
 
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
 
-  final private val select: String = "select nv.nid, nv.url, nv.docid, nv.title, nv.pname, nv.purl, nv.collect, nv.concern, nv.comment, nv.inum, nv.style, nv.imgs, nv.state, nv.ctime, nv.chid, nv.icon, nv.videourl, nv.thumbnail, nv.duration "
+  final private val select: String = "select nv.nid, nv.url, nv.docid, nv.title, nv.pname, nv.purl, nv.collect, nv.concern, nv.comment, nv.inum, nv.style, array_to_string(nv.imgs, ',') as imgs, nv.state, nv.ctime, nv.chid, nv.icon, nv.videourl, nv.thumbnail, nv.duration "
   final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null "
 
 }
@@ -63,7 +63,14 @@ class NewsUnionFeedDao @Inject() (protected val dbConfigProvider: DatabaseConfig
   //在人工3天内推荐里,大图新闻, 和视频
   def byBigImageAndVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" select * from (select nv.nid, url, docid, title, pname, purl, collect, concern, comment, inum, (10+nr.bigimg) as style, imgs, state, ctime, chid, icon, videourl, thumbnail, duration, 999 as rtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit)bigimage union all select * from(#$select , 6 as rtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  and nv.rtype=6 limit $limit)video ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    val action = sql" select * from (select nv.nid, url, docid, title, pname, purl, collect, concern, comment, inum, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs, state, ctime, chid, icon, videourl, thumbnail, duration, 999 as rtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit)bigimage union all select * from(#$select , 6 as rtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  and nv.rtype=6 limit $limit)video ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
+    db.run(action)
+  }
+
+  //在人工3天内推荐里,大图新闻
+  def byBigImage(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]] = {
+    val tablename: String = "newsrecommendread_" + uid % 100
+    val action = sql" select nv.nid, url, docid, title, pname, purl, collect, concern, comment, inum, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs, state, ctime, chid, icon, videourl, thumbnail, duration, 999 as rtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit ".as[(Long, String, String, String, Option[String], Option[String], Int, Int, Int, Int, Int, Option[String], Int, Timestamp, Long, Option[String], Option[String], Option[String], Option[Int], Option[Int])]
     db.run(action)
   }
 
