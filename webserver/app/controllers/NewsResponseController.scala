@@ -11,7 +11,7 @@ import play.api.libs.json.{ JsSuccess, JsError }
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.news._
-import services.newsfeed.{ QidianWithCacheService, FeedChannelService, QidianService, NewsNoUidService }
+import services.newsfeed._
 import services.users.UserService
 import services.video.VideoService
 import utils.Response._
@@ -24,7 +24,7 @@ import scala.util.Random
  * Created by zhange on 2016-05-16.
  *
  */
-class NewsResponseController @Inject() (val qidianService: QidianWithCacheService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
+class NewsResponseController @Inject() (val qidianService: QidianNewsWithUserCacheService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
                                         val userService: UserService, val videoService: VideoService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
@@ -109,7 +109,9 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
   }
 
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
-    pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    if (uid != 6440748) {
+      pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    }
     var newcount = count
     if (newcount > 9) {
       newcount = 9
@@ -202,6 +204,20 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
 
   final private def https(imags: List[String]): List[String] = {
     imags.map { url => url.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com").replace("http://bdp-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com") }
+  }
+
+  def updateNewsFeedCommon() = Action.async { implicit request =>
+    qidianService.updateNewsFeedCommon().map {
+      case true => ServerSucced(true)
+      case _    => ServerSucced(false)
+    }
+  }
+
+  def test(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
+    qidianService.test(uid, page, 9, tcursor, t, None, None, request.headers.get("X-Real-IP")).map {
+      case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
+      case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
+    }
   }
 
 }

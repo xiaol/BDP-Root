@@ -57,7 +57,7 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
       val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
       val seq: Seq[NewsFeedResponse] = list.map {
         case creative: Creative =>
-          NewsFeedResponse.from(creative)
+          NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
       }.toSeq
       seq
     } else {

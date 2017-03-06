@@ -183,3 +183,9 @@ POST     /v2/ns/ad                  controllers.AdvertiseController.getAd()
 
 #统计报表
 GET     /v2/re/top                  controllers.ReportController.topClickNews(ctype: Int, ptype: Int, page: Long ?= 1, count: Long ?= 100)
+
+#更新公共feed流新闻
+GET     /v2/ns/fed/up               controllers.NewsResponseController.updateNewsFeedCommon()
+
+#测试
+GET     /v2/ns/fed/test               controllers.NewsResponseController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])

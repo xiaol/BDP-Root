@@ -1,7 +1,7 @@
 package commons.models.news
 
 import com.sksamuel.elastic4s.{ HitAs, RichSearchHit }
-import commons.models.advertisement.{ App, Creative, Adspace }
+import commons.models.advertisement.{ AdResponse, App, Creative, Adspace }
 import commons.models.video.VideoRow
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
@@ -38,7 +38,8 @@ case class NewsFeedResponse(
   icon: Option[String] = None,
   videourl: Option[String] = None,
   thumbnail: Option[String] = None,
-  duration: Option[Int] = None)
+  duration: Option[Int] = None,
+  adresponse: Option[AdResponse] = None)
 
 object NewsFeedResponse {
 
@@ -76,7 +77,8 @@ object NewsFeedResponse {
     (JsPath \ "icon").writeNullable[String] ~
     (JsPath \ "videourl").writeNullable[String] ~
     (JsPath \ "thumbnail").writeNullable[String] ~
-    (JsPath \ "duration").writeNullable[Int]
+    (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "adresponse").writeNullable[AdResponse]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -102,7 +104,8 @@ object NewsFeedResponse {
     (JsPath \ "icon").readNullable[String] ~
     (JsPath \ "videourl").readNullable[String] ~
     (JsPath \ "thumbnail").readNullable[String] ~
-    (JsPath \ "duration").readNullable[Int]
+    (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "adresponse").readNullable[AdResponse]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {

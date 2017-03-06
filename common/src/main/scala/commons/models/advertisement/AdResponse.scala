@@ -135,40 +135,49 @@ object Banner {
 }
 
 case class Creative(cid: Option[Int] = None,
+                    is_html: Option[Boolean] = None,
                     index: Option[Int] = None,
                     banner: Option[Banner] = None,
                     video: Option[Video] = None,
                     ad_native: Option[List[Ad_native]] = None,
+                    html_snippet: Option[String] = None,
                     app: Option[App] = None,
                     impression: Option[List[String]] = None,
                     click: Option[List[String]] = None,
                     tracking: Option[List[Tracking]] = None,
-                    event: Option[List[Event]] = None)
+                    event: Option[List[Event]] = None,
+                    admark: Option[String] = None)
 object Creative {
   implicit val CreativeWrites: Writes[Creative] = (
     (JsPath \ "cid").writeNullable[Int] ~
+    (JsPath \ "is_html").writeNullable[Boolean] ~
     (JsPath \ "index").writeNullable[Int] ~
     (JsPath \ "banner").writeNullable[Banner] ~
     (JsPath \ "video").writeNullable[Video] ~
     (JsPath \ "ad_native").writeNullable[List[Ad_native]] ~
+    (JsPath \ "html_snippet").writeNullable[String] ~
     (JsPath \ "app").writeNullable[App] ~
     (JsPath \ "impression").writeNullable[List[String]] ~
     (JsPath \ "click").writeNullable[List[String]] ~
     (JsPath \ "tracking").writeNullable[List[Tracking]] ~
-    (JsPath \ "event").writeNullable[List[Event]]
+    (JsPath \ "event").writeNullable[List[Event]] ~
+    (JsPath \ "admark").writeNullable[String]
   )(unlift(Creative.unapply))
 
   implicit val CreativeReads: Reads[Creative] = (
     (JsPath \ "cid").readNullable[Int] ~
+    (JsPath \ "is_html").readNullable[Boolean] ~
     (JsPath \ "index").readNullable[Int] ~
     (JsPath \ "banner").readNullable[Banner] ~
     (JsPath \ "video").readNullable[Video] ~
     (JsPath \ "ad_native").readNullable[List[Ad_native]] ~
+    (JsPath \ "html_snippet").readNullable[String] ~
     (JsPath \ "app").readNullable[App] ~
     (JsPath \ "impression").readNullable[List[String]] ~
     (JsPath \ "click").readNullable[List[String]] ~
     (JsPath \ "tracking").readNullable[List[Tracking]] ~
-    (JsPath \ "event").readNullable[List[Event]]
+    (JsPath \ "event").readNullable[List[Event]] ~
+    (JsPath \ "admark").readNullable[String]
   )(Creative.apply _)
 }
 

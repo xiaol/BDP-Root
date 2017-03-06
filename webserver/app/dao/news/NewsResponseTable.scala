@@ -23,7 +23,7 @@ object NewsResponseDao {
 
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
 
-  final private val select: String = "select nv.nid, nv.url, nv.docid, nv.title, nv.pname, nv.purl, nv.collect, nv.concern, nv.comment, nv.inum, nv.style, nv.imgs, nv.state, nv.ctime, nv.chid, nv.icon, nv.videourl, nv.thumbnail, nv.duration, nv.rtype from newslist_v2 nv"
+  final private val select: String = "select nv.nid, nv.url, nv.docid, nv.title, nv.pname, nv.purl, nv.collect, nv.concern, nv.comment, nv.inum, nv.style, array_to_string(nv.imgs, ',') as imgs, nv.state, nv.ctime, nv.chid, nv.icon, nv.videourl, nv.thumbnail, nv.duration, nv.rtype from newslist_v2 nv"
   final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null "
 
 }

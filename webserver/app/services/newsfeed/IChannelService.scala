@@ -52,7 +52,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
 
-      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
+      //      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
@@ -65,15 +65,15 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
           }
         }
-        rkm <- resultKM.map { seq =>
-          seq.map { news =>
-            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-          }
-        }
+        //        rkm <- resultKM.map { seq =>
+        //          seq.map { news =>
+        //            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+        //          }
+        //        }
         ad <- adFO
         hatePnameWithChid <- hateNews
       } yield {
-        ((rkm ++: r).filter { feed =>
+        (r.filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
@@ -147,7 +147,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
 
-      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
+      //      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
@@ -160,15 +160,15 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
           }
         }
-        rkm <- resultKM.map { seq =>
-          seq.map { news =>
-            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
-          }
-        }
+        //        rkm <- resultKM.map { seq =>
+        //          seq.map { news =>
+        //            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+        //          }
+        //        }
         ad <- adFO
         hatePnameWithChid <- hateNews
       } yield {
-        (rkm ++: ad ++: r).filter { feed =>
+        (ad ++: r).filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
