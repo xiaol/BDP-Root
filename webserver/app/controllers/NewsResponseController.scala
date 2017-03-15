@@ -109,9 +109,7 @@ class NewsResponseController @Inject() (val qidianService: QidianNewsWithUserCac
   }
 
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
-    if (uid != 6440748) {
-      pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-    }
+    pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
     if (newcount > 9) {
       newcount = 9
@@ -210,13 +208,6 @@ class NewsResponseController @Inject() (val qidianService: QidianNewsWithUserCac
     qidianService.updateNewsFeedCommon().map {
       case true => ServerSucced(true)
       case _    => ServerSucced(false)
-    }
-  }
-
-  def test(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
-    qidianService.test(uid, page, 9, tcursor, t, None, None, request.headers.get("X-Real-IP")).map {
-      case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
-      case _                                            => DataEmptyError(s"$cid, $page, $count, $tcursor")
     }
   }
 

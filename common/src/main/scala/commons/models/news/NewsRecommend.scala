@@ -129,19 +129,25 @@ object NewsRecommendResponse {
 case class NewsRecommendRead(
   uid: Long,
   nid: Long,
-  readtime: LocalDateTime)
+  readtime: LocalDateTime,
+  logtype: Option[Int] = None,
+  logchid: Option[Int] = None)
 
 object NewsRecommendRead {
   implicit val NewsRecommendReadWrites: Writes[NewsRecommendRead] = (
     (JsPath \ "uid").write[Long] ~
     (JsPath \ "nid").write[Long] ~
-    (JsPath \ "readtime").write[LocalDateTime]
+    (JsPath \ "readtime").write[LocalDateTime] ~
+    (JsPath \ "logtype").writeNullable[Int] ~
+    (JsPath \ "logchid").writeNullable[Int]
   )(unlift(NewsRecommendRead.unapply))
 
   implicit val NewsRecommendReadReads: Reads[NewsRecommendRead] = (
     (JsPath \ "uid").read[Long] ~
     (JsPath \ "nid").read[Long] ~
-    (JsPath \ "readtime").read[LocalDateTime]
+    (JsPath \ "readtime").read[LocalDateTime] ~
+    (JsPath \ "logtype").readNullable[Int] ~
+    (JsPath \ "logchid").readNullable[Int]
   )(NewsRecommendRead.apply _)
 }
 

@@ -43,7 +43,7 @@ class HateNewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvi
   }
 
   def getNewsByUid(uid: Long): Future[Seq[NewsRow]] = {
-    db.run(newsList.filter(_.nid in hatenewsList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusMonths(-1)).map(_.nid)).result)
+    db.run(newsList.filter(_.ctime > LocalDateTime.now().plusDays(-7)).filter(_.nid in hatenewsList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusMonths(-1)).map(_.nid)).result)
   }
 
 }

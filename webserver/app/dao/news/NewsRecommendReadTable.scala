@@ -22,8 +22,10 @@ trait NewsRecommendReadTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def uid = column[Long]("uid")
     def nid = column[Long]("nid")
     def readtime = column[LocalDateTime]("readtime")
+    def logtype = column[Option[Int]]("logtype")
+    def logchid = column[Option[Int]]("logchid")
 
-    def * = (uid, nid, readtime) <> ((NewsRecommendRead.apply _).tupled, NewsRecommendRead.unapply)
+    def * = (uid, nid, readtime, logtype, logchid) <> ((NewsRecommendRead.apply _).tupled, NewsRecommendRead.unapply)
   }
 }
 

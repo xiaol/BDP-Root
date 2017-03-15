@@ -83,11 +83,11 @@ class VideoDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
 
   def refreshVideoByChannel(uid: Long, chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow3(timeCursor)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow3(timeCursor)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow3(timeCursor)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow3(timeCursor)).map(_.nid)).sortBy(_.nid.desc).drop(offset).take(limit).result)
   }
 
   def loadVideoByChannel(uid: Long, chid: Long, offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow3(timeCursor)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow3(timeCursor)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow3(timeCursor)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > timeWindow3(timeCursor)).map(_.nid)).sortBy(_.nid.desc).drop(offset).take(limit).result)
   }
 
   def findByNid(nid: Long): Future[Option[VideoRow]] = {

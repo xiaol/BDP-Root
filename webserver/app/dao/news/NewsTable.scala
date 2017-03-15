@@ -166,6 +166,11 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
     })
   }
 
+  def loadByCommon(offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {
+    val queryList = loadByNid(nid)
+    db.run(queryList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
   def loadByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {
     val queryList = loadByNid(nid)
     db.run(queryList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment > 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
@@ -173,6 +178,11 @@ class NewsDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)
   def loadByCold(offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {
     val queryList = loadByNid(nid)
     db.run(queryList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filter(_.comment === 0).sortBy(_.ctime.desc).drop(offset).take(limit).result)
+  }
+
+  def refreshByCommon(offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {
+    val queryList = refreshByNid(nid)
+    db.run(queryList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filter(_.ctime > timeCursor).sortBy(_.ctime.asc).drop(offset).take(limit).result)
   }
 
   def refreshByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, nid: Option[Long]): Future[Seq[NewsRow]] = {

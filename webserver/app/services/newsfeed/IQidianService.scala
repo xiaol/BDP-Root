@@ -2,6 +2,7 @@ package services.newsfeed
 
 import java.sql.Timestamp
 import java.util.Date
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
@@ -16,7 +17,8 @@ import play.api.Logger
 import services.advertisement.AdResponseService
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.concurrent.{ Await, Future }
 import scala.util.Random
 import scala.util.control.NonFatal
 import JodaOderingImplicits.LocalDateTimeReverseOrdering
@@ -152,6 +154,9 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
       val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
+
+      val aaa = Await.result(newsFO, Duration(5000, TimeUnit.MILLISECONDS))
+      println("size=========" + aaa.size)
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
         case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
@@ -213,11 +218,15 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         changeADtime(newsfeed, newTimeCursor)
       }.map(_.take(count.toInt))
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-      //从结果中取要浏览的20条,插入已浏览表中
-      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
-      //专题
-      result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
+      if (uid != 6440748) {
+        println("uid==========" + uid)
+        //从结果中取要浏览的20条,插入已浏览表中
+        newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+        newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
+        //专题
+        result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
+      }
+
       //将99的改回
       result.map { seq =>
         val feed = seq.map { r: NewsFeedResponse =>

@@ -86,7 +86,9 @@ case class NewsSimpleRowSyst(
   rtype: Option[Int] = None,
   videourl: Option[String] = None,
   thumbnail: Option[String] = None,
-  duration: Option[Int] = None)
+  duration: Option[Int] = None,
+  logtype: Option[Int] = Some(0),
+  logchid: Option[Int] = None)
 
 object NewsSimpleRowSyst {
   implicit val NewsSimpleRowSystWrites: Writes[NewsSimpleRowSyst] = (
@@ -98,7 +100,9 @@ object NewsSimpleRowSyst {
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "videourl").writeNullable[String] ~
     (JsPath \ "thumbnail").writeNullable[String] ~
-    (JsPath \ "duration").writeNullable[Int]
+    (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "logtype").writeNullable[Int] ~
+    (JsPath \ "logchid").writeNullable[Int]
   )(unlift(NewsSimpleRowSyst.unapply))
 
   implicit val NewsSimpleRowSystReads: Reads[NewsSimpleRowSyst] = (
@@ -110,7 +114,9 @@ object NewsSimpleRowSyst {
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "videourl").readNullable[String] ~
     (JsPath \ "thumbnail").readNullable[String] ~
-    (JsPath \ "duration").readNullable[Int]
+    (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "logtype").readNullable[Int] ~
+    (JsPath \ "logchid").readNullable[Int]
   )(NewsSimpleRowSyst.apply _)
 }
 

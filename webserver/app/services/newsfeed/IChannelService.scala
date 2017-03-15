@@ -84,7 +84,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         }.take(count.toInt - 1) ++: ad)
       }
 
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
@@ -179,7 +179,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         }.take(count.toInt)
       }
 
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
@@ -221,7 +221,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }
 
-    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
@@ -260,7 +260,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       }
     }
 
-    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+    val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
     //从结果中取要浏览的20条,插入已浏览表中
     newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
     newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
@@ -307,7 +307,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
     val date = new Date(ctime.getTime)
     val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
     val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
-    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration)
+    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration, Some(0), Some(chid.toInt))
     val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
     NewsFeedResponse.from(newsSimpleRow)
   }

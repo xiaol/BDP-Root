@@ -40,7 +40,7 @@ class TopicService @Inject() (val topicListDAO: TopicListDAO, val topicClassList
             }
           }
           flag
-        }.map { newsrow => NewsFeedResponse.from(newsrow) }
+        }.map { newsrow => NewsFeedResponse.from(newsrow).copy(logtype = Some(41)).copy(logchid = Some(1)) }
 
         TopicClassRelationNews(topic_class, newsFeedResponses.toList)
       }

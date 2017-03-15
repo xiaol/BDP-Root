@@ -36,7 +36,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
   def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
-      val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
+      val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
       val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
@@ -49,24 +49,29 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
         }
         ad <- adFO
       } yield {
-        r ++: ad
+        r.take(count.toInt - 1) ++: ad
       }
 
       //插入已浏览表
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(6), Some(44)) } }
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-          //将广告时间随机成任意一条新闻时间
-          seq.map { r =>
+
+          var seccount = 10
+          val newsfeed = seq.map { news =>
+            seccount = seccount - 1
+            news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+          }
+          changeADtime(newsfeed, newTimeCursor).take(count.toInt).map { r =>
             if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime).copy(style = 11)
+              r.copy(style = 11)
             else
               r
-          }.sortBy(_.ptime).take(count.toInt)
+          }
         } else {
           Seq[NewsFeedResponse]()
         }
@@ -80,7 +85,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
   def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
-      val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor) //createTimeCursor4Refresh(timeCursor)
+      val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
       val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
       val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
@@ -93,24 +98,28 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
         }
         ad <- adFO
       } yield {
-        r ++: ad
+        r.take(count.toInt - 1) ++: ad
       }
 
       //插入已浏览表
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(6), Some(44)) } }
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
 
       response.map { seq =>
         //若只有广告,返回空
         if (seq.filter(_.rtype.getOrElse(0) != 3).length > 0) {
-          //将广告时间随机成任意一条新闻时间
-          seq.map { r =>
+          var seccount = 0
+          val newsfeed = seq.map { news =>
+            seccount = seccount - 1
+            news.copy(ptime = newTimeCursor.plusSeconds(seccount))
+          }
+          changeADtime(newsfeed, newTimeCursor).take(count.toInt).map { r =>
             if (r.rtype.getOrElse(0) == 3)
-              r.copy(ptime = seq(Random.nextInt(seq.length - 1)).ptime).copy(style = 11)
+              r.copy(style = 11)
             else
               r
-          }.sortBy(_.ptime).take(count.toInt)
+          }
         } else {
           Seq[NewsFeedResponse]()
         }
@@ -120,6 +129,34 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
         Logger.error(s"Within VideoService.loadFeedWithAd($chid, $sechidOpt, $timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
+  }
+
+  def changeADtime(feeds: Seq[NewsFeedResponse], newTimeCursor: LocalDateTime): Seq[NewsFeedResponse] = {
+    //-----------将广告放在第六个-----------
+    //第六个新闻nid和时间
+    val nid6 = feeds.take(6).lastOption match {
+      case Some(news) => news.nid
+      case _          => 0L
+    }
+    val time6 = feeds.take(6).lastOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告的时间
+    val timead = feeds.filter(_.rtype == Some(3)).headOption match {
+      case Some(news) => news.ptime
+      case _          => newTimeCursor
+    }
+    //广告时间和第六条新闻时间互换
+    feeds.map { news =>
+      if (news.rtype == Some(3)) {
+        news.copy(ptime = time6)
+      } else if (news.nid == nid6) {
+        news.copy(ptime = timead)
+      } else {
+        news
+      }
+    }.sortBy(_.ptime)
   }
 
   final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {
@@ -142,7 +179,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     val date = new Date(ctime.getTime)
     val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
     val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
-    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration)
+    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration, Some(6), Some(44))
     val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
     NewsFeedResponse.from(newsSimpleRow)
   }

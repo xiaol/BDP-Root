@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.7
+# 数据平台接口文档_V3.8
 
 ## 目录
 
@@ -7,6 +7,11 @@
 
 ----
 ## 更新日志
+*V3.8:*
+
+1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq)：添加两个字段logtype、logchid
+2. 点击日志上报接口(/rep/v2/c)：多上传两个字段(请注意上传日志中的数据类型，否则上传成功了，后台解析不了)
+
 *V3.7:*
 
 1. 添加接口: 滑动统计接口
@@ -1436,7 +1441,7 @@ Host: bdp.deeporiginalx.com
 
 | Key  | 参数类型   | 是否必须 | 参数解释 |
 | ---- | :----- | :--- | :--- |
-| u    | String | 是    | 用户ID |
+| u    | Long   | 是    | 用户ID |
 | p    | String | 否    | 省份   |
 | t    | String | 否    | 市    |
 | i    | String | 否    | 地区/县 |
@@ -1447,11 +1452,13 @@ Host: bdp.deeporiginalx.com
 ```json
 "d":[
   {
-    "n": 234,   - 新闻ID
-    "c": 12,    - 频道ID
-    "t": 2,     - 新闻类型ID
-    "s": 23,    - 停留时长，秒
-    "f": 1      - 进入位置ID
+    "n": 234,   - Long 新闻ID
+    "c": 12,    - Int 频道ID
+    "t": 2,     - Int 新闻类型ID
+    "s": 23,    - Int 停留时长，秒
+    "f": 1,     - Int 进入位置ID
+    "lt": 0,    - Int logtype,新闻推荐类型
+    "lc": 1,    - Int logchid,新闻从那个频道点击进入
   },
   ...
 ]
@@ -2343,7 +2350,9 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "0"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题
+      "rtype": "0",                                           - 推荐类型:0普通、1热点、2推送、3广告、4专题
+      "logtype": 0,                                           - 推荐日志类型:比rtype区分更细
+      "logchid": 1                                            - 点击新闻所在频道:区分奇点和其他频道
     },
     …
   ]
@@ -2421,7 +2430,9 @@ Content-Type: application/json
       "province": "山东",
       "city": "青岛",
       "district": "山东",
-      "rtype": "3"                                              - 推荐类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
+      "rtype": "3",                                             - 推荐类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频
+      "logtype": 0,                                             - 推荐日志类型:比rtype区分更细
+      "logchid": 1                                              - 点击新闻所在频道:区分奇点和其他频道
     },
     …
   ]
@@ -2510,7 +2521,9 @@ Content-Type: application/json
             "style": 1,
             "imgs": [
               "http://bdp-pic.deeporiginalx.com/111c7c64f9ccb7be3c8a61e6d3fcca0e_544X408.jpg"
-            ]
+            ],
+            "logtype": 41,                                             - 推荐日志类型:比rtype区分更细
+            "logchid": 1                                              - 点击新闻所在频道:区分奇点和其他频道
           }
           ......
         ]
@@ -2534,7 +2547,9 @@ Content-Type: application/json
             "concern": 0,
             "comment": 0,
             "style": 0,
-            "city": "上海"
+            "city": "上海",
+            "logtype": 41,                                             - 推荐日志类型:比rtype区分更细
+            "logchid": 1                                              - 点击新闻所在频道:区分奇点和其他频道
           }
           ......
         ]

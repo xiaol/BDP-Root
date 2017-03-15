@@ -37,13 +37,11 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
   def refreshQidian(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
-      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByHot((page - 1) * count, count / 2, newTimeCursor, nid)
-      val refreshColdFO: Future[Seq[NewsRow]] = newsDAO.refreshByCold((page - 1) * count, count / 2, newTimeCursor, nid)
+      val refreshHotFO: Future[Seq[NewsRow]] = newsDAO.refreshByCommon((page - 1) * count, count / 2, newTimeCursor, nid)
       for {
         hots <- refreshHotFO
-        colds <- refreshColdFO
       } yield {
-        hots ++: colds match {
+        hots match {
           case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
         }
       }
@@ -56,13 +54,11 @@ class NewsNoUidService @Inject() (val newsDAO: NewsDAO) extends INewsNoUidServic
 
   def loadQidian(page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
     {
-      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByHot((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
-      val lostColdFO: Future[Seq[NewsRow]] = newsDAO.loadByCold((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
+      val loadHotFO: Future[Seq[NewsRow]] = newsDAO.loadByCommon((page - 1) * count, count / 2, msecondsToDatetime(timeCursor), nid)
       for {
         hots <- loadHotFO
-        colds <- lostColdFO
       } yield {
-        hots ++: colds match {
+        hots match {
           case newsRows: Seq[NewsRow] => newsRows.map { r => NewsFeedResponse.from(r) }.sortBy(_.ptime)
         }
       }

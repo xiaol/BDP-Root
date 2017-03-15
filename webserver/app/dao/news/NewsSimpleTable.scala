@@ -49,7 +49,7 @@ trait NewsSimpleTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
     def base = (nid.?, url, docid, title, author, ptime, pname, purl, descr, tags) <> ((NewsSimpleRowBase.apply _).tupled, NewsSimpleRowBase.unapply)
     def incr = (collect, concern, comment, inum, style, imgs) <> ((NewsSimpleRowIncr.apply _).tupled, NewsSimpleRowIncr.unapply)
-    def syst = (state, ctime, chid, sechid, icon, rtype, videourl, thumbnail, duration) <> ((NewsSimpleRowSyst.apply _).tupled, NewsSimpleRowSyst.unapply)
+    def syst = (state, ctime, chid, sechid, icon, rtype, videourl, thumbnail, duration, None, None) <> ((NewsSimpleRowSyst.apply _).tupled, NewsSimpleRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsSimpleRow.apply _).tupled, NewsSimpleRow.unapply)
   }
 }

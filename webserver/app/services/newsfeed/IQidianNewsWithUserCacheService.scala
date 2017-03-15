@@ -39,27 +39,11 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
                                                 val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO, val topicNewsReadDAO: TopicNewsReadDAO, val hateNewsDAO: HateNewsDAO)
     extends IQidianNewsWithUserCacheService with NewsCacheService {
 
-  def test(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
-    {
-      val rcache = getNewsFeedCommonSetCache(count).flatMap { seq =>
-        seq match {
-          case Some(news: Seq[NewsFeedResponse]) if news.length >= 5 => Future.successful(news)
-          case _                                                     => Future.successful(Seq[NewsFeedResponse]())
-        }
-      }
-      rcache
-    }.recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.getFeedData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
-        Seq[NewsFeedResponse]()
-    }
-  }
-
   def updateNewsFeedCommon(): Future[Boolean] = {
     Future {
       newsUnionFeedDao.commonAll(500).map { seqall =>
         val data = seqall.map { news =>
-          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
           newsFeedResponse
         }
         remNewsFeedCommonSetCache().flatMap {
@@ -81,13 +65,11 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         case Some(news: Seq[NewsFeedResponse]) if news.length >= 5 => Future.successful((news, 1))
         case _ =>
           //缓存中没有该用户数据, 修改用户状态
-          if (uid != 6440748) {
-            getUserStateCache(uid).map { state =>
-              state match {
-                //无状态位, 设置状态位, 有状态位,说明已经在准备数据
-                case None => setUserStateCache(uid, "0")
-                case _    =>
-              }
+          getUserStateCache(uid).map { state =>
+            state match {
+              //无状态位, 设置状态位, 有状态位,说明已经在准备数据
+              case None => setUserStateCache(uid, "0")
+              case _    =>
             }
           }
 
@@ -99,7 +81,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
                 Future {
                   newsUnionFeedDao.commonAll(500).map { seqall =>
                     val data = seqall.map { news =>
-                      val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+                      val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
                       newsFeedResponse
                     }
                     setNewsFeedCommonSetCache(data.map { news => Json.toJson(news).toString })
@@ -114,7 +96,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       result
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.getFeedData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.getFeedData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
         (Seq[NewsFeedResponse](), 0)
     }
   }
@@ -127,7 +109,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       result.flatMap { data =>
         data match {
           case data: Seq[NewsFeedResponse] if data.nonEmpty && data.length > 0 =>
-            val flag = setNewsFeedCache(uid, data)
+            val flag = setNewsFeedCache(uid, data.take(count.toInt * 7))
             //删除用户状态位
             remUserStateCache(uid)
             flag
@@ -136,7 +118,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.setData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.setData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
         false
     }
   }
@@ -170,7 +152,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.getData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.getData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -185,7 +167,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       val result: Future[Seq[NewsFeedResponse]] = for {
         commons <- refreshCommonFO.map { seq =>
           seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
@@ -211,7 +193,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.getData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.getData($uid, $page, $count, $timeCursor, $adbody, $t, $remoteAddress, $v): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -259,40 +241,40 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       val result: Future[Seq[NewsFeedResponse]] = for {
         hots <- refreshHotFO.map { seq =>
           seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
 
         lDAandKmeans <- refreshLDAandKmeansFO.map { seq =>
           seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
 
         peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
           seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
         commons <- refreshCommonFO.map { seq =>
           seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
         bigimg5 <- refreshBigImageAndVideo.map { seq =>
           seq.filter(_._20 == Some(999)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
 
         video <- refreshBigImageAndVideo.map { seq =>
           seq.filter(_._20 == Some(6)).take(v.getOrElse(0)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
             newsFeedResponse
           }
         }
@@ -322,7 +304,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
 
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.qidian($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.qidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -370,17 +352,31 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         a.filter { feed =>
           var flag = true
           r.foreach { news =>
-            if (news.nid.equals(feed.nid)) {
+            if (news.nid.equals(feed.nid) && feed.rtype.getOrElse(0) != 41) {
               flag = false
             }
           }
           flag
         }
       }
+      //判断剩下的普通新闻条数,如果少于5条,就重新准备数据
+      result.map { seq =>
+        seq.filter(_.rtype.getOrElse(0) == 0).size match {
+          case length: Int if length < 5 => getUserStateCache(uid).map { state =>
+            state match {
+              //无状态位, 设置状态位, 有状态位,说明已经在准备数据
+              case None => setUserStateCache(uid, "0")
+              case _    =>
+            }
+          }
+          case _ =>
+        }
+      }
+
       result.flatMap { news => setNewsFeedCache(uid, news) }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.updateCacheData(): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.updateCacheData(): ${e.getMessage}")
         false
     }
   }
@@ -453,32 +449,23 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         changeADtime(newsfeed, newTimeCursor)
       }.map(_.take(count.toInt))
 
-      if (uid != 6440748) {
-        //更新缓存, 去除已读列表
-        Future {
-          r.map { re =>
-            re._2 match {
-              case s: Int if s == 1 => updateCacheData(uid: Long, result: Future[Seq[NewsFeedResponse]], r.map(_._1): Future[Seq[NewsFeedResponse]])
-              case _                =>
-            }
+      //更新缓存, 去除已读列表
+      Future {
+        r.map { re =>
+          re._2 match {
+            case s: Int if s == 1 => updateCacheData(uid: Long, result: Future[Seq[NewsFeedResponse]], r.map(_._1): Future[Seq[NewsFeedResponse]])
+            case _                =>
           }
         }
       }
 
-      if (uid != 6440748) {
-        val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-        //从结果中取要浏览的20条,插入已浏览表中
-        newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-        newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
-        //专题
-        result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
-      }
-      //      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
-      //      //从结果中取要浏览的20条,插入已浏览表中
-      //      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
-      //      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
-      //      //专题
-      //      result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), v.logtype, Some(1)) } }
+      //从结果中取要浏览的20条,插入已浏览表中
+      newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
+      newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
+      //专题
+      result.map { seq => seq.filter(_.rtype.getOrElse(0) == 4).map { v => topicNewsReadDAO.insertByTid(uid, v.nid.toInt) } }
+
       //将99的改回
       result.map { seq =>
         val feed = seq.map { r: NewsFeedResponse =>
@@ -490,17 +477,15 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         //若只有广告,返回空
         if (feed.filter(_.rtype.getOrElse(0) != 3).length > 0) {
           //最后再设置下一次缓存, 避免本次新闻尚未插入已浏览记录表, 下一次取到重复新闻
-          if (uid != 6440748) {
-            Future {
-              getUserStateCache(uid).map { state =>
-                state match {
-                  case Some(state: String) if state == "0" =>
-                    //准备数据中状态
-                    setUserStateCache(uid, "1")
-                    //准备数据
-                    setData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
-                  case _ =>
-                }
+          Future {
+            getUserStateCache(uid).map { state =>
+              state match {
+                case Some(state: String) if state == "0" =>
+                  //准备数据中状态
+                  setUserStateCache(uid, "1")
+                  //准备数据
+                  setData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
+                case _ =>
               }
             }
           }
@@ -512,7 +497,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.refreshQidian($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.refreshQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -599,7 +584,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         }
       }
 
-      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now()) } }
+      val newsRecommendReads: Future[Seq[NewsRecommendRead]] = result.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), v.logtype, Some(1)) } }
       //从结果中取要浏览的20条,插入已浏览表中
       newsRecommendReads.map { seq => newsRecommendReadDAO.insert(seq) }
       newsRecommendReads.map { seq => newsFeedDao.insertRead(seq) }
@@ -635,7 +620,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       }
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within QidianWithCacheService.loadQidian($timeCursor): ${e.getMessage}")
+        Logger.error(s"Within QidianNewsWithUserCacheService.loadQidian($timeCursor): ${e.getMessage}")
         Seq[NewsFeedResponse]()
     }
   }
@@ -643,7 +628,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
   def toNewsFeedResponse(nid: Long, url: String, docid: String, title: String, pname: Option[String], purl: Option[String],
                          collect: Int, concern: Int, comment: Int, inum: Int, style: Int, imgs: Option[String], state: Int,
                          ctime: Timestamp, chid: Long, icon: Option[String], videourl: Option[String], thumbnail: Option[String],
-                         duration: Option[Int], rtype: Option[Int]): NewsFeedResponse = {
+                         duration: Option[Int], rtype: Option[Int], logtype: Option[Int]): NewsFeedResponse = {
     val imgsList = imgs match {
       case Some(str) =>
         Some(str.split(",").toList)
@@ -653,7 +638,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
     val date = new Date(ctime.getTime)
     val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
     val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
-    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration)
+    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration, logtype, Some(1))
     val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
     NewsFeedResponse.from(newsSimpleRow)
   }

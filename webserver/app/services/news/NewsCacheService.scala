@@ -1,7 +1,7 @@
 package services.news
 
 import akka.util.ByteString
-import commons.models.news.{ NewsFeedResponse, NewsRow }
+import commons.models.news.{ NewsFeedCache, NewsFeedResponse, NewsRow }
 import play.api.Logger
 import play.api.libs.json.Json
 import utils.RedisDriver.cache
@@ -15,12 +15,14 @@ import scala.util.control.NonFatal
  */
 trait NewsCacheService {
   private val rowSuffix = "webapi:news:id:"
+  private val newsfeedrowSuffix = "webapi:news:feed:nid:"
   private val feedSuffix = "webapi:news:feed:uid:"
   private val stateSuffix = "webapi:news:state:uid:"
   private val commonfeedSuffix = "webapi:news:feed:common"
   private val newsRowName: (Long => String) = (nid: Long) => s"$rowSuffix${nid.toString}"
   private val newsFeedName: (Long => String) = (uid: Long) => s"$feedSuffix${uid.toString}"
   private val userstateName: (Long => String) = (uid: Long) => s"$stateSuffix${uid.toString}"
+  private val newsfeedrowName: (Long => String) = (nid: Long) => s"$newsfeedrowSuffix${nid.toString}"
 
   def getNewsRowCache(nid: Long): Future[Option[NewsRow]] = {
     cache.get[String](newsRowName(nid)).map {
@@ -61,7 +63,7 @@ trait NewsCacheService {
   }
 
   def setNewsFeedCache(uid: Long, newsfeed: Seq[NewsFeedResponse]): Future[Boolean] = {
-    cache.set[String](newsFeedName(uid), Json.toJson(newsfeed).toString, Some(60 * 60 * 1L)).recover {
+    cache.set[String](newsFeedName(uid), Json.toJson(newsfeed).toString, Some(60 * 30L)).recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsCacheService.setNewsFeedCache($uid, $newsfeed): ${e.getMessage}")
         false
@@ -117,7 +119,7 @@ trait NewsCacheService {
   }
 
   def setUserStateCache(uid: Long, state: String): Future[Boolean] = {
-    cache.set[String](userstateName(uid), state, Some(60 * 60L)).recover {
+    cache.set[String](userstateName(uid), state, Some(60 * 30L)).recover {
       case NonFatal(e) =>
         Logger.error(s"Within NewsCacheService.setUserStateCache($uid, $state): ${e.getMessage}")
         false
@@ -129,6 +131,38 @@ trait NewsCacheService {
       case NonFatal(e) =>
         Logger.error(s"Within NewsCacheService.remUserStateCache($uid): ${e.getMessage}")
         0L
+    }
+  }
+
+  def getNewsFeedDetailCache(nids: Seq[Long]): Future[Seq[NewsFeedResponse]] = {
+    val nids_str = nids.map { nid => newsfeedrowName(nid) }
+    cache.mget(nids_str: _*).map { seq =>
+      //去除Option: seq.filter(_.isDefined).map(_.get)
+      //或者: seq.flatten
+      seq.flatten.map { newsJson => Json.parse(newsJson.utf8String).as[NewsFeedResponse] }
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsCacheService.getNewsFeedDetailCache($nids): ${e.getMessage}")
+        Seq[NewsFeedResponse]()
+    }
+  }
+
+  def getUserNewsFeedCache(uid: Long): Future[Option[Seq[NewsFeedCache]]] = {
+    cache.get[String](newsFeedName(uid)).map {
+      case Some(newsJson) => Some(Json.parse(newsJson).as[Seq[NewsFeedCache]])
+      case _              => None
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsCacheService.getUserNewsFeedCache($uid): ${e.getMessage}")
+        None
+    }
+  }
+
+  def setUserNewsFeedCache(uid: Long, newsfeed: Seq[NewsFeedResponse]): Future[Boolean] = {
+    cache.set[String](newsFeedName(uid), Json.toJson(newsfeed.map(NewsFeedCache.from(_))).toString, Some(60 * 30L)).recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsCacheService.setUserNewsFeedCache($uid, $newsfeed): ${e.getMessage}")
+        false
     }
   }
 

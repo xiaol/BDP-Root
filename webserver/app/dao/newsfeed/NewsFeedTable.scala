@@ -27,8 +27,8 @@ class NewsFeedDao @Inject() (protected val dbConfigProvider: DatabaseConfigProvi
 
   def insertRead(newsRecommendRead: Seq[NewsRecommendRead]) = {
     val tablename: String = "newsrecommendread_" + newsRecommendRead.head.uid % 100
-    val values = newsRecommendRead.map { read => "(" + read.uid + ", " + read.nid + ", now())" }.mkString(",")
-    val action = sqlu""" INSERT INTO #$tablename (uid, nid, readtime) VALUES #$values """
+    val values = newsRecommendRead.map { read => "(" + read.uid + ", " + read.nid + ", now(), " + read.logtype.getOrElse(0) + ", " + read.logchid.getOrElse(1) + ")" }.mkString(",")
+    val action = sqlu""" INSERT INTO #$tablename (uid, nid, readtime, logtype, logchid) VALUES #$values """
     db.run(action)
   }
 
