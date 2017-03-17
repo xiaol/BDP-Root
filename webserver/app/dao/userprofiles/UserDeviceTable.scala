@@ -50,12 +50,13 @@ trait UserDeviceTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def area = column[Option[String]]("area")
     def ptype = column[Option[Int]]("ptype")
     def ctime = column[Option[LocalDateTime]]("ctime")
+    def appversion = column[Option[String]]("appversion")
 
     def device = (ip, imei, imeiori, mac, macori, mac1, idfa, idfaori,
       aaid, anid, anidori, udid, brand, platform, os, os_version,
       device_size, network, operator, longitude, latitude, screen_orientation) <> ((Device.apply _).tupled, Device.unapply)
 
-    def * = (uid, device, ctype, province, city, area, ptype, ctime) <> ((UserDevice.apply _).tupled, UserDevice.unapply)
+    def * = (uid, device, ctype, province, city, area, ptype, ctime, appversion) <> ((UserDevice.apply _).tupled, UserDevice.unapply)
   }
 }
 

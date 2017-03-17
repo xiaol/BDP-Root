@@ -24,7 +24,7 @@ import scala.util.Random
  * Created by zhange on 2016-05-16.
  *
  */
-class NewsResponseController @Inject() (val qidianService: QidianNewsWithUserCacheService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
+class NewsResponseController @Inject() (val qidianService: QidianWithCacheService, val feedChannelService: FeedChannelService, val newsNoUidService: NewsNoUidService,
                                         val userService: UserService, val videoService: VideoService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 

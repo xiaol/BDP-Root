@@ -61,7 +61,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
       val cachefeed = getNewsFeedCache(uid)
 
       val result = cachefeed.flatMap {
-        //缓存中有数据情况下, 获取需要的数据
+        //缓存中有数据情况下, 获取需要的数据, 标识1: 需要更新用户缓存
         case Some(news: Seq[NewsFeedResponse]) if news.length >= 5 => Future.successful((news, 1))
         case _ =>
           //缓存中没有该用户数据, 修改用户状态
@@ -105,7 +105,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
     {
       //等待1秒以上, 由于是从 从库获取数据,浏览记录需要从主库同步到从库需要一定的时间
       Thread.sleep(Random.nextInt(3))
-      val result: Future[Seq[NewsFeedResponse]] = getData(uid: Long, page: Long, count * 5: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
+      val result: Future[Seq[NewsFeedResponse]] = getData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
       result.flatMap { data =>
         data match {
           case data: Seq[NewsFeedResponse] if data.nonEmpty && data.length > 0 =>
@@ -202,10 +202,11 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val level1 = count / 2
-      val level2 = count / 4
-      val level3 = count / 4
-      val level4 = count / 9
+      val times = 5
+      val level1 = count / 2 * times
+      val level2 = count / 4 * times
+      val level3 = count / 4 * times
+      val level4 = count / 9 * times
 
       //----热点部分----
       //百度热词 和 有评论
@@ -213,13 +214,13 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
 
       //----推荐部分----
       //模型LDA 和 Kmeans推荐
-      val refreshLDAandKmeansFO = newsUnionFeedDao.byLDAandKmeans((page - 1) * count, level1 / 2, newTimeCursor, uid)
+      val refreshLDAandKmeansFO = newsUnionFeedDao.byLDAandKmeans((page - 1) * count, level1, newTimeCursor, uid)
 
       //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
       val refreshByPeopleRecommendWithClickFO = newsUnionFeedDao.byPeopleRecommendWithClick((page - 1) * count, level2, newTimeCursor, uid)
 
       //-------补全新闻------补全流程:(LDA + Kmeans)没有时, 出点击量高的新闻 --> 普通新闻
-      val refreshCommonFO = newsUnionFeedDao.common((page - 1) * count, count, newTimeCursor, uid)
+      val refreshCommonFO = newsUnionFeedDao.common((page - 1) * count, count * times, newTimeCursor, uid)
 
       //----大图和视频部分----
       //大图新闻 和 视频
@@ -288,8 +289,8 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
         hatePnameWithChid <- hateNews
 
       } yield {
-        (bigimg5 ++: topics
-          ++: lDAandKmeans.take(level1.toInt) ++: hots ++: video ++: peopleRecommendWithClick ++: commons).filter { feed =>
+        ((bigimg5 ++: topics ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3.toInt) ++: video ++: peopleRecommendWithClick.take(level2.toInt)).take((count.toInt - 1) * 5)
+          ++: commons).filter { feed =>
             var flag = true
             hatePnameWithChid.foreach { news =>
               if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
@@ -297,7 +298,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
               }
             }
             flag
-          }
+          }.take((count.toInt - 1) * 7)
       }
 
       result
@@ -313,7 +314,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
     val level1 = count / 2
     val level2 = count / 4
     val level3 = count / 4
-    val level4 = count / 8
+    val level4 = count / 9
 
     //----热点部分----
     //百度热词 和 有评论

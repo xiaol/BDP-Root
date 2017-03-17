@@ -55,7 +55,7 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
     }
   }
 
-  def phone(uid: Long, body: String, ctype: Int, province: Option[String], city: Option[String], area: Option[String], ptype: Int, remoteAddress: Option[String]): Future[Long] = {
+  def phone(uid: Long, body: String, ctype: Int, province: Option[String], city: Option[String], area: Option[String], ptype: Int, appversion: Option[String], remoteAddress: Option[String]): Future[Long] = {
     val adRequest: AdRequest = Json.parse(body).as[AdRequest]
     val device: Device = remoteAddress match {
       case Some(ip) => adRequest.device.copy(ip = remoteAddress)
@@ -63,8 +63,8 @@ class UserProfileService @Inject() (val userProfilesDAO: UserProfilesInfoDAO, va
     }
     userDeviceDAO.findByuid(uid).map {
       _ match {
-        case None => userDeviceDAO.insert(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
-        case _    => userDeviceDAO.update(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()))).map { uid => uid.toLong }
+        case None => userDeviceDAO.insert(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()), appversion))
+        case _    => userDeviceDAO.update(UserDevice(uid, device, Some(ctype), province, city, area, Some(ptype), Some(LocalDateTime.now()), appversion))
       }
     }.recover {
       case NonFatal(e) =>

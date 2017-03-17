@@ -9,7 +9,7 @@
 ## 更新日志
 *V3.8:*
 
-1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq)：添加两个字段logtype、logchid
+1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq) 、新闻相关列表接口(/v2/ns/asc)：添加两个字段logtype、logchid
 2. 点击日志上报接口(/rep/v2/c)：多上传两个字段(请注意上传日志中的数据类型，否则上传成功了，后台解析不了)
 
 *V3.7:*
@@ -852,7 +852,9 @@ Content-Type: application/json
       "ptime": "2017-01-08 22:02:26",
       "img": "http://wsqncdn.miaopai.com/stream/Uj1lz71h-04mAv15B33TJA___m.jpg",
       "nid": 10608629,
-      "duration": 190
+      "duration": 190,
+      "logtype": 26,
+      "logchid": 0
     },
     ...
   ]
@@ -2987,6 +2989,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | city    | String | 否         | 市|
 | area    | String | 否         | 区|
 | ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+| appversion    | String | 否         | APP版本号|
 
 _Response_
 

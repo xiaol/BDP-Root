@@ -96,7 +96,8 @@ class NewsController @Inject() (val userService: UserService, val channelService
   }
 
   def listASearch(nid: Long, page: Long, count: Long, s: Int) = Action.async { implicit request =>
-    pvdetailService.insert(PvDetail(0, "NewsController.listASearch", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+    //和详情页是同一个pv
+    //pvdetailService.insert(PvDetail(0, "NewsController.listASearch", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     aSearchService.listByRefer(nid.toString, page, count).map {
       case searchs: Seq[ASearchRow] if searchs.nonEmpty => ServerSucced(if (s == 1) https(searchs.map(_.asearch)) else searchs.map(_.asearch))
       case _                                            => DataEmptyError(s"$nid")

@@ -61,7 +61,9 @@ case class ASearch(
   img: Option[String] = None,
   abs: Option[String] = None,
   nid: Option[Long] = None,
-  duration: Option[Int] = None)
+  duration: Option[Int] = None,
+  logtype: Option[Int] = Some(26),
+  logchid: Option[Int] = Some(0))
 
 object ASearch {
   implicit val ASearchWrites: Writes[ASearch] = (
@@ -74,7 +76,9 @@ object ASearch {
     (JsPath \ "img").writeNullable[String] ~
     (JsPath \ "abs").writeNullable[String] ~
     (JsPath \ "nid").writeNullable[Long] ~
-    (JsPath \ "duration").writeNullable[Int]
+    (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "logtype").writeNullable[Int] ~
+    (JsPath \ "logchid").writeNullable[Int]
   )(unlift(ASearch.unapply))
 
   implicit val ASearchReads: Reads[ASearch] = (
@@ -87,7 +91,9 @@ object ASearch {
     (JsPath \ "img").readNullable[String] ~
     (JsPath \ "abs").readNullable[String] ~
     (JsPath \ "nid").readNullable[Long] ~
-    (JsPath \ "duration").readNullable[Int]
+    (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "logtype").readNullable[Int] ~
+    (JsPath \ "logchid").readNullable[Int]
   )(ASearch.apply _)
 
   def from(temp: ASearchTemp): ASearch = {

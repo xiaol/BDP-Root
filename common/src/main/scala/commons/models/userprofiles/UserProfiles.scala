@@ -120,7 +120,8 @@ case class UserDevice(uid: Long,
                       city: Option[String] = None,
                       area: Option[String] = None,
                       ptype: Option[Int] = None,
-                      ctime: Option[LocalDateTime] = None)
+                      ctime: Option[LocalDateTime] = None,
+                      appversion: Option[String] = None)
 
 object UserDevice {
   implicit val UserDeviceWrites: Writes[UserDevice] = (
@@ -131,7 +132,8 @@ object UserDevice {
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "area").writeNullable[String] ~
     (JsPath \ "ptype").writeNullable[Int] ~
-    (JsPath \ "ctime").writeNullable[LocalDateTime]
+    (JsPath \ "ctime").writeNullable[LocalDateTime] ~
+    (JsPath \ "appversion").writeNullable[String]
   )(unlift(UserDevice.unapply))
 
   implicit val UserDeviceReads: Reads[UserDevice] = (
@@ -142,6 +144,7 @@ object UserDevice {
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "area").readNullable[String] ~
     (JsPath \ "ptype").readNullable[Int] ~
-    (JsPath \ "ctime").readNullable[LocalDateTime]
+    (JsPath \ "ctime").readNullable[LocalDateTime] ~
+    (JsPath \ "appversion").readNullable[String]
   )(UserDevice.apply _)
 }

@@ -33,7 +33,7 @@ trait ASearchTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def nid = column[Option[Long]]("nid")
     def duration = column[Option[Int]]("duration")
 
-    def searchItem = (url, title, from, rank, pname, ptime, img, abs, nid, duration) <> ((ASearch.apply _).tupled, ASearch.unapply)
+    def searchItem = (url, title, from, rank, pname, ptime, img, abs, nid, duration, Some(26), Some(0)) <> ((ASearch.apply _).tupled, ASearch.unapply)
     def * = (id.?, ctime, refer, searchItem) <> ((ASearchRow.apply _).tupled, ASearchRow.unapply)
   }
 }

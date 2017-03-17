@@ -144,7 +144,8 @@ case class Phone(uid: Long,
                  province: Option[String] = None,
                  city: Option[String] = None,
                  area: Option[String] = None,
-                 ptype: Int)
+                 ptype: Int,
+                 appversion: Option[String] = None)
 
 object Phone {
   implicit val PhoneReads: Reads[Phone] = (
@@ -154,7 +155,8 @@ object Phone {
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "area").readNullable[String] ~
-    (JsPath \ "ptype").read[Int]
+    (JsPath \ "ptype").read[Int] ~
+    (JsPath \ "appversion").readNullable[String]
   )(Phone.apply _)
 }
 

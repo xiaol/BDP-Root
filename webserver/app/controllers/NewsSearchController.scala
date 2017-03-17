@@ -19,9 +19,11 @@ class NewsSearchController @Inject() (val newsEsService: NewsEsService, val news
   def search(key: String, pname: Option[String], channel: Option[Long], uid: Option[Long], page: Int, count: Int) = Action.async { implicit request =>
 
     //记录搜索历史
-    uid match {
-      case Some(uid) => profileService.addSearch(Searchnewslist(None, uid, key, Some(LocalDateTime.now())))
-      case _         =>
+    Future {
+      uid match {
+        case Some(uid) => profileService.addSearch(Searchnewslist(None, uid, key, Some(LocalDateTime.now())))
+        case _         =>
+      }
     }
 
     //搜索结果
