@@ -13,6 +13,7 @@ import dao.userprofiles.UserDeviceDAO
 import io.netty.handler.codec.http.{ DefaultHttpHeaders, HttpHeaders }
 import org.asynchttpclient.{ DefaultAsyncHttpClient, ListenableFuture, Response }
 import org.springframework.util.Base64Utils
+import play.api.Logger
 import play.api.libs.json.Json
 import utils.AdConfig._
 
@@ -30,38 +31,44 @@ trait IAdResponseService {
 class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAdResponseService {
 
   def getAdResponse(body: String, remoteAddress: Option[String], uid: Long): Future[Seq[NewsFeedResponse]] = Future {
-    //替换nginx传过来的真实ip
-    val requestbody: String = remoteAddress match {
-      case Some(ip) =>
-        val request: AdRequest = Json.parse(body).as[AdRequest]
-        val adRequest = request.copy(device = request.device.copy(ip = Some(ip)))
-        Json.toJson(adRequest).toString()
-      case _ => body
-    }
+    try {
+      //替换nginx传过来的真实ip
+      val requestbody: String = remoteAddress match {
+        case Some(ip) =>
+          val request: AdRequest = Json.parse(body).as[AdRequest]
+          val adRequest = request.copy(device = request.device.copy(ip = Some(ip)))
+          Json.toJson(adRequest).toString()
+        case _ => body
+      }
 
-    val nowtime: Long = new Date().getTime / 1000
-    val sign: String = Sha1Utils.encodeSha1(adappkey + "|" + nowtime)
-    val str = adappid + "|" + nowtime + "|" + sign
-    val X_TOKEN: String = Base64Utils.encodeToString(str.getBytes)
+      val nowtime: Long = new Date().getTime / 1000
+      val sign: String = Sha1Utils.encodeSha1(adappkey + "|" + nowtime)
+      val str = adappid + "|" + nowtime + "|" + sign
+      val X_TOKEN: String = Base64Utils.encodeToString(str.getBytes)
 
-    val asyncHttpClient = new DefaultAsyncHttpClient()
-    val headers = new DefaultHttpHeaders()
-    headers.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_JSON)
-    headers.add("X-TOKEN", X_TOKEN)
-    //.executeRequest()可以设置超时时间
-    val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(requestbody).setHeaders(headers).execute()
-    val response: String = f.get().getResponseBody
-    asyncHttpClient.close()
-    val adResponse: AdResponse = Json.parse(response).as[AdResponse]
-    if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
-      val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
-      val seq: Seq[NewsFeedResponse] = list.map {
-        case creative: Creative =>
-          NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
-      }.toSeq
-      seq
-    } else {
-      Seq[NewsFeedResponse]()
+      val asyncHttpClient = new DefaultAsyncHttpClient()
+      val headers = new DefaultHttpHeaders()
+      headers.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_JSON)
+      headers.add("X-TOKEN", X_TOKEN)
+      //.executeRequest()可以设置超时时间
+      val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(requestbody).setHeaders(headers).execute()
+      val response: String = f.get().getResponseBody
+      asyncHttpClient.close()
+      val adResponse: AdResponse = Json.parse(response).as[AdResponse]
+      if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
+        val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
+        val seq: Seq[NewsFeedResponse] = list.map {
+          case creative: Creative =>
+            NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
+        }.toSeq
+        seq
+      } else {
+        Seq[NewsFeedResponse]()
+      }
+    } catch {
+      case ex: Exception =>
+        Logger.error(s"Within AdResponseService.getAdResponse(): ${ex.getMessage}")
+        Seq[NewsFeedResponse]()
     }
   }
 

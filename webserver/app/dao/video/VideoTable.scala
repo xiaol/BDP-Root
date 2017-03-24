@@ -35,6 +35,7 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
     def collect = column[Int]("collect")
     def concern = column[Int]("concern")
+    def un_concern = column[Option[Int]]("un_concern")
     def comment = column[Int]("comment")
     def inum = column[Int]("inum")
     def style = column[Int]("style")
@@ -57,7 +58,7 @@ trait VideoTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def rtype = column[Option[Int]]("rtype")
 
     def base = (nid.?, url, docid, title, content, html, author, ptime, pname, purl, descr, tags, province, city, district) <> ((VideoRowBase.apply _).tupled, VideoRowBase.unapply)
-    def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((VideoRowIncr.apply _).tupled, VideoRowIncr.unapply)
+    def incr = (collect, concern, un_concern, comment, inum, style, imgs, compress, ners) <> ((VideoRowIncr.apply _).tupled, VideoRowIncr.unapply)
     def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, videourl, thumbnail, duration, rtype) <> ((VideoRowSyst.apply _).tupled, VideoRowSyst.unapply)
     def * = (base, incr, syst) <> ((VideoRow.apply _).tupled, VideoRow.unapply)
   }

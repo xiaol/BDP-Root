@@ -43,13 +43,13 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
       val response = for {
         r <- result.map { seq =>
-          seq.map { news =>
-            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          seq.map { newsFeedRow =>
+            toNewsFeedResponse(newsFeedRow)
           }
         }
         ad <- adFO
       } yield {
-        r.take(count.toInt - 1) ++: ad
+        ad ++: r
       }
 
       //插入已浏览表
@@ -92,13 +92,13 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
 
       val response = for {
         r <- result.map { seq =>
-          seq.map { news =>
-            toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20)
+          seq.map { newsFeedRow =>
+            toNewsFeedResponse(newsFeedRow)
           }
         }
         ad <- adFO
       } yield {
-        r.take(count.toInt - 1) ++: ad
+        ad ++: r
       }
 
       //插入已浏览表
@@ -166,22 +166,24 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     if (reqTimeCursor.isBefore(oldTimeCursor) || reqTimeCursor.isAfter(nowTimeCursor)) oldTimeCursor else reqTimeCursor
   }
 
-  def toNewsFeedResponse(nid: Long, url: String, docid: String, title: String, pname: Option[String], purl: Option[String],
-                         collect: Int, concern: Int, comment: Int, inum: Int, style: Int, imgs: Option[String], state: Int,
-                         ctime: Timestamp, chid: Long, icon: Option[String], videourl: Option[String], thumbnail: Option[String],
-                         duration: Option[Int], rtype: Option[Int]): NewsFeedResponse = {
-    val imgsList = imgs match {
+  def toNewsFeedResponse(newsFeedRow: NewsFeedRow): NewsFeedResponse = {
+    val imgsList = newsFeedRow.imgs match {
       case Some(str) =>
-        Some(str.replace("{", "").replace("}", "").split(",").toList)
+        Some(str.split(",").toList)
       case _ => None
     }
 
-    val date = new Date(ctime.getTime)
-    val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
-    val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
-    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration, Some(6), Some(44))
-    val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
-    NewsFeedResponse.from(newsSimpleRow)
+    //    val thumbnail = newsFeedRow.rtype match {
+    //      case Some(newstype) if newstype == 6 => imgsList match {
+    //        case Some(list) => Some(list.head)
+    //        case _          => None
+    //      }
+    //      case _ => None
+    //    }
+
+    NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
+      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, newsFeedRow.comment, newsFeedRow.style,
+      None, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.rtype, Some(newsFeedRow.chid.toInt))
   }
 
   def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {

@@ -7,7 +7,7 @@ import jp.t2v.lab.play2.auth.AuthElement
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.newsfeed._
-import services.test.TestService
+import services.test.{ Test, TestService }
 import services.users.UserService
 import utils.Response._
 import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _ }
@@ -82,6 +82,13 @@ class TestController @Inject() (val userService: UserService, val qidianService:
     testService.testNewsFeed().map {
       case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(news)
       case _                                            => DataEmptyError("")
+    }
+  }
+
+  def testToBean() = Action.async { implicit request =>
+    testService.testToBean().map {
+      case news: Seq[NewsFeedRow] if news.nonEmpty => ServerSucced(news)
+      case _                                       => DataEmptyError("")
     }
   }
 

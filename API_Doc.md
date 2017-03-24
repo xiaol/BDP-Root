@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.8
+# 数据平台接口文档_V3.9
 
 ## 目录
 
@@ -7,6 +7,14 @@
 
 ----
 ## 更新日志
+*V3.9:*
+
+1. 第三方用户注册添加utype：
+黄历天气：12，
+纹字锁频：13，
+猎鹰浏览器：14，
+白牌：15
+
 *V3.8:*
 
 1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq) 、新闻相关列表接口(/v2/ns/asc)：添加两个字段logtype、logchid
@@ -193,6 +201,10 @@ _V2.1：_
 | 游客用户   | 2    |
 | 微博三方用户 | 3    |
 | 微信三方用户 | 4    |
+| 黄历天气 | 12    |
+| 纹字锁频 | 13    |
+| 猎鹰浏览器 | 14    |
+| 白牌 | 15    |
 
 ----
 #### 游客用户注册
@@ -276,14 +288,14 @@ Content-Type: application/json
 {
   "muid": 4,                          - Option - 游客合并三方时提供该字段
   "msuid": "weibo_suid_xxx",          - Option - 三方之间进行合并时提供该字段
-  "utype": 3,
-  "platform": 1,
-  "suid": "weibo_suid_xxx1",
-  "stoken": "weibo_stoken_xxx",
-  "sexpires": "2016-4-27 17:37:22",
-  "uname": "zhange",                  - Option
-  "gender": 1,                        - Option
-  "avatar": "http://tva4.jpg",        - Option
+  "utype": 3,                         - 用户类型 - 本地注册用户:1, 游客用户:2 ,微博三方用户:3 ,微信三方用户:4, 黄历天气:12, 纹字锁频:13, 猎鹰浏览器:14, 白牌:15
+  "platform": 1,                      - 平台类型 - IOS:1, 安卓:2, 网页:3, 无法识别:4
+  "suid": "weibo_suid_xxx1",          - 第三方用户id 
+  "stoken": "weibo_stoken_xxx",       - 第三方登录stoken
+  "sexpires": "2016-4-27 17:37:22",   - 过期时间
+  "uname": "zhange",                  - 用户名
+  "gender": 1,                        - Option - 性别
+  "avatar": "http://tva4.jpg",        - Option - 头像地址
   "averse": [                         - Option - 用户屏蔽字段列表
     "政治",
     "战争",

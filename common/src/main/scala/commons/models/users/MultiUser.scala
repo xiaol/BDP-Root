@@ -30,11 +30,11 @@ object UserGuest {
 }
 
 case class UserSocial(
-  muid: Option[Long] = None,
-  msuid: Option[String] = None,
+  muid: Option[Long] = None, //游客uid
+  msuid: Option[String] = None, //已登录的第三方用户id
   utype: Int,
   platform: Int,
-  suid: String,
+  suid: String, //新的第三方用户id
   stoken: String,
   sexpires: LocalDateTime,
   uname: Option[String],

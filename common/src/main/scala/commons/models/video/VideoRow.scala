@@ -63,6 +63,7 @@ object VideoRowBase {
 case class VideoRowIncr(
   collect: Int,
   concern: Int,
+  un_concern: Option[Int] = None,
   comment: Int,
   inum: Int,
   style: Int,
@@ -74,6 +75,7 @@ object VideoRowIncr {
   implicit val VideoRowIncrWrites: Writes[VideoRowIncr] = (
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
+    (JsPath \ "un_concern").writeNullable[Int] ~
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "inum").write[Int] ~
     (JsPath \ "style").write[Int] ~
@@ -85,6 +87,7 @@ object VideoRowIncr {
   implicit val VideoRowIncrReads: Reads[VideoRowIncr] = (
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
+    (JsPath \ "un_concern").readNullable[Int] ~
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "inum").read[Int] ~
     (JsPath \ "style").read[Int] ~

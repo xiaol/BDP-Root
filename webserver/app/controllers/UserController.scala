@@ -33,19 +33,27 @@ class UserController @Inject() (val userService: UserService, val mailService: M
   def signupSocial(token: Int) = Action.async(parse.json) { implicit request =>
     request.body.validate[UserSocial] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      //第三方登录, 已存在游客id, 和游客id合并
       case JsSuccess(userSocial, _) if userSocial.muid.isDefined =>
+        //直接用第三方用户查找并更改
         userService.updateUserRowBySuid(userSocial.suid, UserRowHelpers.from(userSocial)).flatMap {
           case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
-          case None => userService.updateUserRowByUid(userSocial.muid.get, UserRowHelpers.from(userSocial)).flatMap {
-            case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
-            case _             => Future.successful(ServerError(userSocial.toString))
-          }
+          //若数据库中不存在此第三方用户(即此第三方用户第一次登录), 则用游客id查找合并
+          case None =>
+            userService.updateUserRowByUid(userSocial.muid.get, UserRowHelpers.from(userSocial)).flatMap {
+              case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
+              case _             => Future.successful(ServerError(userSocial.toString))
+            }
         }
+      //第三方直接登录, 不存在游客id
       case JsSuccess(userSocial, _) =>
+        //msuid为新的第三方(如用微博登录后,在切换到用微信登录)
         val suid = if (userSocial.msuid.isDefined) userSocial.msuid.get else userSocial.suid
+        //用第三方查找并更改
         userService.updateUserRowBySuid(suid, UserRowHelpers.from(userSocial)).flatMap {
           case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
           case _ =>
+            //数据库中不存在此第三方用户,直接插入, 并获取生成的uid
             userService.insert(UserRowHelpers.from(userSocial)).flatMap {
               case Some(userRow) => gotoLoginSucceededBuilder(userRow, token)
               case _             => Future.successful(ServerError(userSocial.toString))

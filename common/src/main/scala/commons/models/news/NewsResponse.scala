@@ -8,7 +8,7 @@ import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-import scala.util.Try
+import scala.util.{ Random, Try }
 
 /**
  * Created by zhange on 2016-05-04.
@@ -22,17 +22,13 @@ case class NewsFeedResponse(
   ptime: LocalDateTime,
   pname: Option[String] = None,
   purl: Option[String] = None,
-  descr: Option[String] = None,
   channel: Long,
   collect: Int,
   concern: Int,
+  un_concern: Option[Int] = None,
   comment: Int,
   style: Int,
   imgs: Option[List[String]] = None,
-  //  tags: Option[List[String]] = None,
-  //  province: Option[String] = None,
-  //  city: Option[String] = None,
-  //  district: Option[String] = None,
   rtype: Option[Int] = None,
   adimpression: Option[List[String]] = None,
   icon: Option[String] = None,
@@ -63,17 +59,13 @@ object NewsFeedResponse {
     (JsPath \ "ptime").write[LocalDateTime] ~
     (JsPath \ "pname").writeNullable[String] ~
     (JsPath \ "purl").writeNullable[String] ~
-    (JsPath \ "descr").writeNullable[String] ~
     (JsPath \ "channel").write[Long] ~
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
+    (JsPath \ "un_concern").writeNullable[Int] ~
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "style").write[Int] ~
     (JsPath \ "imgs").writeNullable[List[String]] ~
-    //    (JsPath \ "tags").writeNullable[List[String]] ~
-    //    (JsPath \ "province").writeNullable[String] ~
-    //    (JsPath \ "city").writeNullable[String] ~
-    //    (JsPath \ "district").writeNullable[String] ~
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "adimpression").writeNullable[List[String]] ~
     (JsPath \ "icon").writeNullable[String] ~
@@ -92,17 +84,13 @@ object NewsFeedResponse {
     (JsPath \ "ptime").read[LocalDateTime] ~
     (JsPath \ "pname").readNullable[String] ~
     (JsPath \ "purl").readNullable[String] ~
-    (JsPath \ "descr").readNullable[String] ~
     (JsPath \ "channel").read[Long] ~
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
+    (JsPath \ "un_concern").readNullable[Int] ~
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "style").read[Int] ~
     (JsPath \ "imgs").readNullable[List[String]] ~
-    //    (JsPath \ "tags").readNullable[List[String]] ~
-    //    (JsPath \ "province").readNullable[String] ~
-    //    (JsPath \ "city").readNullable[String] ~
-    //    (JsPath \ "district").readNullable[String] ~
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "adimpression").readNullable[List[String]] ~
     (JsPath \ "icon").readNullable[String] ~
@@ -128,32 +116,8 @@ object NewsFeedResponse {
       commentnum = commentnum * 61
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      //base.tags, //base.province, base.city, base.district,
+      syst.chid, incr.collect, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
       syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
-  }
-
-  def from(newsRow: NewsSimpleRow): NewsFeedResponse = {
-    val base = newsRow.base
-    val incr = newsRow.incr
-    val syst = newsRow.syst
-    //修改评论数
-    var commentnum = incr.comment
-    if (commentnum > 10 && commentnum <= 70) {
-      commentnum = commentnum * 2
-    } else if (commentnum > 70 && commentnum <= 200) {
-      commentnum = commentnum * 13
-    } else if (commentnum > 200) {
-      commentnum = commentnum * 61
-    }
-    val logtype = syst.logtype match {
-      case Some(logtype) => Some(logtype)
-      case None          => syst.rtype
-    }
-    NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      //base.tags, //base.province, base.city, base.district,
-      syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration, None, logtype, syst.logchid)
   }
 
   def from(videoRow: VideoRow): NewsFeedResponse = {
@@ -170,8 +134,7 @@ object NewsFeedResponse {
       commentnum = commentnum * 61
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      base.descr, syst.chid, incr.collect, incr.concern, commentnum, incr.style, incr.imgs,
-      //base.tags, //base.province, base.city, base.district,
+      syst.chid, incr.collect, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
       Some(6), None, syst.icon, syst.videourl, syst.thumbnail, syst.duration, None, Some(6))
   }
 
@@ -192,8 +155,12 @@ object NewsFeedResponse {
     }
     val title: String = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "description").head.required_value.get).toOption.getOrElse("")
     val pname: Option[String] = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "title").head.required_value.get).toOption
+    val style = Random.nextInt(2) match {
+      case 1 => 1
+      case _ => 11
+    }
 
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), pname, event.event_value, None, 9999L, 0, 0, 0, number.getOrElse(0), imgs,
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), pname, event.event_value, 9999L, 0, 0, Some(0), 0, style, imgs,
       Some(3), creative.impression, icon)
   }
 
@@ -202,7 +169,7 @@ object NewsFeedResponse {
       case 1 => 41 //置顶
       case _ => 4 //普通专题
     }
-    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, Some(topic.description), 9999L, 0, 0, 0, 5, Some(List(topic.cover)), // None, //None, None, None,
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, 9999L, 0, 0, Some(0), 0, 5, Some(List(topic.cover)),
       Some(rtype), None, None, None, None, None, None, Some(4), Some(1))
   }
 }

@@ -118,10 +118,10 @@ object NewsRecommendResponse {
   )(NewsRecommendResponse.apply _)
 
   def from(newsFeedResponse: NewsFeedResponse): NewsRecommendResponse = {
-    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs) //, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district)
+    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, None, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs) //, newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district)
   }
   def from(newsFeedResponse: NewsFeedResponse, newsRecommend: NewsRecommend): NewsRecommendResponse = {
-    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, newsFeedResponse.descr, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, //newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district,
+    NewsRecommendResponse(newsFeedResponse.nid, newsFeedResponse.docid, newsFeedResponse.title, newsFeedResponse.ptime, newsFeedResponse.pname, newsFeedResponse.purl, None, newsFeedResponse.channel, newsFeedResponse.collect, newsFeedResponse.concern, newsFeedResponse.comment, newsFeedResponse.style, newsFeedResponse.imgs, //newsFeedResponse.province, newsFeedResponse.city, newsFeedResponse.district,
       newsRecommend.rtime, newsRecommend.level, newsRecommend.bigimg, newsRecommend.status)
   }
 }

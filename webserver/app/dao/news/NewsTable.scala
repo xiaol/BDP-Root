@@ -27,7 +27,6 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def docid = column[String]("docid")
     def title = column[String]("title")
     def content = column[JsValue]("content")
-    //    def html = column[String]("html")
     def author = column[Option[String]]("author")
     def ptime = column[LocalDateTime]("ptime")
     def pname = column[Option[String]]("pname")
@@ -40,6 +39,7 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
     def collect = column[Int]("collect")
     def concern = column[Int]("concern")
+    def un_concern = column[Option[Int]]("un_concern")
     def comment = column[Int]("comment")
     def inum = column[Int]("inum")
     def style = column[Int]("style")
@@ -62,7 +62,7 @@ trait NewsTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def duration = column[Option[Int]]("duration")
 
     def base = (nid.?, url, docid, title, content, author, ptime, pname, purl, descr, tags, province, city, district) <> ((NewsRowBase.apply _).tupled, NewsRowBase.unapply)
-    def incr = (collect, concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
+    def incr = (collect, concern, un_concern, comment, inum, style, imgs, compress, ners) <> ((NewsRowIncr.apply _).tupled, NewsRowIncr.unapply)
     def syst = (state, ctime, chid, sechid, srid, srstate, pconf, plog, icon, rtype, videourl, thumbnail, duration) <> ((NewsRowSyst.apply _).tupled, NewsRowSyst.unapply)
     def * = (base, incr, syst) <> ((NewsRow.apply _).tupled, NewsRow.unapply)
   }

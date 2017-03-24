@@ -63,7 +63,7 @@ object NewsRecommendDAO {
 
 @Singleton
 class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext)
-    extends NewsRecommendTable with NewsSimpleTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable
+    extends NewsRecommendTable with NewsTable with NewsRecommendAPPTable with NewsRecommendReadTable with NewsRecommendForUserTable
     with NewsRecommendHotTable with ConcernPublisherTable with NewsPublisherTable with NewsClickTable with NewsRecommendLikeTable
     with VideoTable
     with HasDatabaseConfigProvider[MyPostgresDriver] {
@@ -76,7 +76,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
   val newsRecommendReadList = TableQuery[NewsRecommendReadTable]
   val newsRecommendForUserList = TableQuery[NewsRecommendForUserTable]
   val newsRecommendHotList = TableQuery[NewsRecommendHotTable]
-  val newsList = TableQuery[NewsSimpleTable].filter(_.state === 0)
+  val newsList = TableQuery[NewsTable].filter(_.state === 0)
   val concernPubList = TableQuery[ConcernPublisherTable]
   val publisherList = TableQuery[NewsPublisherTable]
   val newsClickList = TableQuery[NewsClickTable]
@@ -187,61 +187,10 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     db.run(queryAction.result)
   }
 
-  def listNewsByRecommandUid(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {
+  def listNewsByRecommandUid(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsRow, NewsRecommend)]] = {
     val joinQuery = (for {
       (news, newsRecommends) <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow))
         .join(newsRecommendAPPList.filter(_.rtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid))).on(_.nid === _.nid).sortBy(p => (p._2.level.desc, p._2.rtime.desc)).drop(offset).take(limit)
-    } yield (news, newsRecommends)).map {
-      case (n, newsRecommends) =>
-        (n, newsRecommends)
-    }
-
-    db.run(joinQuery.result)
-  }
-
-  //必须出,等级为5大图
-  def listNewsByRecommandUidBigImg5(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {
-    val joinQuery = (for {
-      (news, newsRecommends) <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(bigimagetimeWindow))
-        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).filter(_.level === 5.0).filter(_.bigimg.getOrElse(0) > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).map(_.nid))).on(_.nid === _.nid).sortBy(_._2.rtime.desc).drop(offset).take(limit)
-    } yield (news, newsRecommends)).map {
-      case (n, newsRecommends) =>
-        (n, newsRecommends)
-    }
-
-    db.run(joinQuery.result)
-  }
-
-  //必须出,等级为5非大图
-  def listNewsByRecommandUid5(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {
-    val joinQuery = (for {
-      (news, newsRecommends) <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(bigimagetimeWindow))
-        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).filter(_.level === 5.0).filter(_.bigimg.getOrElse(0) < 1).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).map(_.nid))).on(_.nid === _.nid).sortBy(_._2.rtime.desc).drop(offset).take(limit)
-    } yield (news, newsRecommends)).map {
-      case (n, newsRecommends) =>
-        (n, newsRecommends)
-    }
-
-    db.run(joinQuery.result)
-  }
-
-  //模型从人工推荐新闻中选大图
-  def refreshByPeopleRecommendBigImg(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {
-    val joinQuery = (for {
-      (news, newsRecommends) <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(bigimagetimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 1).filter(_.ctime > LocalDateTime.now().plusDays(bigimagetimeWindow)).map(_.nid))
-        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).map(_.nid))).on(_.nid === _.nid).sortBy(r => (r._2.level.desc, r._2.rtime.desc)).drop(offset).take(limit)
-    } yield (news, newsRecommends)).map {
-      case (n, newsRecommends) =>
-        (n, newsRecommends)
-    }
-    db.run(joinQuery.result)
-  }
-
-  //冷启动时,人工大图
-  def listNewsByRecommandUidBigImg(uid: Long, offset: Long, limit: Long): Future[Seq[(NewsSimpleRow, NewsRecommend)]] = {
-    val joinQuery = (for {
-      (news, newsRecommends) <- newsList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow))
-        .join(newsRecommendList.filter(_.rtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).filter(_.bigimg > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(bigimagetimeWindow)).map(_.nid))).on(_.nid === _.nid).sortBy(p => (p._2.level.desc, p._2.rtime.desc)).drop(offset).take(limit)
     } yield (news, newsRecommends)).map {
       case (n, newsRecommends) =>
         (n, newsRecommends)
@@ -270,67 +219,6 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
       }
       db.run(joinQuery.result)
     }
-  }
-
-  def load(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
-  }
-
-  //新闻刷到头了,用6小时以内没看过的新闻补上
-  def refresh(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusHours(newsWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
-  }
-
-  def loadByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.ctime < timeCursor).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
-  }
-
-  def loadByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
-  }
-
-  def loadByModelRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
-  }
-
-  def refreshByHot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > timeCursor).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.comment > 0).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.comment.desc).drop(offset).take(limit).result)
-  }
-
-  def refreshByHotWord(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendHotList.filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
-  }
-
-  def refreshByLDARecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filter(_.sourcetype === 1).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).result)
-  }
-
-  def refreshByKMeansRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(-7)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filter(_.sourcetype === 2).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).map(_.nid)).result)
-  }
-
-  //  def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-  //    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendForUserList.filter(_.uid === uid).filter(_.sourcetype === 0).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.predict.desc).take(limit).map(_.nid)).result)
-  //  }
-
-  def refreshByPeopleRecommend(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.chid inSet channelFilterSet).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendList.filter(_.rtime > LocalDateTime.now().plusHours(newsrecommendtimeWindow)).map(_.nid)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(-30)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
-  }
-
-  def refreshByClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.chid in newsList.filter(_.nid in newsClickList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(recommendtimeWindow)).map(_.nid)).groupBy(_.chid).map { case (chid, css) => (chid, css.length) }.sortBy(_._2.desc).map(_._1).take(3)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
-  }
-
-  def refreshByLike(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsSimpleRow]] = {
-    db.run(newsList.filter(_.chid =!= shieldedCid).filter(_.state === 0).filterNot(_.pname inSet panemFilterSet).filter(_.sechid.isEmpty).filter(_.imgs.nonEmpty).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filter(_.nid in newsRecommendLikeList.filter(_.uid === uid).filter(_.ctime > LocalDateTime.now().plusDays(newstimeWindow)).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).map(_.nid)).sortBy(_.ctime.desc).take(limit).result)
-  }
-
-  def refreshVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime > timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.asc).drop(offset).take(limit).result)
-  }
-
-  def loadVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[VideoRow]] = {
-    db.run(videoList.filter(_.state === 0).filter(_.ctime > timeWindow(timeCursor)).filter(_.ctime < timeCursor).filterNot(_.nid in newsRecommendReadList.filter(_.uid === uid).filter(_.readtime > LocalDateTime.now().plusDays(newstimeWindow)).map(_.nid)).sortBy(_.ctime.desc).drop(offset).take(limit).result)
   }
 
 }

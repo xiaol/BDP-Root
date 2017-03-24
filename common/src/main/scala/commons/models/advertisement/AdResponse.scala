@@ -56,7 +56,7 @@ object App {
   )(App.apply _)
 }
 
-case class Ad_native(template_id: Option[Int] = None,
+case class Ad_native(template_id: Option[String] = None,
                      index: Option[Int] = None,
                      node_name: Option[String] = None,
                      required_field: Option[Int] = None,
@@ -67,7 +67,7 @@ case class Ad_native(template_id: Option[Int] = None,
                      index_value: Option[String] = None)
 object Ad_native {
   implicit val Ad_nativeWrites: Writes[Ad_native] = (
-    (JsPath \ "template_id").writeNullable[Int] ~
+    (JsPath \ "template_id").writeNullable[String] ~
     (JsPath \ "index").writeNullable[Int] ~
     (JsPath \ "node_name").writeNullable[String] ~
     (JsPath \ "required_field").writeNullable[Int] ~
@@ -79,7 +79,7 @@ object Ad_native {
   )(unlift(Ad_native.unapply))
 
   implicit val Ad_nativeReads: Reads[Ad_native] = (
-    (JsPath \ "template_id").readNullable[Int] ~
+    (JsPath \ "template_id").readNullable[String] ~
     (JsPath \ "index").readNullable[Int] ~
     (JsPath \ "node_name").readNullable[String] ~
     (JsPath \ "required_field").readNullable[Int] ~

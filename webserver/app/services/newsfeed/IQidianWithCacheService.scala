@@ -1,14 +1,11 @@
 package services.newsfeed
 
-import java.sql.Timestamp
 import java.util.Date
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.advertisement.AdRequest
 import commons.models.news._
-import commons.utils.JodaOderingImplicits
 import commons.utils.JodaOderingImplicits.LocalDateTimeReverseOrdering
 import commons.utils.JodaUtils._
 import dao.news._
@@ -44,8 +41,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
   def updateNewsFeedCommon(): Future[Boolean] = {
     Future {
       newsUnionFeedDao.commonAll(500).map { seqall =>
-        val data = seqall.map { news =>
-          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+        val data = seqall.map { newsFeedRow =>
+          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
           newsFeedResponse
         }
         remNewsFeedCommonSetCache().flatMap {
@@ -101,8 +98,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
                     //缓存所有用户共同新闻
                     Future {
                       newsUnionFeedDao.commonAll(500).map { seqall =>
-                        val data = seqall.map { news =>
-                          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+                        val data = seqall.map { newsFeedRow =>
+                          val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
                           newsFeedResponse
                         }
                         setNewsFeedCommonSetCache(data.map { news => Json.toJson(news).toString })
@@ -176,8 +173,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
       val result: Future[Seq[NewsFeedResponse]] = for {
         commons <- refreshCommonFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
@@ -251,41 +248,41 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
       val result: Future[Seq[NewsFeedResponse]] = for {
         hots <- refreshHotFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
 
         lDAandKmeans <- refreshLDAandKmeansFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
 
         peopleRecommendWithClick <- refreshByPeopleRecommendWithClickFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
         commons <- refreshCommonFO.map { seq =>
-          seq.map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
         bigimg5 <- refreshBigImageAndVideo.map { seq =>
-          seq.filter(_._20 == Some(999)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.filter(_.rtype == Some(999)).map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
 
         video <- refreshBigImageAndVideo.map { seq =>
-          seq.filter(_._20 == Some(6)).take(v.getOrElse(0)).map { news =>
-            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(news._1, news._2, news._3, news._4, news._5, news._6, news._7, news._8, news._9, news._10, news._11, news._12, news._13, news._14, news._15, news._16, news._17, news._18, news._19, news._20, news._21)
+          seq.filter(_.rtype == Some(6)).take(v.getOrElse(0)).map { newsFeedRow =>
+            val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
         }
@@ -396,7 +393,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      //rtype类型:0普通、1热点、2推送(2人工推送, 21机器推送)、3广告、4专题、5图片新闻、6视频、7本地
+      //rtype类型:0普通、1热点、2推送(2人工推送, 21机器推送)、3广告、4专题、5图片新闻、6视频、7本地、8段子
       val r: Future[(Seq[NewsFeedResponse], Int)] = getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
       val returnData: Future[Seq[NewsFeedResponse]] = r.map { seq => getReturnData(count: Long, t: Int, v: Option[Int], seq._1: Seq[NewsFeedResponse]) }
 
@@ -636,22 +633,24 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     }
   }
 
-  def toNewsFeedResponse(nid: Long, url: String, docid: String, title: String, pname: Option[String], purl: Option[String],
-                         collect: Int, concern: Int, comment: Int, inum: Int, style: Int, imgs: Option[String], state: Int,
-                         ctime: Timestamp, chid: Long, icon: Option[String], videourl: Option[String], thumbnail: Option[String],
-                         duration: Option[Int], rtype: Option[Int], logtype: Option[Int]): NewsFeedResponse = {
-    val imgsList = imgs match {
+  def toNewsFeedResponse(newsFeedRow: NewsFeedRow): NewsFeedResponse = {
+    val imgsList = newsFeedRow.imgs match {
       case Some(str) =>
         Some(str.split(",").toList)
       case _ => None
     }
 
-    val date = new Date(ctime.getTime)
-    val newsSimpleRowBase = NewsSimpleRowBase(Some(nid), url, docid, title, None, LocalDateTime.fromDateFields(date), pname, purl, None, None)
-    val newsSimpleRowIncr = NewsSimpleRowIncr(collect, concern, comment, inum, style, imgsList)
-    val newsSimpleRowSyst = NewsSimpleRowSyst(state, LocalDateTime.fromDateFields(date), chid, None, icon, rtype, videourl, thumbnail, duration, logtype, Some(1))
-    val newsSimpleRow = NewsSimpleRow(newsSimpleRowBase, newsSimpleRowIncr, newsSimpleRowSyst)
-    NewsFeedResponse.from(newsSimpleRow)
+    //    val thumbnail = newsFeedRow.rtype match {
+    //      case Some(newstype) if newstype == 6 => imgsList match {
+    //        case Some(list) => Some(list.head)
+    //        case _          => None
+    //      }
+    //      case _ => None
+    //    }
+
+    NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
+      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, newsFeedRow.comment, newsFeedRow.style,
+      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1))
   }
 
   final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {

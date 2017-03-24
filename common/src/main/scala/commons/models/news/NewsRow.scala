@@ -68,6 +68,7 @@ object NewsRowBase {
 case class NewsRowIncr(
   collect: Int,
   concern: Int,
+  un_concern: Option[Int] = None,
   comment: Int,
   inum: Int,
   style: Int,
@@ -79,6 +80,7 @@ object NewsRowIncr {
   implicit val NewsRowIncrWrites: Writes[NewsRowIncr] = (
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
+    (JsPath \ "un_concern").writeNullable[Int] ~
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "inum").write[Int] ~
     (JsPath \ "style").write[Int] ~
@@ -90,6 +92,7 @@ object NewsRowIncr {
   implicit val NewsRowIncrReads: Reads[NewsRowIncr] = (
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
+    (JsPath \ "un_concern").readNullable[Int] ~
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "inum").read[Int] ~
     (JsPath \ "style").read[Int] ~
