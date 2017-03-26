@@ -188,13 +188,13 @@ GET     /v2/re/top                  controllers.ReportController.topClickNews(ct
 GET     /v2/ns/fed/up               controllers.NewsResponseController.updateNewsFeedCommon()
 
 #测试
-GET     /v2/ns/fed/test             controllers.TestController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/testnewsfeed     controllers.TestController.testNewsFeed()
+#GET     /v2/ns/fed/test             controllers.TestController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/testnewsfeed     controllers.TestController.testNewsFeed()
 
-GET     /v2/ns/fed/s1             controllers.TestController.select1(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s2             controllers.TestController.select2(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s3             controllers.TestController.select3(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s4             controllers.TestController.select4(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s5             controllers.TestController.select5(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s6             controllers.TestController.select6(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
-GET     /v2/ns/fed/s7             controllers.TestController.select7(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s1             controllers.TestController.select1(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s2             controllers.TestController.select2(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s3             controllers.TestController.select3(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s4             controllers.TestController.select4(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s5             controllers.TestController.select5(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s6             controllers.TestController.select6(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
+#GET     /v2/ns/fed/s7             controllers.TestController.select7(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
