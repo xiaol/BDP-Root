@@ -57,7 +57,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
 
       val response = for {
         r <- result.map { seq =>
@@ -152,7 +152,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdResponse(adbody, remoteAddress, uid)
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
 
       val response = for {
         r <- result.map { seq =>
@@ -301,6 +301,16 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       case _ => None
     }
 
+    //修改评论数
+    var commentnum = newsFeedRow.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+
     //    val thumbnail = newsFeedRow.rtype match {
     //      case Some(newstype) if newstype == 6 => imgsList match {
     //        case Some(list) => Some(list.head)
@@ -310,7 +320,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
     //    }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, newsFeedRow.comment, newsFeedRow.style,
+      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
       imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, Some(0), Some(newsFeedRow.chid.toInt))
   }
 }

@@ -2,28 +2,27 @@ package controllers
 
 import javax.inject.Inject
 
-import jp.t2v.lab.play2.auth.AuthElement
-import play.api.libs.json.Json
-import play.api.mvc._
-import security.auth.AuthConfigImpl
-import services.news._
-import services.users.UserService
-import services.video.VideoService
-import utils.Response._
-import services.spiders.SourceService
-import services.community.ASearchService
-
-import scala.concurrent.{ ExecutionContext, Future }
-import commons.utils.Base64Utils.decodeBase64
-import commons.models.channels.{ ChannelResponse, ChannelRow }
-import commons.models.community.{ ASearch, ASearchRow }
+import commons.models.advertisement.RequestASearchParams
+import commons.models.channels.ChannelResponse
+import commons.models.community.{ ASearch, ASearchResponse, ASearchRow }
 import commons.models.news._
 import commons.models.spiders.SourceResponse
 import commons.models.userprofiles.CommentResponse
-import commons.models.users._
+import commons.utils.Base64Utils.decodeBase64
+import jp.t2v.lab.play2.auth.AuthElement
 import org.joda.time.LocalDateTime
-import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _, _ }
+import play.api.libs.json.{ JsError, JsSuccess, Json }
+import play.api.mvc._
+import security.auth.AuthConfigImpl
+import services.community.ASearchService
+import services.news._
+import services.spiders.SourceService
+import services.users.UserService
+import services.video.VideoService
+import utils.Response._
+import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _ }
 
+import scala.concurrent.{ ExecutionContext, Future }
 import scala.util.Random
 
 /**
@@ -84,54 +83,23 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  final private def https(detail: NewsDetailsResponse): NewsDetailsResponse = {
-    var list: List[NewsBodyBlock] = detail.content.as[List[NewsBodyBlock]]
-    list = list.map { news =>
-      news match {
-        case imageBlock: ImageBlock => imageBlock.copy(img = imageBlock.img.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com"))
-        case _                      => news
-      }
-    }
-    detail.copy(content = Json.toJson(list))
-  }
-
   def listASearch(nid: Long, page: Long, count: Long, s: Int) = Action.async { implicit request =>
-    //和详情页是同一个pv
-    //pvdetailService.insert(PvDetail(0, "NewsController.listASearch", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     aSearchService.listByRefer(nid.toString, page, count).map {
       case searchs: Seq[ASearchRow] if searchs.nonEmpty => ServerSucced(if (s == 1) https(searchs.map(_.asearch)) else searchs.map(_.asearch))
       case _                                            => DataEmptyError(s"$nid")
     }
   }
 
-  //  //AsyncStack(AuthorityKey -> GuestRole) { implicit request =>
-  //  def loadFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
-  //    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.loadFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-  //    chid match {
-  //      case 1L => newsService.loadFeedByRecommends(page, count, tcursor, nid).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
-  //      }
-  //      case _ => newsService.loadFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor, nid).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
-  //      }
-  //    }
-  //  }
-  //
-  //  def refreshFeed(uid: Option[Long], chid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, nid: Option[Long]) = Action.async { implicit request =>
-  //    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.refreshFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-  //    chid match {
-  //      case 1L => newsService.refreshFeedByRecommends(page, count, tcursor, nid).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
-  //      }
-  //      case _ => newsService.refreshFeedByChannel(uid.getOrElse(0), chid, sechidOpt, page, count, tcursor, nid).map {
-  //        case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == tmock) mockRealTime(news) else news)
-  //        case _                                            => DataEmptyError(s"$chid, $page, $count, $tcursor")
-  //      }
-  //    }
-  //  }
+  def listASearchWithAd = Action.async(parse.json) { request =>
+    request.body.validate[RequestASearchParams] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(requestASearchParams, _) =>
+        aSearchService.listByReferWithAd(requestASearchParams.nid.toString, requestASearchParams.p.getOrElse(1), requestASearchParams.c.getOrElse(20), Some(decodeBase64(requestASearchParams.b.get)), request.headers.get("X-Real-IP")).map {
+          case searchs: Seq[ASearchResponse] if searchs.nonEmpty => ServerSucced(if (requestASearchParams.s.getOrElse(0) == 1) https2(searchs) else searchs)
+          case _                                                 => DataEmptyError(s"$requestASearchParams")
+        }
+    }
+  }
 
   def loadLocationFeed(page: Long, count: Long, tcursor: Long, tmock: Int, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(0, "NewsController.loadLocationFeed", LocalDateTime.now(), request.headers.get("X-Real-IP")))
@@ -217,6 +185,26 @@ class NewsController @Inject() (val userService: UserService, val channelService
 
   //http改https
   final private def https(aSearch: Seq[ASearch]): Seq[ASearch] = {
+    aSearch.map { aSearch =>
+      aSearch.img match {
+        case Some(imag: String) => aSearch.copy(img = Some(https(imag)))
+        case None               => aSearch
+      }
+    }
+  }
+
+  final private def https(detail: NewsDetailsResponse): NewsDetailsResponse = {
+    var list: List[NewsBodyBlock] = detail.content.as[List[NewsBodyBlock]]
+    list = list.map { news =>
+      news match {
+        case imageBlock: ImageBlock => imageBlock.copy(img = imageBlock.img.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com"))
+        case _                      => news
+      }
+    }
+    detail.copy(content = Json.toJson(list))
+  }
+
+  final private def https2(aSearch: Seq[ASearchResponse]): Seq[ASearchResponse] = {
     aSearch.map { aSearch =>
       aSearch.img match {
         case Some(imag: String) => aSearch.copy(img = Some(https(imag)))

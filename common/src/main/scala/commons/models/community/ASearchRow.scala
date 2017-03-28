@@ -1,5 +1,6 @@
 package commons.models.community
 
+import commons.models.advertisement.AdResponse
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
 import play.api.libs.functional.syntax._
@@ -62,6 +63,7 @@ case class ASearch(
   abs: Option[String] = None,
   nid: Option[Long] = None,
   duration: Option[Int] = None,
+  rtype: Option[Int] = None,
   logtype: Option[Int] = Some(26),
   logchid: Option[Int] = Some(0))
 
@@ -77,6 +79,7 @@ object ASearch {
     (JsPath \ "abs").writeNullable[String] ~
     (JsPath \ "nid").writeNullable[Long] ~
     (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "logtype").writeNullable[Int] ~
     (JsPath \ "logchid").writeNullable[Int]
   )(unlift(ASearch.unapply))
@@ -92,6 +95,7 @@ object ASearch {
     (JsPath \ "abs").readNullable[String] ~
     (JsPath \ "nid").readNullable[Long] ~
     (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "logtype").readNullable[Int] ~
     (JsPath \ "logchid").readNullable[Int]
   )(ASearch.apply _)
@@ -117,6 +121,63 @@ object ASearchRow {
     (JsPath \ "refer").read[String] ~
     (JsPath \ "asearch").read[ASearch]
   )(ASearchRow.apply _)
+}
+
+case class ASearchResponse(
+  url: String,
+  title: String,
+  from: String,
+  rank: Int,
+  pname: String,
+  ptime: LocalDateTime,
+  img: Option[String] = None,
+  abs: Option[String] = None,
+  nid: Option[Long] = None,
+  duration: Option[Int] = None,
+  rtype: Option[Int] = None,
+  logtype: Option[Int] = Some(26),
+  logchid: Option[Int] = Some(0),
+  adresponse: Option[AdResponse] = None)
+
+object ASearchResponse {
+  implicit val ASearchResponseWrites: Writes[ASearchResponse] = (
+    (JsPath \ "url").write[String] ~
+    (JsPath \ "title").write[String] ~
+    (JsPath \ "from").write[String] ~
+    (JsPath \ "rank").write[Int] ~
+    (JsPath \ "pname").write[String] ~
+    (JsPath \ "ptime").write[LocalDateTime] ~
+    (JsPath \ "img").writeNullable[String] ~
+    (JsPath \ "abs").writeNullable[String] ~
+    (JsPath \ "nid").writeNullable[Long] ~
+    (JsPath \ "duration").writeNullable[Int] ~
+    (JsPath \ "rtype").writeNullable[Int] ~
+    (JsPath \ "logtype").writeNullable[Int] ~
+    (JsPath \ "logchid").writeNullable[Int] ~
+    (JsPath \ "adresponse").writeNullable[AdResponse]
+  )(unlift(ASearchResponse.unapply))
+
+  implicit val ASearchResponseReads: Reads[ASearchResponse] = (
+    (JsPath \ "url").read[String] ~
+    (JsPath \ "title").read[String] ~
+    (JsPath \ "from").read[String] ~
+    (JsPath \ "rank").read[Int] ~
+    (JsPath \ "pname").read[String] ~
+    (JsPath \ "ptime").read[LocalDateTime] ~
+    (JsPath \ "img").readNullable[String] ~
+    (JsPath \ "abs").readNullable[String] ~
+    (JsPath \ "nid").readNullable[Long] ~
+    (JsPath \ "duration").readNullable[Int] ~
+    (JsPath \ "rtype").readNullable[Int] ~
+    (JsPath \ "logtype").readNullable[Int] ~
+    (JsPath \ "logchid").readNullable[Int] ~
+    (JsPath \ "adresponse").readNullable[AdResponse]
+  )(ASearchResponse.apply _)
+
+  def from(aSearch: ASearch, adresponse: Option[AdResponse]): ASearchResponse = {
+    ASearchResponse(aSearch.url, aSearch.title, aSearch.from, aSearch.rank, aSearch.pname, aSearch.ptime, aSearch.img,
+      aSearch.abs, aSearch.nid, aSearch.duration, aSearch.rtype, aSearch.logtype, aSearch.logchid, adresponse)
+  }
 }
 
 case class ASearchs(aSearchs: List[ASearch])

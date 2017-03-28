@@ -73,3 +73,23 @@ object RequestAdvertiseParams {
     (JsPath \ "nid").readNullable[Long]
   )(RequestAdvertiseParams.apply _)
 }
+
+case class RequestASearchParams(nid: Long, b: Option[String] = None, s: Option[Int] = None, p: Option[Long] = None, c: Option[Long] = None)
+
+object RequestASearchParams {
+  implicit val RequestAdvertiseParamsWrites: Writes[RequestASearchParams] = (
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "b").writeNullable[String] ~
+    (JsPath \ "s").writeNullable[Int] ~
+    (JsPath \ "p").writeNullable[Long] ~
+    (JsPath \ "c").writeNullable[Long]
+  )(unlift(RequestASearchParams.unapply))
+
+  implicit val RequestAdvertiseParamsReads: Reads[RequestASearchParams] = (
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "b").readNullable[String] ~
+    (JsPath \ "s").readNullable[Int] ~
+    (JsPath \ "p").readNullable[Long] ~
+    (JsPath \ "c").readNullable[Long]
+  )(RequestASearchParams.apply _)
+}

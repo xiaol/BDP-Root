@@ -35,12 +35,12 @@ class UserProfilesAppController @Inject() (val userProfileService: UserProfileSe
     request.body.validate[Phone] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(phone, _) => phone match {
-        case phone: Phone if phone.uid > 0 =>
-          userProfileService.phone(phone.uid, decodeBase64(phone.b), phone.ctype, phone.province, phone.city, phone.area, phone.ptype, phone.appversion, request.headers.get("X-Real-IP")).map {
-            case id: Long if id > 0 => ServerSucced(id)
-            case _                  => DataCreateError(s"${phone.toString}")
-          }
-        case _ => Future.successful(DataCreateError(s"${phone.toString}"))
+        case phone: Phone if phone.uid > 0 => Future.successful(ServerSucced(phone.uid))
+        //          userProfileService.phone(phone.uid, decodeBase64(phone.b), phone.ctype, phone.province, phone.city, phone.area, phone.ptype, phone.appversion, request.headers.get("X-Real-IP")).map {
+        //            case id: Long if id > 0 => ServerSucced(id)
+        //            case _                  => DataCreateError(s"${phone.toString}")
+        //          }
+        case _                             => Future.successful(DataCreateError(s"${phone.toString}"))
       }
 
     }
