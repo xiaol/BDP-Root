@@ -37,7 +37,8 @@ GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(n
 
 #GET     /v2/ns/con/com              ???
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)
-#GET     /v2/ns/related               controllers.NewsController.getRelated(nid:String)
+POST    /v2/ns/ascad                controllers.NewsController.listASearchWithAd()
+#GET     /v2/ns/related             controllers.NewsController.getRelated(nid:String)
 
 GET     /v2/ns/fed/r                controllers.NewsResponseController.refreshFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long ?=0, t:Int ?=0, nid: Option[Long])
 GET     /v2/ns/fed/l                controllers.NewsResponseController.loadFeedNew(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 14, tcr: Long, tmk:Int ?= 1, uid: Long ?=0, t:Int ?=0, nid: Option[Long])
@@ -150,7 +151,7 @@ POST    /v2/sps/asc                 controllers.SpiderPipelineController.createS
 GET     /v2/persist/:msg                     controllers.PersistanceController.testPersistance(msg:String)
 
 #insert apps
-#POST    /v2/au/app                  controllers.UserProfilesAppController.insert()
+POST    /v2/au/app                  controllers.UserProfilesAppController.insert()
 POST    /v2/au/phone                controllers.UserProfilesAppController.phone()
 
 #记录转发、不感兴趣日志

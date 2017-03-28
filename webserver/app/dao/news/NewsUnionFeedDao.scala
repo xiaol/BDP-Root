@@ -23,7 +23,7 @@ object NewsUnionFeedDao {
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
 
   final private val select: String = "select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, nv.style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail "
-  final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null "
+  final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null and nv.rtype is null "
 
 }
 
@@ -52,7 +52,7 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
   def hot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
     val limitbaidu = limit / 2
-    val action = sql"select * from (#$select , 1 as rtype, 11 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2) and nv.nid in (select nid from newsrecommendhot where ctime>#$dayWindow2) and nv.ctime>#$dayWindow2 #$condition limit $limitbaidu )baiduhot union all select * from (#$select , 1 as rtype, 12 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1 #$condition and nv.imgs is not null and nv.comment>0 limit $limit)hot ".as[NewsFeedRow]
+    val action = sql"select * from (#$select , 1 as rtype, 11 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2) and nv.nid in (select nid from newsrecommendhot where ctime>#$dayWindow2) and nv.ctime>#$dayWindow2 #$condition limit $limitbaidu )baiduhot union all select * from (#$select , 1 as rtype, 12 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1 #$condition and nv.imgs is not null and nv.comment>20 limit $limit)hot ".as[NewsFeedRow]
     db.run(action)
   }
 

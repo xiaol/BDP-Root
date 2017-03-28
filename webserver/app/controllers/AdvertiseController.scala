@@ -30,7 +30,7 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         pvdetailService.insert(PvDetail(requestParams.uid, "AdvertiseController.getAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-        adResponseService.getAdResponse(decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.uid).map {
+        adResponseService.getAdNewsFeedResponse(decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
           case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (requestParams.s.getOrElse(0) == 1) https(news) else news)
           case _                                            => DataEmptyError(s"$requestParams")
         }

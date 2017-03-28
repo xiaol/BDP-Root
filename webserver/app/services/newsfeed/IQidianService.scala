@@ -111,7 +111,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
         }
 
         video <- refreshBigImageAndVideo.map { seq =>
-          seq.filter(_.rtype == Some(6)).take(v.getOrElse(0)).map { newsFeedRow =>
+          seq.filter(_.rtype == Some(6)).map { newsFeedRow =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
@@ -157,7 +157,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
       val aaa = Await.result(newsFO, Duration(5000, TimeUnit.MILLISECONDS))
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
+        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
         case _                  => Future.successful(Seq[NewsFeedResponse]())
       }
 
@@ -254,7 +254,7 @@ class QidianService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsR
       val newsFO: Future[Seq[NewsFeedResponse]] = qidian(uid, page, count, timeCursor, t, v)
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
+        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
         case _                  => Future.successful(Seq[NewsFeedResponse]())
       }
 

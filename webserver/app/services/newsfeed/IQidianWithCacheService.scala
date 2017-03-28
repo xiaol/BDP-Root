@@ -281,7 +281,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         }
 
         video <- refreshBigImageAndVideo.map { seq =>
-          seq.filter(_.rtype == Some(6)).take(v.getOrElse(0)).map { newsFeedRow =>
+          seq.filter(_.rtype == Some(6)).map { newsFeedRow =>
             val newsFeedResponse: NewsFeedResponse = toNewsFeedResponse(newsFeedRow)
             newsFeedResponse
           }
@@ -399,7 +399,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
+        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
         case _                  => Future.successful(Seq[NewsFeedResponse]())
       }
 
@@ -519,7 +519,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       val returnData: Future[Seq[NewsFeedResponse]] = r.map { seq => getReturnData(count: Long, t: Int, v: Option[Int], seq._1: Seq[NewsFeedResponse]) }
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdResponse(body, remoteAddress, uid)
+        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
         case _                  => Future.successful(Seq[NewsFeedResponse]())
       }
 
@@ -640,6 +640,16 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       case _ => None
     }
 
+    //修改评论数
+    var commentnum = newsFeedRow.comment
+    if (commentnum > 10 && commentnum <= 70) {
+      commentnum = commentnum * 2
+    } else if (commentnum > 70 && commentnum <= 200) {
+      commentnum = commentnum * 13
+    } else if (commentnum > 200) {
+      commentnum = commentnum * 61
+    }
+
     //    val thumbnail = newsFeedRow.rtype match {
     //      case Some(newstype) if newstype == 6 => imgsList match {
     //        case Some(list) => Some(list.head)
@@ -649,7 +659,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     //    }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, newsFeedRow.comment, newsFeedRow.style,
+      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
       imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1))
   }
 
