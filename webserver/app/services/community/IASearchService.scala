@@ -5,6 +5,7 @@ import javax.inject.Inject
 import com.google.inject.ImplementedBy
 import commons.models.advertisement.AdResponse
 import commons.models.community.{ ASearchResponse, ASearchRow }
+import commons.models.news.NewsFeedResponse
 import dao.community.ASearchDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
@@ -39,7 +40,7 @@ class ASearchService @Inject() (val asearchDAO: ASearchDAO, val adResponseServic
   def listByReferWithAd(refer: String, page: Long, count: Long, adbody: Option[String], remoteAddress: Option[String]): Future[Seq[ASearchResponse]] = {
     {
       val result = asearchDAO.listByRefer(refer, (page - 1) * count, count)
-      val adFO: Future[Option[AdResponse]] = adResponseService.getAdResponse(adbody.get, remoteAddress)
+      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody.get, remoteAddress)
 
       val response = for {
         r <- result.map { seq =>
@@ -48,13 +49,22 @@ class ASearchService @Inject() (val asearchDAO: ASearchDAO, val adResponseServic
           }
         }
         ad <- adFO.map { adResponseOpt =>
-          adResponseOpt match {
-            case Some(adResponse) => Seq[ASearchResponse](ASearchResponse("", "", "", 0, "", LocalDateTime.now(), None, None, None, None, Some(3), Some(3), None, Some(adResponse)))
-            case None             => Seq[ASearchResponse]()
+          adResponseOpt.headOption match {
+            case Some(newsFeedResponse) =>
+              val img = newsFeedResponse.imgs match {
+                case Some(imgs) => imgs.headOption
+                case _          => None
+              }
+              Seq[ASearchResponse](ASearchResponse(newsFeedResponse.purl.getOrElse(""), newsFeedResponse.title, "", 0, newsFeedResponse.pname.getOrElse(""), LocalDateTime.now(), img, None, None, None, Some(3), Some(3), None, newsFeedResponse.adresponse))
+            case None => Seq[ASearchResponse]()
           }
         }
       } yield {
-        r ++: ad
+        r.head.rtype.getOrElse(0) match {
+          //相关视频将广告放第一个
+          case 6 => ad ++: r
+          case _ => r.take(3) ++: ad ++: r.drop(3)
+        }
       }
 
       response.map { seq =>

@@ -176,7 +176,7 @@ object ASearchResponse {
 
   def from(aSearch: ASearch, adresponse: Option[AdResponse]): ASearchResponse = {
     ASearchResponse(aSearch.url, aSearch.title, aSearch.from, aSearch.rank, aSearch.pname, aSearch.ptime, aSearch.img,
-      aSearch.abs, aSearch.nid, aSearch.duration, aSearch.rtype, aSearch.logtype, aSearch.logchid, adresponse)
+      aSearch.abs, aSearch.nid, aSearch.duration, Some(aSearch.rtype.getOrElse(0)), aSearch.logtype, aSearch.logchid, adresponse)
   }
 }
 

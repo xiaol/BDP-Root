@@ -20,8 +20,10 @@ trait SlideCountTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def ptype = column[Int]("ptype")
     def ctime = column[Option[LocalDateTime]]("ctime")
     def ipaddress = column[Option[String]]("ipaddress")
+    def version_text = column[Option[String]]("version_text")
+    def operate_type = column[Option[Int]]("operate_type")
 
-    def * = (mid, uid, ctype, ptype, ctime, ipaddress) <> ((Slide.apply _).tupled, Slide.unapply)
+    def * = (mid, uid, ctype, ptype, ctime, ipaddress, version_text, operate_type) <> ((Slide.apply _).tupled, Slide.unapply)
   }
 }
 

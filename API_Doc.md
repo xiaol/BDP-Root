@@ -1,4 +1,4 @@
-# 数据平台接口文档_V3.9
+# 数据平台接口文档_V3.10
 
 ## 目录
 
@@ -7,6 +7,11 @@
 
 ----
 ## 更新日志
+*V3.10:*
+
+1. 相关新闻添加评论:/v2/ns/ascad
+2. 修改滑动统计接口：/v2/sl/ins
+
 *V3.9:*
 
 1. 第三方用户注册添加utype：
@@ -842,9 +847,10 @@ Host: bdp.deeporiginalx.com
 
 | Key  | 参数类型   | 是否必须     | 参数解释 |
 | ---- | :----- | :------- | :--- |
-| nid  | String | 是        | 新闻ID |
-| p    | String | 否(默认 1)  | 页数   |
-| c    | String | 否(默认 20) | 条数   |
+| nid  | Long | 是        | 新闻ID |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)  |
+| p    | Long | 否(默认 1)  | 页数   |
+| c    | Long | 否(默认 20) | 条数   |
 
 _Response_
 
@@ -872,6 +878,134 @@ Content-Type: application/json
   ]
 }
 ```
+#### 新闻相关搜索列表(带广告)
+
+_Request_
+
+```json
+POST /v2/ns/ascad
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释 |
+| ---- | :----- | :------- | :--- |
+| nid  | Long | 是        | 新闻ID |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)  |
+| p    | Long | 否(默认 1)  | 页数   |
+| c    | Long | 否(默认 20) | 条数   |
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "url": "http://deeporiginalx.com/news.html?type=0&nid=10608629",
+      "title": "【背部训练】与@韩夕Jessie 的背部训练。来一起练背￼一介粗人的秒拍视频  workout vlog vol.3",
+      "from": "Qidian",
+      "rank": 1,
+      "pname": "微博热点",
+      "ptime": "2017-01-08 22:02:26",
+      "img": "http://wsqncdn.miaopai.com/stream/Uj1lz71h-04mAv15B33TJA___m.jpg",
+      "nid": 10608629,
+      "duration": 190,
+      "logtype": 26,
+      "logchid": 0
+    },
+    {
+      "url": "",
+      "title": "",
+      "from": "",
+      "rank": 0,
+      "pname": "",
+      "ptime": "2017-03-28 18:15:10",
+      "rtype": 3,
+      "logtype": 3,
+      "adresponse": {
+        "version": 1,
+        "status": 0,
+        "message": "Success",
+        "data": {
+          "adspace": [
+            {
+              "aid": 246,
+              "adformat": 5,
+              "creative": [
+                {
+                  "cid": 0,
+                  "index": 0,
+                  "ad_native": [
+                    {
+                      "template_id": "167",
+                      "index": 0,
+                      "required_field": 2,
+                      "action_type": 0,
+                      "required_value": "http://pgdt.gtimg.cn/gdt/0/DAABYMtAEsAEsAAIBYHBf6BTpLlzwG.jpg/0?ck=59b912f913a8bda4c9b6cbede441ba99",
+                      "type": "jpg",
+                      "index_value": "icon"
+                    },
+                    {
+                      "template_id": "167",
+                      "index": 1,
+                      "required_field": 1,
+                      "action_type": 0,
+                      "required_value": "会员才知道的世界，你懂的",
+                      "type": "text",
+                      "index_value": "title"
+                    },
+                    {
+                      "template_id": "167",
+                      "index": 2,
+                      "required_field": 1,
+                      "action_type": 0,
+                      "required_value": "95%的人不知道的优惠！你正在浪费你的特权",
+                      "type": "text",
+                      "index_value": "description"
+                    },
+                    {
+                      "template_id": "167",
+                      "index": 3,
+                      "required_field": 2,
+                      "action_type": 0,
+                      "required_value": "http://pgdt.gtimg.cn/gdt/0/transformer_11383441592749851919_149.jpg/0?ck=f0274540034de43753d2084ead861db9",
+                      "type": "jpg",
+                      "index_value": "image"
+                    }
+                  ],
+                  "impression": [
+                    "http://v.gdt.qq.com/gdt_stats.fcg?count=1&viewid0=88_e5tPeEmHlT!TyRJImpjTR!tw7SW2ZKbEK1Fhww8fFIN9G5GICvcCfZWqZo8bLGxwMAeermn!wIyR5DQksPyz5pz2KCQUP0E5IuS_rVAac19hqy5PL1nx7GoVi47mS7nOuciGaNBXMAAInLntjyCJjRDKNQY1o6BNQdhm2n3UU6unRpwPAU8iYKvl6yhubR9e7Ky1xP2H0JzXNdRUC0g",
+                    "http://as.lieying.cn/v2/forward/imp/ch/16?version=1.0&sspaid=246&sid=0&guid=ffa8568e69c74e61910f16a293467776"
+                  ],
+                  "click": [
+                    "http://as.lieying.cn/v2/forward/click/ch/16?version=1.0&sspaid=246&sid=0&guid=ffa8568e69c74e61910f16a293467776"
+                  ],
+                  "event": [
+                    {
+                      "event_key": 1,
+                      "event_value": "http://c.gdt.qq.com/gdt_mclick.fcg?viewid=88_e5tPeEmHlT!TyRJImpjTR!tw7SW2ZKbEK1Fhww8fFIN9G5GICvcCfZWqZo8bLGxwMAeermn!wIyR5DQksPyz5pz2KCQUP0E5IuS_rVAac19hqy5PL1nx7GoVi47mS7nOuciGaNBXMAAInLntjyCJjRDKNQY1o6BNQdhm2n3UU6unRpwPAU8iYKvl6yhubR9e7Ky1xP2H0JzXNdRUC0g&jtype=0&i=1&os=2&acttype=&s=%7B%22down_x%22%3A-999%2C%22down_y%22%3A-999%2C%22up_x%22%3A-999%2C%22up_y%22%3A-999%7D"
+                    }
+                  ],
+                  "admark": "http://alicdn.lieying.cn/sentshow/imgs/tmp/tsa_ad_logo.png"
+                }
+              ]
+            }
+          ]
+        }
+      }
+    }
+    ...
+  ]
+}
+
+```
+
 
 ----
 ### 新闻普通评论列表
@@ -3029,6 +3163,8 @@ Host: bdp.deeporiginalx.com
 | uid  | Long   | 是        | 用户ID                                |
 | ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
 | ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+| version_text  | Stirng   | 是        | APP版本    |
+| operate_type  | Int   | 是        | 操作类型: 滑动展示:1， 广告展示：2    |
 
 _Response_
 

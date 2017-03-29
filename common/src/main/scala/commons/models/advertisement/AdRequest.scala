@@ -165,4 +165,6 @@ case class Slide(mid: String,
                  ctype: Int,
                  ptype: Int,
                  ctime: Option[LocalDateTime] = None,
-                 ipaddress: Option[String])
+                 ipaddress: Option[String] = None,
+                 version_text: Option[String] = None,
+                 operate_type: Option[Int] = None)

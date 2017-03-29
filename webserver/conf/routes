@@ -177,7 +177,7 @@ GET     /v2/ns/next                 controllers.NewsController.getNextDetails(ni
 GET     /v2/ns/last                 controllers.NewsController.getLastDetails(nid:Long, uid:Option[Long], s:Int ?= 0, chid: Long)
 
 #滑动统计
-GET     /v2/sl/ins                  controllers.UserProfilesAppController.insertSlide(mid: String, uid:Long, ctype:Int, ptype:Int)
+GET     /v2/sl/ins                  controllers.UserProfilesAppController.insertSlide(mid: String, uid:Long, ctype:Int, ptype:Int, version_text: Option[String], operate_type: Option[Int])
 
 #详情页广告
 POST     /v2/ns/ad                  controllers.AdvertiseController.getAd()

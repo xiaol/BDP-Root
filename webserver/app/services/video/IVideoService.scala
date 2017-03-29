@@ -163,7 +163,7 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     val reqTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
     val oldTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(-12))
     val nowTimeCursor: LocalDateTime = dateTimeStr2DateTime(getDatetimeNow(0))
-    if (reqTimeCursor.isBefore(oldTimeCursor) || reqTimeCursor.isAfter(nowTimeCursor)) oldTimeCursor else reqTimeCursor
+    if (reqTimeCursor.isBefore(oldTimeCursor)) oldTimeCursor else reqTimeCursor
   }
 
   def toNewsFeedResponse(newsFeedRow: NewsFeedRow): NewsFeedResponse = {
