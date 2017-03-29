@@ -15,11 +15,11 @@ object ProcessDependencies{
 
   val scalr  = "org.imgscalr" % "imgscalr-lib" % "4.2"
 
-//  val openimajCore = "org.openimaj" % "core-image" % "1.3.5"
-//  val openimajFace =  "org.openimaj" % "faces" % "1.3.5"
-//  val openimajFeatures =   "org.openimaj" % "image-local-features" % "1.3.5"
+  val openimajCore = "org.openimaj" % "core-image" % "1.3.5"
+  val openimajFace =  "org.openimaj" % "faces" % "1.3.5"
+  val openimajFeatures =   "org.openimaj" % "image-local-features" % "1.3.5"
 
   val aliyunOSS = "com.aliyun.oss" % "aliyun-sdk-oss" % "2.2.3"
 
-  val processDependencies: Seq[ModuleID] = Seq(stanfordNLP, jsoup, selenium, scalr, aliyunOSS)
+  val processDependencies: Seq[ModuleID] = Seq(stanfordNLP, jsoup, selenium, scalr, aliyunOSS, openimajCore,openimajFace,openimajFeatures)
 }
