@@ -52,7 +52,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
 
-      //      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
+      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
@@ -65,15 +65,15 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             toNewsFeedResponse(newsFeedRow)
           }
         }
-        //        rkm <- resultKM.map { seq =>
-        //          seq.map { news =>
-        //            toNewsFeedResponse(newsFeedRow)
-        //          }
-        //        }
+        rkm <- resultKM.map { seq =>
+          seq.map { newsFeedRow =>
+            toNewsFeedResponse(newsFeedRow)
+          }
+        }
         ad <- adFO
         hatePnameWithChid <- hateNews
       } yield {
-        ad ++: (r.filter { feed =>
+        ad ++: ((rkm ++: r).filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
@@ -81,7 +81,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             }
           }
           flag
-        })
+        }).sortBy(_.ptime)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
@@ -146,8 +146,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
         case Some(sechid) => newsResponseDao.bySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
         case None         => newsResponseDao.byChannel((page - 1) * count, count, newTimeCursor, uid, chid)
       }
-
-      //      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
+      val resultKM = newsResponseDao.byChannelWithKmeans((page - 1) * count, count / 2, newTimeCursor, uid, chid)
 
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
@@ -160,15 +159,15 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             toNewsFeedResponse(newsFeedRow)
           }
         }
-        //        rkm <- resultKM.map { seq =>
-        //          seq.map { news =>
-        //            toNewsFeedResponse(newsFeedRow)
-        //          }
-        //        }
+        rkm <- resultKM.map { seq =>
+          seq.map { newsFeedRow =>
+            toNewsFeedResponse(newsFeedRow)
+          }
+        }
         ad <- adFO
         hatePnameWithChid <- hateNews
       } yield {
-        (ad ++: r).filter { feed =>
+        (ad ++: rkm ++: r).filter { feed =>
           var flag = true
           hatePnameWithChid.foreach { news =>
             if (news.base.pname.getOrElse("1").equals(feed.pname.getOrElse("2"))) {
@@ -176,7 +175,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
             }
           }
           flag
-        }.take(count.toInt)
+        }.take(count.toInt).sortBy(_.ptime)
       }
 
       val newsRecommendReads: Future[Seq[NewsRecommendRead]] = response.map { seq => seq.filter(_.rtype.getOrElse(0) != 3).filter(_.rtype.getOrElse(0) != 4).map { v => NewsRecommendRead(uid, v.nid, LocalDateTime.now(), Some(0), Some(chid.toInt)) } }
@@ -319,8 +318,8 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
     //      case _ => None
     //    }
 
-    NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
+    NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now().plusSeconds(Random.nextInt(10)), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
       newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
-      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, Some(0), Some(newsFeedRow.chid.toInt))
+      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(newsFeedRow.chid.toInt))
   }
 }
