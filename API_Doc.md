@@ -66,7 +66,7 @@
 ----
 ##  客户端接口
 
-### 用户
+### 1 用户
 
 用户平台注释（platform）：
 
@@ -91,9 +91,9 @@
 | 白牌 | 15    |
 
 ----
-#### 游客用户
+#### 1.1 游客用户
 
-##### 游客用户注册
+##### 1.1.1 游客用户注册
 
 _Request_
 
@@ -129,7 +129,7 @@ Authorization: Basic OWNtcWFibHYoN2tzZ2MuZyoqN18uZjQydS50bnBpNSlnYmR+filwdW4qaWV
 ```
 
 ----
-##### 游客用户登录
+##### 1.1.2 游客用户登录
 
 _Request_
 
@@ -162,7 +162,7 @@ Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmF
 ```
 
 ----
-#### 三方用户注册
+#### 1.2 三方用户注册
 
 _Request_
 
@@ -216,9 +216,9 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 }
 ```
 ----
-#### 本地用户
+#### 1.3 本地用户
 
-##### 本地用户注册
+##### 1.3.1 本地用户注册
 
 _Request_
 
@@ -257,7 +257,7 @@ Authorization: Basic OWNtcWFibHYoN2tzZ2MuZyoqN18uZjQydS50bnBpNSlnYmR+filwdW4qaWV
 }
 ```
 ----
-##### 本地用户登录
+##### 1.3.2 本地用户登录
 
 _Request_
 
@@ -289,7 +289,7 @@ Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmF
 }
 ```
 ----
-##### 本地用户修改密码
+##### 1.3.3 本地用户修改密码
 
 _Request_
 
@@ -323,7 +323,7 @@ Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmF
 }
 ```
 ----
-##### 本地用户重置密码
+##### 1.3.4 本地用户重置密码
 
 _Request_
 
@@ -356,9 +356,9 @@ Authorization: Basic X3VmNDM5YXQ3MWdlJ28qNGMyJzlyfnJpZG9+dicybDZrNydhdXcyaW82MmF
 ```
 
 ----
-### 新闻列表页
+### 2 新闻列表页
 
-#### 列表页响应统一格式
+#### 2.1 列表页响应统一格式
 
 ```json
 HTTP/1.1 200 OK
@@ -395,7 +395,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-#### 列表页刷新
+#### 2.2 列表页刷新
 
 _Request_
 
@@ -417,7 +417,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 
 
 ----
-#### 列表页加载
+#### 2.3 列表页加载
 
 _Request_
 
@@ -438,7 +438,7 @@ Host: bdp.deeporiginalx.com
 | t    | Int    | 是        | 显示专题  是(1)否(0)                              |
 
 ----
-#### 列表页刷新（广告）
+#### 2.4 列表页刷新（广告）
 
 _Request_
 
@@ -464,7 +464,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 
 
 ----
-#### 列表页加载（广告）
+#### 2.5 列表页加载（广告）
 
 _Request_
 
@@ -491,7 +491,7 @@ Host: bdp.deeporiginalx.com
 
 ----
 
-#### 行政区划-列表页刷新
+#### 2.6 行政区划-列表页刷新
 
 _Request_
 
@@ -511,7 +511,7 @@ Host: bdp.deeporiginalx.com
 | c    | String | 否(默认 20) | 条数                                       |
 
 ----
-#### 行政区划-列表页加载
+#### 2.7 行政区划-列表页加载
 
 _Request_
 
@@ -531,7 +531,7 @@ Host: bdp.deeporiginalx.com
 | c    | String | 否(默认 20) | 条数                                       |
 
 ----
-#### 新闻源-列表页刷新
+#### 2.8 新闻源-列表页刷新
 
 _Request_
 
@@ -549,7 +549,7 @@ Host: bdp.deeporiginalx.com
 | c    | String | 否(默认 20) | 条数                                  |
 
 ----
-#### 新闻源-列表页加载
+#### 2.9 新闻源-列表页加载
 
 _Request_
 
@@ -568,9 +568,9 @@ Host: bdp.deeporiginalx.com
 
 
 ----
-### 新闻详情页
+### 3 新闻详情页
 
-#### 新闻详情内容
+#### 3.1 新闻详情内容
 
 _Request_
 
@@ -630,7 +630,7 @@ Content-Type: application/json
 
 
 ----
-#### 下一条详情页
+#### 3.2 下一条详情页
 
 _Request_
 
@@ -647,7 +647,7 @@ Host: bdp.deeporiginalx.com
 | s    | Int  | 否(默认 0)       | 显示https图片地址  是(1)否(0) |
 
 ----
-#### 上一条详情页
+#### 3.3 上一条详情页
 
 _Request_
 
@@ -666,7 +666,7 @@ Host: bdp.deeporiginalx.com
 ----
 
 ----
-#### 视频详情页
+#### 3.4 视频详情页
 
 _Request_
 
@@ -726,7 +726,7 @@ Content-Type: application/json
 ```
 
 ----
-#### 详情页相关推荐列表
+#### 3.5 详情页相关推荐列表
 
 _Request_
 
@@ -768,7 +768,7 @@ Content-Type: application/json
   ]
 }
 ```
-#### 详情页相关推荐列表(带广告)
+#### 3.6 详情页相关推荐列表(带广告)
 
 _Request_
 
@@ -898,9 +898,9 @@ Content-Type: application/json
 
 
 ----
-### 评论列表
+### 4 评论列表
 ----
-#### 新闻普通评论列表
+#### 4.1 新闻普通评论列表
 
 _Request_
 
@@ -944,7 +944,7 @@ Content-Type: application/json
 
 ----
 
-#### 新闻热点评论列表
+#### 4.2 新闻热点评论列表
 
 _Request_
 
@@ -963,7 +963,7 @@ Host: bdp.deeporiginalx.com
 
 
 ----
-### 专题详情
+### 5 专题详情
 
 _Request_
 
@@ -1062,10 +1062,10 @@ Content-Type: application/json
 
 
 ----
-### 新闻搜索
+### 6 新闻搜索
 
 ----
-#### 搜索
+#### 6.1 搜索
 _Request_
 
 ```json
@@ -1114,7 +1114,7 @@ Content-Type: application/json
 }
 ```
 ----
-#### 搜索新闻及订阅号
+#### 6.2 搜索新闻及订阅号
 _Request_
 
 ```json
@@ -1176,7 +1176,7 @@ Content-Type: application/json
 }
 ```
 
-### 广告请求
+### 7 广告请求
 
 _Request_
 
@@ -1224,11 +1224,11 @@ Content-Type: application/json
 ```
 
 ----
-### 新闻发布源
+### 8 新闻发布源
 
 ----
 
-#### 添加新闻发布源关心
+#### 8.1 添加新闻发布源关心
 
 *Request*
 
@@ -1257,7 +1257,7 @@ Content-Type: application/json
 }
 ```
 
-#### 取消新闻发布源关心
+#### 8.2 取消新闻发布源关心
 
 *Request*
 
@@ -1286,7 +1286,7 @@ Content-Type: application/json
 }
 ```
 
-#### 已关心发布源列表
+#### 8.3 已关心发布源列表
 
 *Request*
 
@@ -1321,7 +1321,7 @@ Content-Type: application/json
 }
 ```
 
-#### 已关心发布源的新闻列表刷新
+#### 8.4 已关心发布源的新闻列表刷新
 
 *Request*
 
@@ -1340,7 +1340,7 @@ Host: bdp.deeporiginalx.com
 
 **Response：新闻列表页数据格式**
 
-#### 已关心发布源的新闻列表加载
+#### 8.5 已关心发布源的新闻列表加载
 
 *Request*
 
@@ -1359,7 +1359,7 @@ Host: bdp.deeporiginalx.com
 
 **Response：新闻列表页数据格式**
 
-#### 指定新闻发布源新闻列表
+#### 8.6 指定新闻发布源新闻列表
 
 *Request*
 
@@ -1416,12 +1416,12 @@ Content-Type: application/json
 ```
 
 ----
-### 用户相关操作
+### 9 用户相关操作
 ----
-#### 新闻评论
+#### 9.1 新闻评论
 
 ----
-##### 创建评论
+##### 9.1.1 创建评论
 
 _Request_
 
@@ -1457,7 +1457,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 删除评论
+##### 9.1.2 删除评论
 
 _Request_
 
@@ -1487,7 +1487,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 查看评论列表
+##### 9.1.3 查看评论列表
 
 _Request_
 
@@ -1501,10 +1501,10 @@ Host: bdp.deeporiginalx.com
 | ---- | :----- | :--- | :--- |
 | uid  | String | 是    | 用户ID |
 
-#### 新闻评论点赞
+#### 9.2 新闻评论点赞
 
 ----
-##### 点赞
+##### 9.2.1 点赞
 
 _Request_
 
@@ -1535,7 +1535,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 取消赞
+##### 9.2.2 取消赞
 
 _Request_
 
@@ -1565,10 +1565,10 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 }
 ```
 
-#### 新闻收藏
+#### 9.3 新闻收藏
 
 ----
-##### 添加收藏
+##### 9.3.1 添加收藏
 
 _Request_
 
@@ -1599,7 +1599,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 取消收藏
+##### 9.3.2 取消收藏
 
 _Request_
 
@@ -1630,7 +1630,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 查看收藏列表
+##### 9.3.3 查看收藏列表
 
 _Request_
 
@@ -1649,10 +1649,10 @@ Host: bdp.deeporiginalx.com
 _Response：新闻列表页数据格式_
 返回格式与feed流一样
 
-#### 新闻关心
+#### 9.4 新闻关心
 
 ----
-##### 添加关心
+##### 9.4.1 添加关心
 
 _Request_
 
@@ -1683,7 +1683,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 取消关心
+##### 9.4.2 取消关心
 
 _Request_
 
@@ -1714,7 +1714,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-##### 查看关心列表
+##### 9.4.3 查看关心列表
 
 _Request_
 
@@ -1734,10 +1734,10 @@ _Response_
 
 
 ----
-### 新闻频道
+### 10 新闻频道
 
 ----
-#### 普通频道
+#### 10.1 普通频道
 
 _Request_
 
@@ -1776,7 +1776,7 @@ Content-Type: application/json
 ```
 
 ----
-#### 用户定制频道
+#### 10.2 用户定制频道
 
 _Request_
 
@@ -1808,7 +1808,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-#### 用户定制频道修改
+#### 10.3 用户定制频道修改
 
 _Request_
 
@@ -1847,10 +1847,10 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 
 
 ----
-### 日志上报
+### 11 日志上报
 
 ----
-#### 点击日志
+#### 11.1 点击日志
 
 _Request_
 
@@ -1921,7 +1921,7 @@ Content-Type: image/gif
 ----
 
 ----
-#### 用户手机信息,手机app列表收集接口
+#### 11.2 用户手机信息,手机app列表收集接口
 
 _Request_
 
@@ -1967,7 +1967,7 @@ Content-Type: application/json
 ```
 
 ----
-#### 转发记录
+#### 11.3 转发记录
 
 _Request_
 
@@ -1999,7 +1999,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 ----
-#### 不感兴趣记录
+#### 11.4 不感兴趣记录
 
 _Request_
 
@@ -2031,7 +2031,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 ```
 
 
-#### 滑动接口
+#### 11.5 滑动接口
 
 _Request_
 
