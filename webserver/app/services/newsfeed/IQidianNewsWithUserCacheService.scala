@@ -649,7 +649,7 @@ class QidianNewsWithUserCacheService @Inject() (val newsUnionFeedDao: NewsUnionF
     }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
       imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1))
   }
 

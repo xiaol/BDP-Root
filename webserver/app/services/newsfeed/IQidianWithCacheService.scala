@@ -329,7 +329,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
     //----推荐部分----
     //模型LDA 和 Kmeans推荐
-    val refreshLDAandKmeansFO = alldata.filter(_.rtype.getOrElse(0) == 21).take(level1.toInt).map(news => news.copy(rtype = Some(0)))
+    val refreshLDAandKmeansFO = alldata.filter(_.rtype.getOrElse(0) == 21).take(level1.toInt).map(news => news.copy(rtype = Some(2)))
 
     //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
     val refreshByPeopleRecommendWithClickFO = alldata.filter(_.rtype.getOrElse(0) == 2).take(level2.toInt)
@@ -658,9 +658,14 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     //      case _ => None
     //    }
 
+    val extendData = newsFeedRow.rtype match {
+      case Some(newstype) if newstype == 6 => Some(ExtendData(newsFeedRow.nid, newsFeedRow.clicktimes))
+      case _                               => None
+    }
+
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
-      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1))
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1), extendData)
   }
 
   final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {

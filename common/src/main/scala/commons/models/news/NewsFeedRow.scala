@@ -27,11 +27,12 @@ case class NewsFeedRow(
   videourl: Option[String] = None,
   duration: Option[Int] = None,
   thumbnail: Option[String] = None,
+  clicktimes: Option[Int] = None,
   rtype: Option[Int] = None,
   logtype: Option[Int] = Some(0))
 
 object NewsFeedRow {
-  implicit val getNewsFeedRowResult = GetResult(r => NewsFeedRow(r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<))
+  implicit val getNewsFeedRowResult = GetResult(r => NewsFeedRow(r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<, r.<<))
 
   implicit val NewsFeedRowWrites: Writes[NewsFeedRow] = (
     (JsPath \ "nid").write[Long] ~
@@ -50,6 +51,7 @@ object NewsFeedRow {
     (JsPath \ "videourl").writeNullable[String] ~
     (JsPath \ "duration").writeNullable[Int] ~
     (JsPath \ "thumbnail").writeNullable[String] ~
+    (JsPath \ "clicktimes").writeNullable[Int] ~
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "logtype").writeNullable[Int]
   )(unlift(NewsFeedRow.unapply))
@@ -71,6 +73,7 @@ object NewsFeedRow {
     (JsPath \ "videourl").readNullable[String] ~
     (JsPath \ "duration").readNullable[Int] ~
     (JsPath \ "thumbnail").readNullable[String] ~
+    (JsPath \ "clicktimes").readNullable[Int] ~
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "logtype").readNullable[Int]
   )(NewsFeedRow.apply _)

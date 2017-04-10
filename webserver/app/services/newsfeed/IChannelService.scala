@@ -319,7 +319,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
     //    }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now().plusSeconds(Random.nextInt(10)), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
       imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(newsFeedRow.chid.toInt))
   }
 }

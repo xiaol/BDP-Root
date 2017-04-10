@@ -22,7 +22,7 @@ object NewsUnionFeedDao {
 
   final private val channelFilterSet = Set(2L, 4L, 6L, 7L, 9L) //模型推荐这几个频道, 频道推荐就不推这些频道
 
-  final private val select: String = "select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, nv.style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail "
+  final private val select: String = "select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, nv.style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail, nv.clicktimes "
   final private val condition: String = " and nv.chid != 28 and nv.state=0 and nv.pname not in('就是逗你笑', 'bomb01') and nv.sechid is null and nv.rtype is null "
 
 }
@@ -73,14 +73,14 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
   //在人工3天内推荐里,大图新闻, 和视频
   def byBigImageAndVideo(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" select * from (select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail, 999 as rtype, 25 as logtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit)bigimage union all select * from(#$select , 6 as rtype, 6 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  and nv.rtype=6 limit $limit)video ".as[NewsFeedRow]
+    val action = sql" select * from (select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail, nv.clicktimes, 999 as rtype, 25 as logtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit)bigimage union all select * from(#$select , 6 as rtype, 6 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  and nv.rtype=6 limit $limit)video ".as[NewsFeedRow]
     db.run(action)
   }
 
   //在人工3天内推荐里,大图新闻
   def byBigImage(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail, 999 as rtype, 25 as logtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit ".as[NewsFeedRow]
+    val action = sql" select nv.nid, nv.docid, nv.title, nv.pname, nv.purl, nv.chid, nv.collect, nv.concern, nv.un_concern, nv.comment, (10+nr.bigimg) as style, array_to_string(nv.imgs, ',') as imgs,  nv.icon, nv.videourl, nv.duration, nv.thumbnail, nv.clicktimes, 999 as rtype, 25 as logtype from newslist_v2 nv inner join newsrecommendlist nr on nv.nid=nr.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3)  and nv.ctime>#$dayWindow3 and nr.rtime>#$dayWindow3 and nr.bigimg >0 order by level desc, rtime desc limit $limit ".as[NewsFeedRow]
     db.run(action)
   }
 

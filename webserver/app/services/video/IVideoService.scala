@@ -5,7 +5,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.news._
+import commons.models.news.{ ExtendData, _ }
 import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
@@ -192,8 +192,8 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     //    }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
-      None, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.rtype, Some(newsFeedRow.chid.toInt))
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      None, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.rtype, Some(newsFeedRow.chid.toInt), Some(ExtendData(newsFeedRow.nid, newsFeedRow.clicktimes)))
   }
 
   def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {

@@ -23,7 +23,6 @@ case class NewsFeedResponse(
   pname: Option[String] = None,
   purl: Option[String] = None,
   channel: Long,
-  collect: Int,
   concern: Int,
   un_concern: Option[Int] = None,
   comment: Int,
@@ -37,7 +36,8 @@ case class NewsFeedResponse(
   duration: Option[Int] = None,
   adresponse: Option[AdResponse] = None,
   logtype: Option[Int] = Some(0),
-  logchid: Option[Int] = None)
+  logchid: Option[Int] = None,
+  extendData: Option[ExtendData] = None)
 
 object NewsFeedResponse {
 
@@ -60,7 +60,6 @@ object NewsFeedResponse {
     (JsPath \ "pname").writeNullable[String] ~
     (JsPath \ "purl").writeNullable[String] ~
     (JsPath \ "channel").write[Long] ~
-    (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
     (JsPath \ "un_concern").writeNullable[Int] ~
     (JsPath \ "comment").write[Int] ~
@@ -74,7 +73,8 @@ object NewsFeedResponse {
     (JsPath \ "duration").writeNullable[Int] ~
     (JsPath \ "adresponse").writeNullable[AdResponse] ~
     (JsPath \ "logtype").writeNullable[Int] ~
-    (JsPath \ "logchid").writeNullable[Int]
+    (JsPath \ "logchid").writeNullable[Int] ~
+    (JsPath \ "extendData").writeNullable[ExtendData]
   )(unlift(NewsFeedResponse.unapply))
 
   implicit val NewsFeedResponseReads: Reads[NewsFeedResponse] = (
@@ -85,7 +85,6 @@ object NewsFeedResponse {
     (JsPath \ "pname").readNullable[String] ~
     (JsPath \ "purl").readNullable[String] ~
     (JsPath \ "channel").read[Long] ~
-    (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
     (JsPath \ "un_concern").readNullable[Int] ~
     (JsPath \ "comment").read[Int] ~
@@ -99,7 +98,8 @@ object NewsFeedResponse {
     (JsPath \ "duration").readNullable[Int] ~
     (JsPath \ "adresponse").readNullable[AdResponse] ~
     (JsPath \ "logtype").readNullable[Int] ~
-    (JsPath \ "logchid").readNullable[Int]
+    (JsPath \ "logchid").readNullable[Int] ~
+    (JsPath \ "extendData").readNullable[ExtendData]
   )(NewsFeedResponse.apply _)
 
   def from(newsRow: NewsRow): NewsFeedResponse = {
@@ -116,7 +116,7 @@ object NewsFeedResponse {
       commentnum = commentnum * 61
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      syst.chid, incr.collect, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
+      syst.chid, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
       syst.rtype, None, syst.icon, syst.videourl, syst.thumbnail, syst.duration)
   }
 
@@ -134,7 +134,7 @@ object NewsFeedResponse {
       commentnum = commentnum * 61
     }
     NewsFeedResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl,
-      syst.chid, incr.collect, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
+      syst.chid, incr.concern, incr.un_concern, commentnum, incr.style, incr.imgs,
       Some(6), None, syst.icon, syst.videourl, syst.thumbnail, syst.duration, None, Some(6))
   }
 
@@ -160,7 +160,7 @@ object NewsFeedResponse {
       case _ => 11
     }
 
-    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), pname, event.event_value, 9999L, 0, 0, Some(0), 0, style, imgs,
+    NewsFeedResponse(creative.cid.get.toLong, creative.cid.get.toString, title, LocalDateTime.now(), pname, event.event_value, 9999L, 0, Some(0), 0, style, imgs,
       Some(3), creative.impression, icon)
   }
 
@@ -169,7 +169,7 @@ object NewsFeedResponse {
       case 1 => 41 //置顶
       case _ => 4 //普通专题
     }
-    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, 9999L, 0, 0, Some(0), 0, 5, Some(List(topic.cover)),
+    NewsFeedResponse(topic.id, "", topic.name, topic.create_time.getOrElse(LocalDateTime.now()), Some(" "), None, 9999L, 0, Some(0), 0, 5, Some(List(topic.cover)),
       Some(rtype), None, None, None, None, None, None, Some(4), Some(1))
   }
 }
@@ -302,4 +302,18 @@ object NewsFeedCache {
   def from(newsFeedResponse: NewsFeedResponse): NewsFeedCache = {
     NewsFeedCache(newsFeedResponse.nid, newsFeedResponse.style, newsFeedResponse.rtype)
   }
+}
+
+case class ExtendData(nid: Long, clicktimes: Option[Int] = None)
+
+object ExtendData {
+  implicit val ExtendDataWrites: Writes[ExtendData] = (
+    (JsPath \ "nid").write[Long] ~
+    (JsPath \ "clicktimes").writeNullable[Int]
+  )(unlift(ExtendData.unapply))
+
+  implicit val ExtendDataReads: Reads[ExtendData] = (
+    (JsPath \ "nid").read[Long] ~
+    (JsPath \ "clicktimes").readNullable[Int]
+  )(ExtendData.apply _)
 }
