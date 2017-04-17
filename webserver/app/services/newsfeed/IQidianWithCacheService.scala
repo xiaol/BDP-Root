@@ -209,7 +209,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val times = 5
+      val times = 7
       val level1 = count / 2 * times
       val level2 = count / 4 * times
       val level3 = count / 4 * times
@@ -407,7 +407,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         news <- returnData
         ad <- adFO
       } yield {
-        (ad ++: news).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -527,7 +527,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         news <- returnData
         ad <- adFO
       } yield {
-        (ad ++: news).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间

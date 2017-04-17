@@ -37,7 +37,6 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
     val tablename: String = "newsrecommendread_" + uid % 100
     val limitclick = limit / 2
     val action = sql" select * from (#$select , 0 as rtype, 100 as logtype from newslist_v2 nv inner join newsclickorder nc on nv.nid=nc.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2)  and nc.ctype=0 and nc.ctime>#$dayWindow1 and nv.ctime>#$dayWindow2 limit $limitclick)click union all select * from (#$select, 0 as rtype, 0 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  #$condition and nv.imgs is not null limit $limit)common ".as[NewsFeedRow]
-    println(action.statements.head)
     db.run(action)
   }
 
@@ -46,7 +45,7 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
     val tablename: String = "newsrecommendread_" + uid % 100
     val limitclick = limit / 2
     //val action = sql" select * from (#$select , 0 as rtype, 100 as logtype from newslist_v2 nv inner join newsclickorder nc on nv.nid=nc.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2)  and nc.ctype=0 and nc.ctime>#$dayWindow1 and nv.ctime>#$dayWindow2 limit $limitclick)click union all select * from (#$select, 0 as rtype, 0 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  #$condition and nv.imgs is not null limit $limit)common ".as[NewsFeedRow]
-    val action = sql" #$select, 0 as rtype, 0 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  #$condition and nv.imgs is not null and nv.comment>20 limit $limit ".as[NewsFeedRow]
+    val action = sql" #$select, 0 as rtype, 0 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1  #$condition and nv.imgs is not null and nv.comment>6 limit $limit ".as[NewsFeedRow]
     db.run(action)
   }
 
@@ -61,16 +60,18 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
   def byLDAandKmeans(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename1: String = "newsrecommendread_" + uid % 100
     val tablename2: String = "newsrecommendforuser_" + uid % 10
-    val action = sql"select * from ( #$select , 21 as rtype, 21 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename1 nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.nid in (select nid from #$tablename2 where uid=$uid and ctime>#$dayWindow3 and sourcetype=1) and nv.ctime>#$dayWindow3 #$condition limit $limit )lda union all select * from (#$select , 21 as rtype, 22 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename1 nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.nid in (select nid from #$tablename2 where uid=$uid and ctime>#$dayWindow3 and sourcetype=2) and nv.ctime>#$dayWindow3 #$condition limit $limit)kmeans ".as[NewsFeedRow]
+    val limitalgorithm = limit / 2
+    val action = sql"select * from ( #$select , 21 as rtype, 21 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename1 nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.nid in (select nid from #$tablename2 where uid=$uid and ctime>#$dayWindow3 and sourcetype=1) and nv.ctime>#$dayWindow3 #$condition limit $limitalgorithm )lda union all select * from (#$select , 21 as rtype, 22 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename1 nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.nid in (select nid from #$tablename2 where uid=$uid and ctime>#$dayWindow3 and sourcetype=2) and nv.ctime>#$dayWindow3 #$condition limit $limitalgorithm)kmeans ".as[NewsFeedRow]
     db.run(action)
   }
 
   //在人工1天内推荐里,用户偏好前3的频道,3天内的新闻
   def byPeopleRecommendWithClick(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
-    val tablename: String = "newsrecommendread_" + uid % 100
-    //val action = sql" select * from (#$select , 2 as rtype, 23 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'10 day') group by chid order by count(1) desc limit 3) and nv.chid not in (2, 4, 6, 7, 9) and nv.nid in (select nid from newsrecommendlist where rtime>#$dayWindow1) and nv.ctime>#$dayWindow3 #$condition limit $limit)r1 union all select * from (#$select , 2 as rtype, 24 as logtype from newslist_v2 nv inner join newsrecommendlist nl on nv.nid=nl.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nl.rtime>#$dayWindow1 and nv.ctime>#$dayWindow3 #$condition order by nl.level desc,nl.rtime desc limit $limit)r2 ".as[NewsFeedRow]
-    val action = sql" #$select , 0 as rtype, 23 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'10 day') group by chid order by count(1) desc limit 3)  and nv.ctime>#$dayWindow3 #$condition limit $limit ".as[NewsFeedRow]
-    db.run(action)
+    //    val tablename: String = "newsrecommendread_" + uid % 100
+    //    //val action = sql" select * from (#$select , 2 as rtype, 23 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'10 day') group by chid order by count(1) desc limit 3) and nv.chid not in (2, 4, 6, 7, 9) and nv.nid in (select nid from newsrecommendlist where rtime>#$dayWindow1) and nv.ctime>#$dayWindow3 #$condition limit $limit)r1 union all select * from (#$select , 2 as rtype, 24 as logtype from newslist_v2 nv inner join newsrecommendlist nl on nv.nid=nl.nid where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nl.rtime>#$dayWindow1 and nv.ctime>#$dayWindow3 #$condition order by nl.level desc,nl.rtime desc limit $limit)r2 ".as[NewsFeedRow]
+    //    val action = sql" #$select , 0 as rtype, 23 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.chid in (select chid from newslist_v2 where nid in (select nid from newsrecommendclick where uid=$uid and ctime>now()-interval'10 day') group by chid order by count(1) desc limit 3)  and nv.ctime>#$dayWindow3 #$condition limit $limit ".as[NewsFeedRow]
+    //    db.run(action)
+    Future { Seq[NewsFeedRow]() }
   }
 
   //在人工3天内推荐里,大图新闻, 和视频
