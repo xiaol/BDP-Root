@@ -240,12 +240,27 @@ object NewsDetailsResponse {
     (JsPath \ "thumbnail").readNullable[String]
   )(NewsDetailsResponse.apply _)
 
-  def from(newsRow: NewsRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
-    val base = newsRow.base
-    val incr = newsRow.incr
-    val syst = newsRow.syst
+  //  def from(newsRow: NewsRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
+  //    val base = newsRow.base
+  //    val incr = newsRow.incr
+  //    val syst = newsRow.syst
+  //    //修改评论数
+  //    var commentnum = incr.comment
+  //    if (commentnum > 10 && commentnum <= 70) {
+  //      commentnum = commentnum * 2
+  //    } else if (commentnum > 70 && commentnum <= 200) {
+  //      commentnum = commentnum * 13
+  //    } else if (commentnum > 200) {
+  //      commentnum = commentnum * 61
+  //    }
+  //    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+  //  }
+
+  def from(newsFeedRow: NewsRow, newsDetailRow: NewsDetailRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
+    val base = newsDetailRow.base
+    val syst = newsDetailRow.syst
     //修改评论数
-    var commentnum = incr.comment
+    var commentnum = newsFeedRow.incr.comment
     if (commentnum > 10 && commentnum <= 70) {
       commentnum = commentnum * 2
     } else if (commentnum > 70 && commentnum <= 200) {
@@ -253,7 +268,7 @@ object NewsDetailsResponse {
     } else if (commentnum > 200) {
       commentnum = commentnum * 61
     }
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, syst.inum, base.tags, None, base.content, newsFeedRow.incr.collect, newsFeedRow.incr.concern, commentnum, colFlag, conFlag, conPubFlag)
   }
 
   def from1(newsRow: VideoRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
