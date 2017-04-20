@@ -9,7 +9,7 @@ import play.api.libs.json._
  * Created by zhange on 2016-05-04.
  *
  */
-
+/*************************************新闻详情表**************************************/
 case class NewsDetailRowBase(nid: Option[Long] = None,
                              url: String,
                              docid: String,

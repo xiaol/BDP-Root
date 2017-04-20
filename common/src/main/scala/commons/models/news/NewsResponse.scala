@@ -2,6 +2,7 @@ package commons.models.news
 
 import com.sksamuel.elastic4s.{ HitAs, RichSearchHit }
 import commons.models.advertisement.{ AdResponse, App, Creative, Adspace }
+import commons.models.detail.DetailRow
 import commons.models.video.VideoRow
 import commons.utils.Joda4PlayJsonImplicits._
 import org.joda.time.LocalDateTime
@@ -182,10 +183,10 @@ case class NewsDetailsResponse(
   pname: Option[String] = None,
   purl: Option[String] = None,
   channel: Long,
-  inum: Int,
+  inum: Option[Int] = None,
   tags: Option[List[String]] = None,
   descr: Option[String] = None,
-  content: JsValue,
+  content: Option[JsValue] = None,
   collect: Int,
   concern: Int,
   comment: Int,
@@ -204,10 +205,10 @@ object NewsDetailsResponse {
     (JsPath \ "pname").writeNullable[String] ~
     (JsPath \ "purl").writeNullable[String] ~
     (JsPath \ "channel").write[Long] ~
-    (JsPath \ "inum").write[Int] ~
+    (JsPath \ "inum").writeNullable[Int] ~
     (JsPath \ "tags").writeNullable[List[String]] ~
     (JsPath \ "descr").writeNullable[String] ~
-    (JsPath \ "content").write[JsValue] ~
+    (JsPath \ "content").writeNullable[JsValue] ~
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
     (JsPath \ "comment").write[Int] ~
@@ -226,10 +227,10 @@ object NewsDetailsResponse {
     (JsPath \ "pname").readNullable[String] ~
     (JsPath \ "purl").readNullable[String] ~
     (JsPath \ "channel").read[Long] ~
-    (JsPath \ "inum").read[Int] ~
+    (JsPath \ "inum").readNullable[Int] ~
     (JsPath \ "tags").readNullable[List[String]] ~
     (JsPath \ "descr").readNullable[String] ~
-    (JsPath \ "content").read[JsValue] ~
+    (JsPath \ "content").readNullable[JsValue] ~
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
     (JsPath \ "comment").read[Int] ~
@@ -240,41 +241,10 @@ object NewsDetailsResponse {
     (JsPath \ "thumbnail").readNullable[String]
   )(NewsDetailsResponse.apply _)
 
-  //  def from(newsRow: NewsRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
-  //    val base = newsRow.base
-  //    val incr = newsRow.incr
-  //    val syst = newsRow.syst
-  //    //修改评论数
-  //    var commentnum = incr.comment
-  //    if (commentnum > 10 && commentnum <= 70) {
-  //      commentnum = commentnum * 2
-  //    } else if (commentnum > 70 && commentnum <= 200) {
-  //      commentnum = commentnum * 13
-  //    } else if (commentnum > 200) {
-  //      commentnum = commentnum * 61
-  //    }
-  //    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
-  //  }
-
-  def from(newsFeedRow: NewsRow, newsDetailRow: NewsDetailRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
-    val base = newsDetailRow.base
-    val syst = newsDetailRow.syst
-    //修改评论数
-    var commentnum = newsFeedRow.incr.comment
-    if (commentnum > 10 && commentnum <= 70) {
-      commentnum = commentnum * 2
-    } else if (commentnum > 70 && commentnum <= 200) {
-      commentnum = commentnum * 13
-    } else if (commentnum > 200) {
-      commentnum = commentnum * 61
-    }
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, syst.inum, base.tags, None, base.content, newsFeedRow.incr.collect, newsFeedRow.incr.concern, commentnum, colFlag, conFlag, conPubFlag)
-  }
-
-  def from1(newsRow: VideoRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
-    val base = newsRow.base
-    val incr = newsRow.incr
-    val syst = newsRow.syst
+  def from(newsFeedRow: NewsRow, detailRow: DetailRow, colFlag: Option[Int] = None, conFlag: Option[Int] = None, conPubFlag: Option[Int] = None): NewsDetailsResponse = {
+    val base = newsFeedRow.base
+    val syst = newsFeedRow.syst
+    val incr = newsFeedRow.incr
     //修改评论数
     var commentnum = incr.comment
     if (commentnum > 10 && commentnum <= 70) {
@@ -284,7 +254,25 @@ object NewsDetailsResponse {
     } else if (commentnum > 200) {
       commentnum = commentnum * 61
     }
-    NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, incr.inum, base.tags, base.descr, base.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, syst.videourl, syst.thumbnail)
+
+    val newsDetailRow = newsFeedRow.syst.rtype match {
+      case Some(rtype) if rtype == 6 =>
+
+        val detailbase = detailRow.video.get.base
+        val detailsyst = detailRow.video.get.syst
+        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(incr.inum), detailbase.tags, None, detailbase.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, syst.videourl, syst.thumbnail)
+
+      case Some(rtype) if rtype == 8 =>
+        val detailbase = detailRow.joke.get.base
+        val detailsyst = detailRow.joke.get.syst
+        NewsDetailsResponse(base.nid.get, base.docid, "", syst.ctime, base.pname, base.purl, syst.chid, None, None, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+
+      case _ =>
+        val detailbase = detailRow.news.get.base
+        val detailsyst = detailRow.news.get.syst
+        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(detailsyst.inum), detailbase.tags, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+    }
+    newsDetailRow
   }
 }
 

@@ -3,10 +3,15 @@ package services.news
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
+import commons.models.detail.DetailRow
+import commons.models.joke.JokeDetailRow
 import commons.models.news._
+import commons.models.video.VideoDetailRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
+import dao.joke.JokeDetailDAO
 import dao.news._
+import dao.video.VideoDetailDAO
 import org.joda.time.LocalDateTime
 import play.api.Logger
 
@@ -21,7 +26,7 @@ import scala.util.control.NonFatal
 
 @ImplementedBy(classOf[NewsService])
 trait INewsService {
-  def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]]
+  //def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]]
   def refreshFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]]
   def loadFeedByChannel(chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]]
   def refreshFeedByLocation(page: Long, count: Long, timeCursor: Long, province: Option[String], city: Option[String], district: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
@@ -32,85 +37,127 @@ trait INewsService {
   def updateComment(docid: String, comment: Int): Future[Option[Int]]
 }
 
-class NewsService @Inject() (val newsDetailDAO: NewsDetailDAO, val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsPublisherDAO: NewsPublisherDAO) extends INewsService with NewsCacheService {
+class NewsService @Inject() (val newsDetailDAO: NewsDetailDAO, val videoDetailDAO: VideoDetailDAO, val jokeDetailDAO: JokeDetailDAO, val newsDAO: NewsDAO, val newsRecommendDAO: NewsRecommendDAO, val newsPublisherDAO: NewsPublisherDAO) extends INewsService with NewsCacheService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
-  def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]] = {
-    newsDetailDAO.findByNid(nid).map {
-      case Some(news) => Some(NewsDetailsResponse.from(news._1, news._2))
-      case _          => None
-    }.recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within NewsService.findDetailsByNid($nid): ${e.getMessage}")
-        None
-    }
-  }
+  //  def findDetailsByNid(nid: Long): Future[Option[NewsDetailsResponse]] = {
+  //    newsDetailDAO.findByNid(nid).map {
+  //      case Some(news) => Some(NewsDetailsResponse.from(news._1, news._2))
+  //      case _          => None
+  //    }.recover {
+  //      case NonFatal(e) =>
+  //        Logger.error(s"Within NewsService.findDetailsByNid($nid): ${e.getMessage}")
+  //        None
+  //    }
+  //  }
 
-  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
-    //    val result = uidOpt match {
-    //      case None => getNewsRowCache(nid).flatMap {
-    //        case Some(row) =>
-    //          Future.successful(Some(NewsDetailsResponse.from(row)))
-    //        case _ =>
-    //          newsDAO.findByNid(nid).map {
-    //            case Some(row) =>
-    //              //存入缓存
-    //              setNewsRowCache(row)
-    //              Some(NewsDetailsResponse.from(row))
-    //            case _ => None
-    //          }
-    //      }
-    //      //有用户id情况,需要查询此用户对本条新闻的关心等情况,每个用户都不一样,用缓存作用不大
-    //      case Some(uid) => newsDAO.findByNidWithProfile(nid, uid).map {
-    //        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from(row, Some(c1), Some(c2), Some(c3)))
-    //        case _                       => None
-    //      }
-    //    }
+  //  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], rtypeOpt: Option[Int]): Future[Option[NewsDetailsResponse]] = {
+  //    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+  //      case None => newsDetailDAO.findByNid(nid).map {
+  //        case Some(news) =>
+  //          Some(NewsDetailsResponse.from(news._1, news._2))
+  //        case _ => None
+  //      }
+  //      case Some(uid) => findDetailByNidWithProfile(nid, uid).map {
+  //        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, newsdetail, Some(c1), Some(c2), Some(c3)))
+  //        case _                                        => None
+  //      }
+  //    }
+  //    result.recover {
+  //      case NonFatal(e) =>
+  //        Logger.error(s"Within NewsService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+  //        None
+  //    }
+  //  }
 
-    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
-      case None => newsDetailDAO.findByNid(nid).map {
-        case Some(news) =>
-          Some(NewsDetailsResponse.from(news._1, news._2))
-        case _ => None
-      }
-      case Some(uid) => findDetailByNidWithProfile(nid, uid).map {
-        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, newsdetail, Some(c1), Some(c2), Some(c3)))
-        case _                                        => None
-      }
-    }
-    result.recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within NewsService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
-        None
-    }
-  }
-
-  def findDetailByNidWithProfile(nid: Long, uid: Long): Future[Option[(NewsRow, NewsDetailRow, Int, Int, Int)]] = {
+  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], rtypeOpt: Option[Int]): Future[Option[NewsDetailsResponse]] = {
     {
-      val feedWithProfile: Future[Option[(NewsRow, Int, Int, Int)]] = newsDetailDAO.findByNidWithProfile(nid, uid)
-      val detail: Future[Option[NewsDetailRow]] = newsDetailDAO.findDetailByNid(nid)
+      //详情
+      val detailResult = rtypeOpt match {
+        //视频
+        case Some(rtype) if rtype == 6 => videoDetailDAO.findDetailByNid(nid).map(DetailRow(None, _, None))
+        //段子
+        case Some(rtype) if rtype == 8 => jokeDetailDAO.findDetailByNid(nid).map(DetailRow(None, None, _))
+        //新闻
+        case Some(rtype)               => newsDetailDAO.findDetailByNid(nid).map(DetailRow(_, None, None))
+        //未知, 三种同时取
+        case _                         => allDetail(nid).map { detail => DetailRow(detail._1, detail._2, detail._3) }
+      }
+
+      //feed流信息和用户关注信息
+      val feedResult = uidOpt match {
+        case None =>
+          newsDAO.findByNid(nid).map {
+            case Some(newsfeed) => Some(newsfeed, None, None, None)
+            case _              => None
+          }
+
+        case Some(uid) => newsDetailDAO.findByNidWithProfile(nid, uid).map {
+          case Some((newsfeed, c1, c2, c3)) => Some(newsfeed, Some(c1), Some(c2), Some(c3))
+          case _                            => None
+        }
+      }
+
       for {
-        feedWithProfile <- feedWithProfile
-        detail <- detail
-      } yield (Some(feedWithProfile.get._1, detail.get, feedWithProfile.get._2, feedWithProfile.get._3, feedWithProfile.get._4))
+        feedWithProfile <- feedResult
+        detail <- detailResult
+      } yield (Some(NewsDetailsResponse.from(feedWithProfile.get._1, detail, feedWithProfile.get._2, feedWithProfile.get._3, feedWithProfile.get._4)))
     }.recover {
       case NonFatal(e) =>
-        Logger.error(s"Within NewsService.findDetailByNidWithProfile($nid, $uid): ${e.getMessage}")
+        Logger.error(s"Within NewsService.findDetailByNidWithProfile($nid, $uidOpt): ${e.getMessage}")
         None
     }
   }
+
+  def allDetail(nid: Long): Future[(Option[NewsDetailRow], Option[VideoDetailRow], Option[JokeDetailRow])] = {
+    {
+      val newsdetail: Future[Option[NewsDetailRow]] = newsDetailDAO.findDetailByNid(nid)
+      val videodetail: Future[Option[VideoDetailRow]] = videoDetailDAO.findDetailByNid(nid)
+      val jokedetail: Future[Option[JokeDetailRow]] = jokeDetailDAO.findDetailByNid(nid)
+
+      for {
+        newsdetail <- newsdetail
+        videodetail <- videodetail
+        jokedetail <- jokedetail
+      } yield (newsdetail, videodetail, jokedetail)
+    }.recover {
+      case NonFatal(e) =>
+        Logger.error(s"Within NewsService.allDetail($nid): ${e.getMessage}")
+        (None, None, None)
+    }
+  }
+
+  //  def findDetailByNidWithProfile(nid: Long, uid: Long): Future[Option[(NewsRow, NewsDetailRow, Int, Int, Int)]] = {
+  //    {
+  //      val feedWithProfile: Future[Option[(NewsRow, Int, Int, Int)]] = newsDetailDAO.findByNidWithProfile(nid, uid)
+  //      //detail不清楚在哪个表中,不清楚是新闻,视频,段子,只能3个表同时取,最好取完放redis里
+  //      val detail: Future[Option[NewsDetailRow]] = newsDetailDAO.findDetailByNid(nid)
+  //      for {
+  //        feedWithProfile <- feedWithProfile
+  //        detail <- detail
+  //      } yield (Some(feedWithProfile.get._1, detail.get, feedWithProfile.get._2, feedWithProfile.get._3, feedWithProfile.get._4))
+  //    }.recover {
+  //      case NonFatal(e) =>
+  //        Logger.error(s"Within NewsService.findDetailByNidWithProfile($nid, $uid): ${e.getMessage}")
+  //        None
+  //    }
+  //  }
 
   def findNextDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], chid: Long): Future[Option[NewsDetailsResponse]] = {
     val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
       case None => newsDetailDAO.findNextByNid(nid, chid: Long).map {
-        case Some(row) => Some(NewsDetailsResponse.from(row._1, row._2))
+        case Some(row) => Some(NewsDetailsResponse.from(row._1, DetailRow(Some(row._2))))
         case _         => None
       }
-      case Some(uid) => findNextDetailByNidWithProfile(nid, uid, chid).map {
-        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, newsdetail, Some(c1), Some(c2), Some(c3)))
-        case _                                        => None
+      case Some(uid) => newsDetailDAO.findNextByNid(nid, chid: Long).map {
+        case Some(row) => Some(NewsDetailsResponse.from(row._1, DetailRow(Some(row._2))))
+        case _         => None
       }
+      //      case Some(uid) => findNextDetailByNidWithProfile(nid, uid, chid).map {
+      //        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, DetailRow(Some(newsdetail)), Some(c1), Some(c2), Some(c3)))
+      //        case _                                        => None
+      //      }
     }
     result.recover {
       case NonFatal(e) =>
@@ -137,13 +184,17 @@ class NewsService @Inject() (val newsDetailDAO: NewsDetailDAO, val newsDAO: News
   def findLastDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long], chid: Long): Future[Option[NewsDetailsResponse]] = {
     val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
       case None => newsDetailDAO.findLastByNid(nid, chid: Long).map {
-        case Some(row) => Some(NewsDetailsResponse.from(row._1, row._2))
+        case Some(row) => Some(NewsDetailsResponse.from(row._1, DetailRow(Some(row._2))))
         case _         => None
       }
-      case Some(uid) => findLastDetailByNidWithProfile(nid, uid, chid).map {
-        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, newsdetail, Some(c1), Some(c2), Some(c3)))
-        case _                                        => None
+      case Some(uid) => newsDetailDAO.findLastByNid(nid, chid: Long).map {
+        case Some(row) => Some(NewsDetailsResponse.from(row._1, DetailRow(Some(row._2))))
+        case _         => None
       }
+      //      case Some(uid) => findLastDetailByNidWithProfile(nid, uid, chid).map {
+      //        case Some((newsfeed, newsdetail, c1, c2, c3)) => Some(NewsDetailsResponse.from(newsfeed, DetailRow(Some(newsdetail)), Some(c1), Some(c2), Some(c3)))
+      //        case _                                        => None
+      //      }
     }
     result.recover {
       case NonFatal(e) =>
