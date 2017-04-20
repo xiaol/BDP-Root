@@ -33,9 +33,9 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         pvdetailService.insert(PvDetail(requestParams.uid, "NewsResponseController.refreshFeedWithAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-        var newcount: Long = requestParams.c.getOrElse(9)
-        if (newcount > 9) {
-          newcount = 9
+        var newcount: Long = requestParams.c.getOrElse(11)
+        if (newcount > 11) {
+          newcount = 11
         }
         requestParams.uid match {
           case uid: Long if uid > 0 => requestParams.cid match {
@@ -111,8 +111,8 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
   def refreshFeedNew(cid: Long, sechidOpt: Option[Long], page: Long, count: Long, tcursor: Long, tmock: Int, uid: Long, t: Int, nid: Option[Long]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid, "NewsResponseController.refreshFeedNew", LocalDateTime.now(), request.headers.get("X-Real-IP")))
     var newcount = count
-    if (newcount > 9) {
-      newcount = 9
+    if (newcount > 11) {
+      newcount = 11
     }
     uid match {
       case uid: Long if uid > 0 => cid match {
