@@ -38,6 +38,7 @@ object Response {
   private final val DATA_INVALID_CODE = 4001
   private final val JSON_INVALID_CODE = 4002
   private final val AUTH_VERIFY_CODE = 4003
+  private final val CONTTENT_TYPE_ERROR_CODE = 4015
 
   def ServerSucced[T](data: T, token: Option[String] = None)(implicit writes: Writes[T]): Result = {
     Ok(Json.toJson(Response(SERVER_SUCCED_CODE, data, token)))
@@ -76,5 +77,13 @@ object Response {
 
   def AuthVerifyError(data: String): Result = {
     Ok(Json.toJson(Response(AUTH_VERIFY_CODE, s"AuthVerifyError: $data")))
+  }
+
+  def ContentTypeError(): Result = {
+    Ok(Json.toJson(Response(CONTTENT_TYPE_ERROR_CODE, s"Request Header ContentType Error")))
+  }
+
+  def ParamsInvalidError(): Result = {
+    Ok(Json.toJson(Response(JSON_INVALID_CODE, s"ParamsInvalid")))
   }
 }

@@ -93,3 +93,25 @@ object RequestASearchParams {
     (JsPath \ "c").readNullable[Long]
   )(RequestASearchParams.apply _)
 }
+
+case class RequestAdSourceParams(uid: Long, did: String, ctype: Int, ptype: Int, aversion: String, ctime: Long)
+
+object RequestAdSourceParams {
+  implicit val RequestAdSourceParamsWrites: Writes[RequestAdSourceParams] = (
+    (JsPath \ "uid").write[Long] ~
+    (JsPath \ "did").write[String] ~
+    (JsPath \ "ctype").write[Int] ~
+    (JsPath \ "ptype").write[Int] ~
+    (JsPath \ "aversion").write[String] ~
+    (JsPath \ "ctime").write[Long])(unlift(RequestAdSourceParams.unapply))
+
+  implicit val requestAdSourceParamsReads: Reads[RequestAdSourceParams] = (
+    (JsPath \ "uid").read[Long] ~
+    (JsPath \ "did").read[String] ~
+    (JsPath \ "ctype").read[Int] ~
+    (JsPath \ "ptype").read[Int] ~
+    (JsPath \ "aversion").read[String] ~
+    (JsPath \ "ctime").read[Long]
+  )(RequestAdSourceParams.apply _)
+
+}

@@ -5,9 +5,14 @@
 
 ----
 ## 更新日志
+*V3.11:*
+
+1. 获取广告来源接口:/v2/ad/source
+2. feed流、相关新闻、普通新闻评论的请求接口中需要增加source参数; 猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3 ;
+
 *V3.10:*
 
-1. 相关新闻添加评论:/v2/ns/ascad
+1. 相关新闻添加广告:/v2/ns/ascad
 2. 修改滑动统计接口：/v2/sl/ins
 
 *V3.9:*
@@ -20,7 +25,7 @@
 
 *V3.8:*
 
-1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq) 、新闻相关列表接口(/v2/ns/asc)：添加两个字段logtype、logchid
+1. feed流接口（/v2/ns/fed/ra、/v2/ns/fed/la、/v2/ns/fed/rn、/v2/ns/fed/ln）、专题详情接口(/v2/ns/tdq) 、新闻相关列表接口(/v2/ns/c)：添加两个字段logtype、logchid
 2. 点击日志上报接口(/rep/v2/c)：多上传两个字段(请注意上传日志中的数据类型，否则上传成功了，后台解析不了)
 
 *V3.7:*
@@ -461,6 +466,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
 | nid  | Long | 否        | 最大新闻ID                                |
+| source  | Int | 是        | 广告来源:猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |
 
 
 ----
@@ -785,7 +791,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)  |
 | p    | Long | 否(默认 1)  | 页数   |
 | c    | Long | 否(默认 20) | 条数   |
-
+| source   | Int | 是        | 广告来源:猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3    
 
 _Response_
 
@@ -2057,5 +2063,36 @@ Content-Type: application/json
 {
   "code": 2000,
   "data": 634788   --uid
+}
+```
+
+### 12 广告接口
+
+#### 12.1 获取广告展示平台接口
+
+_Request_
+
+```json
+POST /v2/ad/source
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| did  | String   | 是        | 设备标识ID                                |
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+| aversion  | Stirng   | 是        | APP版本    |
+| ctime  | Long   | 是        | 当前系统时间毫秒值    |
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": 1   --广告来源:猎鹰广告api:1,广点通sdk:2 ,亦复广告api:3    
 }
 ```

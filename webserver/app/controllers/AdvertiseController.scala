@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import commons.models.advertisement.RequestAdvertiseParams
+import commons.models.advertisement.{ RequestAdSourceParams, RequestAdvertiseParams }
 import commons.models.news._
 import commons.utils.Base64Utils.decodeBase64
 import jp.t2v.lab.play2.auth.AuthElement
@@ -13,8 +13,8 @@ import security.auth.AuthConfigImpl
 import services.advertisement.AdResponseService
 import services.news.PvdetailService
 import services.users.UserService
-import utils.Response._
-import utils.ResponseRecommand.{ DataEmptyError => _, DataInvalidError => _, ServerSucced => _ }
+import utils.Response.{ ServerSucced, _ }
+import utils.AdConfig._
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.language.postfixOps
@@ -24,6 +24,23 @@ import scala.language.postfixOps
  */
 class AdvertiseController @Inject() (val userService: UserService, val adResponseService: AdResponseService, val pvdetailService: PvdetailService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
+
+  /**
+   * 获取广告来源,根据uid来进行分流,猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3
+   */
+  def getAdSource = Action.async(parse.json) { request =>
+    request.body.validate[RequestAdSourceParams] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(requestParams, _) =>
+        if (requestParams.uid % 10 < lieyingapiWeight)
+          Future.successful(ServerSucced(1))
+        else if (requestParams.uid % 10 - lieyingapiWeight < gdtsdkWeight)
+          Future.successful(ServerSucced(2))
+        else
+          Future.successful(ServerSucced(3))
+    }
+
+  }
 
   def getAd = Action.async(parse.json) { request =>
     request.body.validate[RequestAdvertiseParams] match {

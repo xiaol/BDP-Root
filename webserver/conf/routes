@@ -188,6 +188,12 @@ GET     /v2/re/top                  controllers.ReportController.topClickNews(ct
 #更新公共feed流新闻
 GET     /v2/ns/fed/up               controllers.NewsResponseController.updateNewsFeedCommon()
 
+#获取广告来源
+POST   /v2/ad/source                controllers.AdvertiseController.getAdSource
+
+#热点
+POST   /v2/hot/news                  controllers.HotTopicController.processHotNews
+
 #测试
 #GET     /v2/ns/fed/test             controllers.TestController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
 #GET     /v2/ns/fed/testnewsfeed     controllers.TestController.testNewsFeed()
