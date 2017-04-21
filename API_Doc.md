@@ -386,7 +386,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
       "collect": 0,                                           - 收藏数
       "concern": 0,                                           - 关心数
       "comment": 4,                                           - 评论数
-      "style": 1,                                             - 列表图格式，0、1、2、3
+      "style": 1,                                             - 列表图格式，新闻:0、1图、2、3图、4起点号, 11第一张大图、12、13, 视频样式:6小图、7、8大图, 广告样式:(广点通SDK50小图、51大图)
       "imgs": [                                               - 该字段会有对应style数值的图片
         "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
       ],

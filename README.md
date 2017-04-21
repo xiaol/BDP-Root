@@ -25,13 +25,12 @@
    3. `rm -fr web-server-0.0.1` & `mv web-server-0.0.1.zip backends/`
 
 4. 解包新版本应用，新版压缩包必须在`/data/pro`目录下
+    unzip web-server-0.0.1.zip
 
-5. 终止守护进程并重启：
-   `supervisorctl stop api`
-   或
-   1. 获取 PID：`ps aux|grep super`
-   2. 终止：`kill -9 PID`
-   3. 重启服务：`supervisord -c /etc/supervisord.conf`
+5. 替换配置文件
+    `cp /data/pro/application.conf  web-server-0.0.1/conf/`
+
+5. 启动服务：`supervisorctl start api`
 
 6. 查看服务状态：`supervisorctl status`
 

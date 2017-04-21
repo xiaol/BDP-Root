@@ -83,7 +83,7 @@ object NewsEsRow {
     val base = row.base
     val incr = row.incr
     val syst = row.syst
-    NewsEsRow(base.nid, base.docid, base.title, base.tags, base.descr, base.province, base.city, base.district, base.ptime, base.pname, base.purl, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, incr.compress, incr.ners, syst.ctime)
+    NewsEsRow(base.nid, base.docid, base.title, None, None, base.province, base.city, base.district, base.ptime, base.pname, base.purl, syst.chid, incr.collect, incr.concern, incr.comment, incr.style, incr.imgs, None, None, syst.ctime)
   }
 }
 

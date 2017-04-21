@@ -24,7 +24,7 @@ class PersistanceServer(aSearchService: ASearchService, newsService: NewsService
   val timeout: Timeout = 15.seconds
 
   override def receive = {
-    case newsRow: NewsRow if (newsRow.base.content.toString().length > 2) =>
+    case newsRow: NewsRow =>
       val superior = sender()
       newsService.insert(newsRow).map {
         case reply if reply.isDefined =>

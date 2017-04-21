@@ -30,10 +30,11 @@ GET     /v2/au/common               controllers.Application.listCommon()
 GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1, sech:Int ?= 0)
 GET     /v2/ns/srcs                 controllers.NewsController.listSource(p:Long ?= 1, c:Long ?= 20)
 
-GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0)
-GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0)
+GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0, rtype: Option[Int])
+GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0, rtype: Option[Int])
 #video detail
-GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(nid:Long, uid:Option[Long])
+#GET     /v2/vi/con                  controllers.NewsController.getVideoDetails(nid:Long, uid:Option[Long])
+GET     /v2/vi/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0, rtype: Option[Int])
 
 #GET     /v2/ns/con/com              ???
 GET     /v2/ns/asc                  controllers.NewsController.listASearch(nid:Long, p:Long ?= 1, c:Long ?= 20, s:Int ?= 0)

@@ -51,9 +51,9 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def getDetails(nid: Long, uid: Option[Long], s: Int) = Action.async { implicit request =>
+  def getDetails(nid: Long, uid: Option[Long], s: Int, rtype: Option[Int]) = Action.async { implicit request =>
     pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-    newsService.findDetailsWithProfileByNid(nid, uid).map {
+    newsService.findDetailsWithProfileByNid(nid, uid, rtype).map {
       case Some(news) => ServerSucced(if (s == 1) https(news) else news)
       case _          => DataEmptyError(s"$nid")
     }
@@ -75,13 +75,13 @@ class NewsController @Inject() (val userService: UserService, val channelService
     }
   }
 
-  def getVideoDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
-    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getVideoDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
-    videoService.findDetailsWithProfileByNid(nid, uid).map {
-      case Some(news) => ServerSucced(news)
-      case _          => DataEmptyError(s"$nid")
-    }
-  }
+  //  def getVideoDetails(nid: Long, uid: Option[Long]) = Action.async { implicit request =>
+  //    pvdetailService.insert(PvDetail(uid.getOrElse(0), "NewsController.getVideoDetails", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+  //    videoService.findDetailsWithProfileByNid(nid, uid).map {
+  //      case Some(news) => ServerSucced(news)
+  //      case _          => DataEmptyError(s"$nid")
+  //    }
+  //  }
 
   def listASearch(nid: Long, page: Long, count: Long, s: Int) = Action.async { implicit request =>
     aSearchService.listByRefer(nid.toString, page, count).map {
@@ -194,14 +194,19 @@ class NewsController @Inject() (val userService: UserService, val channelService
   }
 
   final private def https(detail: NewsDetailsResponse): NewsDetailsResponse = {
-    var list: List[NewsBodyBlock] = detail.content.as[List[NewsBodyBlock]]
-    list = list.map { news =>
-      news match {
-        case imageBlock: ImageBlock => imageBlock.copy(img = imageBlock.img.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com"))
-        case _                      => news
-      }
+    detail.content match {
+      case Some(content) =>
+        var list: List[NewsBodyBlock] = detail.content.get.as[List[NewsBodyBlock]]
+        list = list.map { news =>
+          news match {
+            case imageBlock: ImageBlock => imageBlock.copy(img = imageBlock.img.replace("http://pro-pic.deeporiginalx.com", "https://bdp-images.oss-cn-hangzhou.aliyuncs.com"))
+            case _                      => news
+          }
+        }
+        detail.copy(content = Some(Json.toJson(list)))
+      case _ => detail
     }
-    detail.copy(content = Json.toJson(list))
+
   }
 
   final private def https2(aSearch: Seq[ASearchResponse]): Seq[ASearchResponse] = {

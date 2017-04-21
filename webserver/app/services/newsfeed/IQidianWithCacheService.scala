@@ -209,8 +209,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val times = 5
-      val level1 = count / 2 * times
+      val times = 7
+      val level1 = (count / 2 + 1) * times
       val level2 = count / 4 * times
       val level3 = count / 4 * times
       val level4 = count / 9 * times
@@ -220,7 +220,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       val refreshHotFO = newsUnionFeedDao.hot((page - 1) * count, level3, newTimeCursor, uid)
 
       //----推荐部分----
-      //模型LDA 和 Kmeans推荐
+      //模型LDA 和 Kmeans推荐 和 CF基于用户LDA的协同过滤
       val refreshLDAandKmeansFO = newsUnionFeedDao.byLDAandKmeans((page - 1) * count, level1, newTimeCursor, uid)
 
       //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
@@ -318,7 +318,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
   }
 
   private def getReturnData(count: Long, t: Int, v: Option[Int], alldata: Seq[NewsFeedResponse]): Seq[NewsFeedResponse] = {
-    val level1 = count / 2
+    val level1 = count / 2 + 1
     val level2 = count / 4
     val level3 = count / 4
     val level4 = count / 9
@@ -329,7 +329,9 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
     //----推荐部分----
     //模型LDA 和 Kmeans推荐
-    val refreshLDAandKmeansFO = alldata.filter(_.rtype.getOrElse(0) == 21).take(level1.toInt).map(news => news.copy(rtype = Some(0)))
+    val refreshLDAFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 21).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
+    val refreshKmeansFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 22).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
+    val refreshCFFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 27).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
 
     //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
     val refreshByPeopleRecommendWithClickFO = alldata.filter(_.rtype.getOrElse(0) == 2).take(level2.toInt)
@@ -338,17 +340,17 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     val refreshCommonFO = alldata.filter(_.rtype.getOrElse(0) == 0).take(count.toInt)
 
     //----大图和视频部分----
-    //大图新闻 和 视频
+    //大图新闻、5等级新闻 和 视频
     val refreshBigImageAndVideo = v match {
-      case Some(video: Int) if video == 1 => alldata.filter(_.style > 10).take(level4.toInt) ++: alldata.filter(_.rtype.getOrElse(0) == 6).take(level4.toInt)
-      case _                              => alldata.filter(_.style > 10).take(level4.toInt)
+      case Some(video: Int) if video == 1 => alldata.take(level4.toInt) ++: alldata.filter(_.rtype.getOrElse(0) == 6).take(level4.toInt)
+      case _                              => alldata.take(level4.toInt)
     }
     //专题
     val topicsFO = alldata.filter(_.rtype.getOrElse(0) == 4).take(level4.toInt)
 
     val adFO = alldata.filter(_.rtype.getOrElse(0) == 3).take(level4.toInt)
 
-    (adFO ++: refreshBigImageAndVideo ++: topicsFO ++: refreshLDAandKmeansFO ++: refreshHotFO ++: refreshByPeopleRecommendWithClickFO ++: refreshCommonFO)
+    (adFO ++: refreshBigImageAndVideo ++: topicsFO ++: refreshLDAFO ++: refreshKmeansFO ++: refreshCFFO ++: refreshHotFO ++: refreshByPeopleRecommendWithClickFO ++: refreshCommonFO)
   }
 
   private def updateCacheData(uid: Long, read: Future[Seq[NewsFeedResponse]], alldata: Future[Seq[NewsFeedResponse]]): Future[Boolean] = {
@@ -395,7 +397,13 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
       //rtype类型:0普通、1热点、2推送(2人工推送, 21机器推送)、3广告、4专题、5图片新闻、6视频、7本地、8段子
       val r: Future[(Seq[NewsFeedResponse], Int)] = getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
-      val returnData: Future[Seq[NewsFeedResponse]] = r.map { seq => getReturnData(count: Long, t: Int, v: Option[Int], seq._1: Seq[NewsFeedResponse]) }
+      val returnData: Future[Seq[NewsFeedResponse]] = r.map { seq =>
+        if (seq._2 == 1) {
+          getReturnData(count: Long, t: Int, v: Option[Int], seq._1: Seq[NewsFeedResponse])
+        } else {
+          seq._1
+        }
+      }
 
       //广告
       val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
@@ -407,7 +415,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         news <- returnData
         ad <- adFO
       } yield {
-        (ad ++: news).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -527,7 +535,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         news <- returnData
         ad <- adFO
       } yield {
-        (ad ++: news).take(count.toInt + 2)
+        (ad ++: news).take(count.toInt)
       }
       //规则一:去重复新闻,一个来源可能重复
       //规则二:重做时间
@@ -658,9 +666,14 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     //      case _ => None
     //    }
 
+    val extendData = newsFeedRow.rtype match {
+      case Some(newstype) if newstype == 6 => Some(ExtendData(newsFeedRow.nid, newsFeedRow.clicktimes))
+      case _                               => None
+    }
+
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
-      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1))
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      imgsList, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.logtype, Some(1), extendData)
   }
 
   final private def createTimeCursor4Refresh(timeCursor: Long): LocalDateTime = {

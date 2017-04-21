@@ -15,14 +15,10 @@ case class NewsRowBase(
   url: String,
   docid: String,
   title: String,
-  content: JsValue,
-  //  html: String,
   author: Option[String] = None,
   ptime: LocalDateTime,
   pname: Option[String] = None,
   purl: Option[String] = None,
-  descr: Option[String] = None,
-  tags: Option[List[String]] = None,
   province: Option[String] = None,
   city: Option[String] = None,
   district: Option[String] = None)
@@ -33,14 +29,10 @@ object NewsRowBase {
     (JsPath \ "url").write[String] ~
     (JsPath \ "docid").write[String] ~
     (JsPath \ "title").write[String] ~
-    (JsPath \ "content").write[JsValue] ~
-    //    (JsPath \ "html").write[String] ~
     (JsPath \ "author").writeNullable[String] ~
     (JsPath \ "ptime").write[LocalDateTime] ~
     (JsPath \ "pname").writeNullable[String] ~
     (JsPath \ "purl").writeNullable[String] ~
-    (JsPath \ "descr").writeNullable[String] ~
-    (JsPath \ "tags").writeNullable[List[String]] ~
     (JsPath \ "province").writeNullable[String] ~
     (JsPath \ "city").writeNullable[String] ~
     (JsPath \ "district").writeNullable[String]
@@ -51,14 +43,10 @@ object NewsRowBase {
     (JsPath \ "url").read[String] ~
     (JsPath \ "docid").read[String] ~
     (JsPath \ "title").read[String] ~
-    (JsPath \ "content").read[JsValue] ~
-    //    (JsPath \ "html").read[String] ~
     (JsPath \ "author").readNullable[String] ~
     (JsPath \ "ptime").read[LocalDateTime] ~
     (JsPath \ "pname").readNullable[String] ~
     (JsPath \ "purl").readNullable[String] ~
-    (JsPath \ "descr").readNullable[String] ~
-    (JsPath \ "tags").readNullable[List[String]] ~
     (JsPath \ "province").readNullable[String] ~
     (JsPath \ "city").readNullable[String] ~
     (JsPath \ "district").readNullable[String]
@@ -72,9 +60,7 @@ case class NewsRowIncr(
   comment: Int,
   inum: Int,
   style: Int,
-  imgs: Option[List[String]] = None,
-  compress: Option[String] = None,
-  ners: Option[JsValue] = None)
+  imgs: Option[List[String]] = None)
 
 object NewsRowIncr {
   implicit val NewsRowIncrWrites: Writes[NewsRowIncr] = (
@@ -84,9 +70,7 @@ object NewsRowIncr {
     (JsPath \ "comment").write[Int] ~
     (JsPath \ "inum").write[Int] ~
     (JsPath \ "style").write[Int] ~
-    (JsPath \ "imgs").writeNullable[List[String]] ~
-    (JsPath \ "compress").writeNullable[String] ~
-    (JsPath \ "ners").writeNullable[JsValue]
+    (JsPath \ "imgs").writeNullable[List[String]]
   )(unlift(NewsRowIncr.unapply))
 
   implicit val NewsRowIncrReads: Reads[NewsRowIncr] = (
@@ -96,9 +80,7 @@ object NewsRowIncr {
     (JsPath \ "comment").read[Int] ~
     (JsPath \ "inum").read[Int] ~
     (JsPath \ "style").read[Int] ~
-    (JsPath \ "imgs").readNullable[List[String]] ~
-    (JsPath \ "compress").readNullable[String] ~
-    (JsPath \ "ners").readNullable[JsValue]
+    (JsPath \ "imgs").readNullable[List[String]]
   )(NewsRowIncr.apply _)
 }
 
@@ -108,9 +90,6 @@ case class NewsRowSyst(
   chid: Long,
   sechid: Option[Long],
   srid: Long,
-  srstate: Int,
-  pconf: Option[JsValue] = None,
-  plog: Option[JsValue] = None,
   icon: Option[String] = None,
   rtype: Option[Int] = None,
   videourl: Option[String] = None,
@@ -124,9 +103,6 @@ object NewsRowSyst {
     (JsPath \ "chid").write[Long] ~
     (JsPath \ "sechid").writeNullable[Long] ~
     (JsPath \ "srid").write[Long] ~
-    (JsPath \ "srstate").write[Int] ~
-    (JsPath \ "pconf").writeNullable[JsValue] ~
-    (JsPath \ "plog").writeNullable[JsValue] ~
     (JsPath \ "icon").writeNullable[String] ~
     (JsPath \ "rtype").writeNullable[Int] ~
     (JsPath \ "videourl").writeNullable[String] ~
@@ -140,9 +116,6 @@ object NewsRowSyst {
     (JsPath \ "chid").read[Long] ~
     (JsPath \ "sechid").readNullable[Long] ~
     (JsPath \ "srid").read[Long] ~
-    (JsPath \ "srstate").read[Int] ~
-    (JsPath \ "pconf").readNullable[JsValue] ~
-    (JsPath \ "plog").readNullable[JsValue] ~
     (JsPath \ "icon").readNullable[String] ~
     (JsPath \ "rtype").readNullable[Int] ~
     (JsPath \ "videourl").readNullable[String] ~

@@ -5,7 +5,7 @@ import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
-import commons.models.news._
+import commons.models.news.{ ExtendData, _ }
 import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
@@ -192,29 +192,29 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     //    }
 
     NewsFeedResponse(newsFeedRow.nid, newsFeedRow.docid, newsFeedRow.title, LocalDateTime.now(), newsFeedRow.pname, newsFeedRow.purl, newsFeedRow.chid,
-      newsFeedRow.collect, newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
-      None, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.rtype, Some(newsFeedRow.chid.toInt))
+      newsFeedRow.concern, newsFeedRow.un_concern, commentnum, newsFeedRow.style,
+      None, newsFeedRow.rtype, None, newsFeedRow.icon, newsFeedRow.videourl, newsFeedRow.thumbnail, newsFeedRow.duration, None, newsFeedRow.rtype, Some(newsFeedRow.chid.toInt), Some(ExtendData(newsFeedRow.nid, newsFeedRow.clicktimes)))
   }
 
-  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
-    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
-      case None => videoDAO.findByNid(nid).map {
-        case Some(row) =>
-          var detail = NewsDetailsResponse.from1(row)
-          detail.content.\\("imag")
-          Some(NewsDetailsResponse.from1(row))
-        case _ => None
-      }
-      case Some(uid) => videoDAO.findByNidWithProfile(nid, uid).map {
-        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from1(row, Some(c1), Some(c2), Some(c3)))
-        case _                       => None
-      }
-    }
-    result.recover {
-      case NonFatal(e) =>
-        Logger.error(s"Within VideoService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
-        None
-    }
-  }
+  //  def findDetailsWithProfileByNid(nid: Long, uidOpt: Option[Long]): Future[Option[NewsDetailsResponse]] = {
+  //    val result: Future[Option[NewsDetailsResponse]] = uidOpt match {
+  //      case None => videoDAO.findByNid(nid).map {
+  //        case Some(row) =>
+  //          var detail = NewsDetailsResponse.from1(row)
+  //          detail.content.\\("imag")
+  //          Some(NewsDetailsResponse.from1(row))
+  //        case _ => None
+  //      }
+  //      case Some(uid) => videoDAO.findByNidWithProfile(nid, uid).map {
+  //        case Some((row, c1, c2, c3)) => Some(NewsDetailsResponse.from1(row, Some(c1), Some(c2), Some(c3)))
+  //        case _                       => None
+  //      }
+  //    }
+  //    result.recover {
+  //      case NonFatal(e) =>
+  //        Logger.error(s"Within VideoService.findDetailsWithProfileByNid($nid, $uidOpt): ${e.getMessage}")
+  //        None
+  //    }
+  //  }
 
 }

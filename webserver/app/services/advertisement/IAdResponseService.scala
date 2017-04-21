@@ -11,7 +11,7 @@ import commons.models.news.NewsFeedResponse
 import commons.utils.Sha1Utils
 import dao.userprofiles.UserDeviceDAO
 import io.netty.handler.codec.http.{ DefaultHttpHeaders, HttpHeaders }
-import org.asynchttpclient.{ DefaultAsyncHttpClient, ListenableFuture, Response }
+import org.asynchttpclient._
 import org.springframework.util.Base64Utils
 import play.api.Logger
 import play.api.libs.json.Json
@@ -31,49 +31,36 @@ trait IAdResponseService {
 
 class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAdResponseService {
 
-  def getAdNewsFeedResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = Future {
+  def getAdNewsFeedResponse(body: String, remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
     try {
-      //替换nginx传过来的真实ip
-      val requestbody: String = remoteAddress match {
-        case Some(ip) =>
-          val request: AdRequest = Json.parse(body).as[AdRequest]
-          val adRequest = request.copy(device = request.device.copy(ip = Some(ip)))
-          Json.toJson(adRequest).toString()
-        case _ => body
-      }
+      val result: Future[Option[AdResponse]] = getAdResponse(body, remoteAddress)
 
-      val nowtime: Long = new Date().getTime / 1000
-      val sign: String = Sha1Utils.encodeSha1(adappkey + "|" + nowtime)
-      val str = adappid + "|" + nowtime + "|" + sign
-      val X_TOKEN: String = Base64Utils.encodeToString(str.getBytes)
-
-      val asyncHttpClient = new DefaultAsyncHttpClient()
-      val headers = new DefaultHttpHeaders()
-      headers.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_JSON)
-      headers.add("X-TOKEN", X_TOKEN)
-      //.executeRequest()可以设置超时时间
-      val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(requestbody).setHeaders(headers).execute()
-      val response: String = f.get().getResponseBody
-      asyncHttpClient.close()
-      val adResponse: AdResponse = Json.parse(response).as[AdResponse]
-      if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
-        val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
-        val seq: Seq[NewsFeedResponse] = list.map {
-          case creative: Creative =>
-            NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
-        }.toSeq
-        seq
-      } else {
-        Seq[NewsFeedResponse]()
+      result.map { response =>
+        response match {
+          case Some(adResponse: AdResponse) =>
+            if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
+              val list: List[Creative] = adResponse.data.get.adspace.get.head.creative.get
+              val seq: Seq[NewsFeedResponse] = list.map {
+                case creative: Creative =>
+                  NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
+              }
+              seq
+            } else {
+              Seq[NewsFeedResponse]()
+            }
+          case _ => Seq[NewsFeedResponse]()
+        }
       }
     } catch {
       case ex: Exception =>
         Logger.error(s"Within AdResponseService.getAdNewsFeedResponse(): ${ex.getMessage}")
-        Seq[NewsFeedResponse]()
+        Future { Seq[NewsFeedResponse]() }
     }
   }
 
-  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Option[AdResponse]] = Future {
+  def getAdResponse(body: String, remoteAddress: Option[String]): Future[Option[AdResponse]] = {
+    val cf: DefaultAsyncHttpClientConfig = new DefaultAsyncHttpClientConfig.Builder().setRequestTimeout(300).setConnectTimeout(300).build()
+    val asyncHttpClient: AsyncHttpClient = new DefaultAsyncHttpClient(cf)
     try {
       //替换nginx传过来的真实ip
       val requestbody: String = remoteAddress match {
@@ -84,29 +71,40 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
         case _ => body
       }
 
+      //组装TOKEN
       val nowtime: Long = new Date().getTime / 1000
       val sign: String = Sha1Utils.encodeSha1(adappkey + "|" + nowtime)
       val str = adappid + "|" + nowtime + "|" + sign
       val X_TOKEN: String = Base64Utils.encodeToString(str.getBytes)
 
-      val asyncHttpClient = new DefaultAsyncHttpClient()
+      //组装header
       val headers = new DefaultHttpHeaders()
       headers.add(HttpHeaders.Names.CONTENT_TYPE, HttpHeaders.Values.APPLICATION_JSON)
       headers.add("X-TOKEN", X_TOKEN)
-      //.executeRequest()可以设置超时时间
+
+      //获取广告
       val f: ListenableFuture[Response] = asyncHttpClient.preparePost(adurl).setBody(requestbody).setHeaders(headers).execute()
       val response: String = f.get().getResponseBody
       asyncHttpClient.close()
       val adResponse: AdResponse = Json.parse(response).as[AdResponse]
-      if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
-        Some(adResponse)
-      } else {
-        None
+
+      Future {
+        if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
+          Some(adResponse)
+        } else {
+          None
+        }
       }
     } catch {
       case ex: Exception =>
         Logger.error(s"Within AdResponseService.getAdResponse(): ${ex.getMessage}")
-        None
+        try {
+          if (!asyncHttpClient.isClosed)
+            asyncHttpClient.close()
+        } catch {
+          case ex: Exception => Logger.error(s"Within AdResponseService.getAdResponse(): Close asyncHttpClient Failure, ${ex.getMessage}")
+        }
+        Future { None }
     }
   }
 
@@ -125,9 +123,6 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
       bufferedWriter.flush()
       streamWriter.flush()
       socket.close()
-      //    val asyncHttpClient = new DefaultAsyncHttpClient()
-      //    asyncHttpClient.prepareGet(deleteAdUrl_v + "?nid=" + nid).execute().get()
-      //    asyncHttpClient.close()
     }
   }
 }
