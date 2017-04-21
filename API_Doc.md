@@ -5,6 +5,11 @@
 
 ----
 ## 更新日志
+*V3.12:*
+1. 爬虫上传热点新闻接口:/v2/hot/crawler/news
+2. 爬虫上传热词接口:/v2/hot/crawler/words
+3. 前端获取热词接口:/v2/hot/words
+
 *V3.11:*
 
 1. 获取广告来源接口:/v2/ad/source
@@ -48,6 +53,7 @@
 7. 4001：请求数据错误；
 8. 4002：请求体JSON格式错误；
 9. 4003：用户验证错误；
+10. 4015: 请求Content-Type格式不正确；
 
 ### 图片服务
 
@@ -2093,6 +2099,95 @@ Content-Type: application/json
 
 {
   "code": 2000,
-  "data": 1   --广告来源:猎鹰广告api:1,广点通sdk:2 ,亦复广告api:3    
+  "data": 1   --广告来源:猎鹰广告api:1,广点通sdk:2 ,亦复广告api:3
+}
+```
+
+### 13 热点
+
+#### 13.1 爬虫上传热点新闻
+
+_Request_
+
+```json
+POST /v2/hot/crawler/news
+Content-Type:  application/x-www-form-urlencoded
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| news  | String[]   | 是        | 热点新闻集合
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": "Upload Hot News Success"
+}
+```
+
+#### 13.2 爬虫上传热词
+
+_Request_
+
+```json
+POST /v2/hot/crawler/words
+Content-Type:  application/x-www-form-urlencoded
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| words  | String[]   | 是        | 热词集合
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": "Upload Hot words Success"
+}
+```
+
+#### 13.3 前端获取热词
+
+_Request_
+
+```json
+POST /v2/hot/words
+Content-Type:  application/json
+Host: bdp.deeporiginalx.com
+```
+
+
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+	"code": 2000,
+    "data": [
+    {
+      "title": "十九大前夕习近平基层听民声问计于民"
+    },
+    {
+      "title": "贵州选举党的十九大代表习近平全票当选"
+    },
+    {
+      "title": "武汉房地产市场整治加码"
+    },
+	....
+    ]
 }
 ```
