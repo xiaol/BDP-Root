@@ -25,13 +25,13 @@ class HotTopicController @Inject() (var esService: NewsEsService, var hotTopicSe
           request.body.get("news") match {
             case Some(params: Seq[String]) if params.size > 0 =>
               val newsList = for (keyword <- params) yield {
-                esService.searchHotNid(keyword, 1, 1).map { re => HotNews(re, LocalDateTime.now(), 1, keyword) }
-                //                Future.successful(14149344).map { re => HotNews(re, LocalDateTime.now(), 1, keyword) }
+                esService.searchHotNid(keyword, 1, 1).map { re => hotTopicService.insert(HotNews(re, LocalDateTime.now(), 1, keyword)) }
+                //                Future.successful(Random.nextLong()).map { re => hotTopicService.insert(HotNews(re, LocalDateTime.now(), 1, keyword)) }
               }
-              val resultList = Future.sequence(newsList).map {
-                news =>
-                  hotTopicService.insertAll(news)
-              }
+              //              val resultList = Future.sequence(newsList).map {
+              //                news =>
+              //                  hotTopicService.insertAll(news)
+              //              }
               Future.successful(ServerSucced("Upload Hot News Success"))
             case _ =>
               Future.successful(ParamsInvalidError())

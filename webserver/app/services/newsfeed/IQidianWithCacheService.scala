@@ -24,7 +24,7 @@ import scala.util.Random
 import scala.util.control.NonFatal
 
 /**
- * Created by zhange on 2016-05-09.
+ * Created by zhangshaolong on 2017-04-20.
  *
  */
 
@@ -296,7 +296,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         hatePnameWithChid <- hateNews
 
       } yield {
-        ((bigimg5 ++: topics ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3.toInt) ++: video ++: peopleRecommendWithClick.take(level2.toInt)).take((count.toInt - 1) * 5)
+        ((bigimg5 ++: topics ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3.toInt) ++: video ++: peopleRecommendWithClick.take(level2.toInt)).take((count.toInt - 1) * times)
           ++: commons).filter { feed =>
             var flag = true
             hatePnameWithChid.foreach { news =>
@@ -305,7 +305,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
               }
             }
             flag
-          }.take((count.toInt - 1) * 7)
+          }.take((count.toInt - 1) * times)
       }
 
       result
@@ -342,8 +342,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     //----大图和视频部分----
     //大图新闻、5等级新闻 和 视频
     val refreshBigImageAndVideo = v match {
-      case Some(video: Int) if video == 1 => alldata.take(level4.toInt) ++: alldata.filter(_.rtype.getOrElse(0) == 6).take(level4.toInt)
-      case _                              => alldata.take(level4.toInt)
+      case Some(video: Int) if video == 1 => alldata.filter(_.rtype.getOrElse(0) == 999).take(level4.toInt) ++: alldata.filter(_.rtype.getOrElse(0) == 6).take(level4.toInt)
+      case _                              => alldata.filter(_.rtype.getOrElse(0) == 999).take(level4.toInt)
     }
     //专题
     val topicsFO = alldata.filter(_.rtype.getOrElse(0) == 4).take(level4.toInt)
@@ -684,33 +684,42 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
   def changeADtime(feeds: Seq[NewsFeedResponse], newTimeCursor: LocalDateTime): Seq[NewsFeedResponse] = {
     //-----------将广告放在第六个-----------
-    if (feeds.filter(_.rtype == Some(3)).length > 0) {
-      //第六个新闻nid和时间
-      val nid6 = feeds.take(6).lastOption match {
-        case Some(news) => news.nid
-        case _          => 0L
-      }
-      val time6 = feeds.take(6).lastOption match {
-        case Some(news) => news.ptime
-        case _          => newTimeCursor
-      }
-      //广告的时间
-      val timead = feeds.filter(_.rtype == Some(3)).headOption match {
-        case Some(news) => news.ptime
-        case _          => newTimeCursor
-      }
-      //广告时间和第六条新闻时间互换
-      feeds.map { news =>
-        if (news.rtype == Some(3)) {
-          news.copy(ptime = time6)
-        } else if (news.nid == nid6) {
-          news.copy(ptime = timead)
-        } else {
-          news
+    val resutl = feeds.filter(_.rtype == Some(3)).length match {
+      case length: Int if length > 0 =>
+        //第六个新闻nid和时间
+        val nid6 = feeds.take(6).lastOption match {
+          case Some(news) => news.nid
+          case _          => 0L
         }
-      }.sortBy(_.ptime)
-    } else {
-      feeds
+        val time6 = feeds.take(6).lastOption match {
+          case Some(news) => news.ptime
+          case _          => newTimeCursor
+        }
+        //广告的时间
+        val timead = feeds.filter(_.rtype == Some(3)).headOption match {
+          case Some(news) => news.ptime
+          case _          => newTimeCursor
+        }
+        //广告时间和第六条新闻时间互换
+        feeds.map { news =>
+          if (news.rtype == Some(3)) {
+            news.copy(ptime = time6)
+          } else if (news.nid == nid6) {
+            news.copy(ptime = timead)
+          } else {
+            news
+          }
+        }.sortBy(_.ptime)
+      case _ => feeds
+    }
+
+    resutl.zipWithIndex.map { feedWithIndex =>
+      //第1、5、9三个位置可以是三图新闻，其他位置若为三图，改为一图
+      if (feedWithIndex._2 != 4 && feedWithIndex._2 != 8 && feedWithIndex._1.style == 3) {
+        feedWithIndex._1.copy(style = 1)
+      } else {
+        feedWithIndex._1
+      }
     }
   }
 
