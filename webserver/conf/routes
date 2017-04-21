@@ -193,7 +193,9 @@ GET     /v2/ns/fed/up               controllers.NewsResponseController.updateNew
 POST   /v2/ad/source                controllers.AdvertiseController.getAdSource
 
 #热点
-POST   /v2/hot/news                  controllers.HotTopicController.processHotNews
+POST   /v2/hot/crawler/news                  controllers.HotTopicController.processHotNews
+POST   /v2/hot/crawler/words                 controllers.HotTopicController.processCrawlerHotWords
+POST   /v2/hot/words                         controllers.HotTopicController.getHotWords
 
 #测试
 #GET     /v2/ns/fed/test             controllers.TestController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
