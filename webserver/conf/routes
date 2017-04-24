@@ -197,6 +197,11 @@ POST   /v2/hot/crawler/news                  controllers.HotTopicController.proc
 POST   /v2/hot/crawler/words                 controllers.HotTopicController.processCrawlerHotWords
 POST   /v2/hot/words                         controllers.HotTopicController.getHotWords
 
+#版本更新
+GET     /v2/version/compare         controllers.UpdateController.compare(uid: Long, channelId: Int, ptype: Int, version: String, version_code: Int)
+POST    /v2/version/insert          controllers.UpdateController.insert()
+POST    /v2/version/update          controllers.UpdateController.update()
+
 #测试
 #GET     /v2/ns/fed/test             controllers.TestController.test(cid:Long, scid:Option[Long], p:Long ?= 1, c:Long ?= 9, tcr: Long, tmk:Int ?= 1, uid: Long, t:Int ?=0, nid: Option[Long])
 #GET     /v2/ns/fed/testnewsfeed     controllers.TestController.testNewsFeed()
