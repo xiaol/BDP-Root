@@ -25,8 +25,9 @@ trait UpdateVersionTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def updateLog = column[Option[String]]("updatelog")
     def downloadLink = column[String]("downloadlink")
     def forceUpdate = column[Boolean]("forceupdate")
+    def md5 = column[String]("md5")
 
-    def * = (ctype, ptype, version, version_code, updateLog, downloadLink, forceUpdate) <> ((UpdateVersion.apply _).tupled, UpdateVersion.unapply)
+    def * = (ctype, ptype, version, version_code, updateLog, downloadLink, forceUpdate, md5) <> ((UpdateVersion.apply _).tupled, UpdateVersion.unapply)
   }
 }
 
