@@ -2225,7 +2225,8 @@ Content-Type: application/json
     "version_code": 2,
     "updateLog": "更新日志",
     "downloadLink": "http://qidianapkstatic.oss-cn-beijing.aliyuncs.com/qidian_official_v3.6.3_20170303.apk",
-    "forceUpdate": false
+    "forceUpdate": false,
+    "md5": "a393cad9469c5da62454a115d0ef3f53"
   }
 }
 ```

@@ -14,7 +14,8 @@ case class UpdateVersion(ctype: Int,
                          version_code: Int,
                          updateLog: Option[String] = None,
                          downloadLink: String,
-                         forceUpdate: Boolean)
+                         forceUpdate: Boolean,
+                         md5: String)
 
 object UpdateVersion {
   implicit val UpdateVersionRowWrites: Writes[UpdateVersion] = (
@@ -24,7 +25,8 @@ object UpdateVersion {
     (JsPath \ "version_code").write[Int] ~
     (JsPath \ "updateLog").writeNullable[String] ~
     (JsPath \ "downloadLink").write[String] ~
-    (JsPath \ "forceUpdate").write[Boolean]
+    (JsPath \ "forceUpdate").write[Boolean] ~
+    (JsPath \ "md5").write[String]
   )(unlift(UpdateVersion.unapply))
 
   implicit val UpdateVersionRowReads: Reads[UpdateVersion] = (
@@ -34,6 +36,7 @@ object UpdateVersion {
     (JsPath \ "version_code").read[Int] ~
     (JsPath \ "updateLog").readNullable[String] ~
     (JsPath \ "downloadLink").read[String] ~
-    (JsPath \ "forceUpdate").read[Boolean]
+    (JsPath \ "forceUpdate").read[Boolean] ~
+    (JsPath \ "md5").read[String]
   )(UpdateVersion.apply _)
 }
