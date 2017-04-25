@@ -475,7 +475,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
 | v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
 | nid  | Long | 否        | 最大新闻ID                                |
-| source  | Int | 是        | 广告来源:猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |
+| ads  | Int | 是        | 广告来源(adsource):猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |
 
 
 ----
@@ -800,7 +800,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 | s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)  |
 | p    | Long | 否(默认 1)  | 页数   |
 | c    | Long | 否(默认 20) | 条数   |
-| source   | Int | 是        | 广告来源:猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3    
+| ads  | Int | 是        | 广告来源(adsource):猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |    
 
 _Response_
 
@@ -2103,6 +2103,8 @@ Content-Type: application/json
 {
   "code": 2000,
   "data": 1   --广告来源:猎鹰广告api:1,广点通sdk:2 ,亦复广告api:3
+  "feedAdPos":6 --非gdtsdk 来源则返回-1
+  "relatedAdPos":4 --非gdtsdk 来源则返回-1
 }
 ```
 

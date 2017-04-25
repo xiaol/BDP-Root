@@ -29,7 +29,7 @@ object Response {
     (JsPath \ "token").readNullable[String]
   )(Response.apply[T] _)
 
-  private final val SERVER_SUCCED_CODE = 2000
+  final val SERVER_SUCCED_CODE = 2000
   private final val SERVER_ERROR_CODE = 2001
   private final val SERVER_EMPTY_CODE = 2002
   private final val SERVER_CREATE_CODE = 2003

@@ -1,12 +1,9 @@
 package services.video
 
-import java.sql.Timestamp
-import java.util.Date
 import javax.inject.Inject
 
 import com.google.inject.ImplementedBy
 import commons.models.news.{ ExtendData, _ }
-import commons.models.video.VideoRow
 import commons.utils.JodaOderingImplicits
 import commons.utils.JodaUtils._
 import dao.news._
@@ -18,7 +15,6 @@ import services.advertisement.AdResponseService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Random
 import scala.util.control.NonFatal
 
 /**
@@ -26,20 +22,28 @@ import scala.util.control.NonFatal
  */
 @ImplementedBy(classOf[VideoService])
 trait IVideoService {
-  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
-  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]]
+
+  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]]
 }
 
 class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsResponseDao, val adResponseService: AdResponseService, val newsFeedDao: NewsFeedDao, val newsRecommendReadDAO: NewsRecommendReadDAO) extends IVideoService {
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
-  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid)
+      //val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
+
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+        case _ => Future.successful(Seq[NewsFeedResponse]())
+      }
 
       val response = for {
         r <- result.map { seq =>
@@ -83,12 +87,19 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     }
   }
 
-  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
-      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid) //videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid)
+      //videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
+
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+        case _ => Future.successful(Seq[NewsFeedResponse]())
+      }
 
       val response = for {
         r <- result.map { seq =>

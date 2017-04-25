@@ -94,7 +94,7 @@ class NewsController @Inject() (val userService: UserService, val channelService
     request.body.validate[RequestASearchParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestASearchParams, _) =>
-        aSearchService.listByReferWithAd(requestASearchParams.nid.toString, requestASearchParams.p.getOrElse(1), requestASearchParams.c.getOrElse(20), Some(decodeBase64(requestASearchParams.b.get)), request.headers.get("X-Real-IP")).map {
+        aSearchService.listByReferWithAd(requestASearchParams.nid.toString, requestASearchParams.p.getOrElse(1), requestASearchParams.c.getOrElse(20), Some(decodeBase64(requestASearchParams.b.get)), request.headers.get("X-Real-IP"), requestASearchParams.ads.getOrElse(1)).map {
           case searchs: Seq[ASearchResponse] if searchs.nonEmpty => ServerSucced(if (requestASearchParams.s.getOrElse(0) == 1) https2(searchs) else searchs)
           case _                                                 => DataEmptyError(s"$requestASearchParams")
         }

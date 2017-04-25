@@ -22,4 +22,9 @@ object AdConfig extends AdConfig {
   val lieyingapiWeight = adWeight.getString("lieyingapi").toInt
   val gdtsdkWeight = adWeight.getString("gdtsdk").toInt
   val yifuapiWeight = adWeight.getString("yifuapi").toInt
+
+  val adposition = config.getConfig("adsource").getConfig("displayPosition")
+  val feedAdPos = adposition.getInt("feedAdPos")
+  val relatedAdPos = adposition.getInt("relatedAdPos")
+
 }

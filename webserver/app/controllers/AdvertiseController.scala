@@ -8,13 +8,15 @@ import commons.utils.Base64Utils.decodeBase64
 import jp.t2v.lab.play2.auth.AuthElement
 import org.joda.time.LocalDateTime
 import play.api.libs.json._
+import play.api.mvc.Results.Ok
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.advertisement.AdResponseService
 import services.news.PvdetailService
 import services.users.UserService
-import utils.Response.{ ServerSucced, _ }
 import utils.AdConfig._
+import utils.{ AdSourceResponse, Response }
+import utils.Response.{ ServerSucced, _ }
 
 import scala.concurrent.{ ExecutionContext, Future }
 import scala.language.postfixOps
@@ -32,12 +34,12 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
     request.body.validate[RequestAdSourceParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        if (requestParams.uid % 10 < lieyingapiWeight)
-          Future.successful(ServerSucced(1))
-        else if (requestParams.uid % 10 - lieyingapiWeight < gdtsdkWeight)
-          Future.successful(ServerSucced(2))
-        else
-          Future.successful(ServerSucced(3))
+        val uid = requestParams.uid % 10
+        uid match {
+          case i if i < lieyingapiWeight                                => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1))
+          case i if i - lieyingapiWeight < gdtsdkWeight                 => Future.successful(AdSourceResponse.ServerSucced(1, feedAdPos, relatedAdPos))
+          case i if i - lieyingapiWeight - gdtsdkWeight < yifuapiWeight => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1))
+        }
     }
 
   }

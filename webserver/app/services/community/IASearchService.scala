@@ -23,7 +23,7 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[ASearchService])
 trait IASearchService {
   def listByRefer(refer: String, page: Long, count: Long): Future[Seq[ASearchRow]]
-  def listByReferWithAd(refer: String, page: Long, count: Long, adbody: Option[String], remoteAddress: Option[String]): Future[Seq[ASearchResponse]]
+  def listByReferWithAd(refer: String, page: Long, count: Long, adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[ASearchResponse]]
   def insertMulti(searchItemRows: Seq[ASearchRow]): Future[Seq[Long]]
 }
 
@@ -37,10 +37,19 @@ class ASearchService @Inject() (val asearchDAO: ASearchDAO, val adResponseServic
     }
   }
 
-  def listByReferWithAd(refer: String, page: Long, count: Long, adbody: Option[String], remoteAddress: Option[String]): Future[Seq[ASearchResponse]] = {
+  def listByReferWithAd(refer: String, page: Long, count: Long, adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[ASearchResponse]] = {
     {
       val result = asearchDAO.listByRefer(refer, (page - 1) * count, count)
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody.get, remoteAddress)
+
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adbody match {
+            case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
+            case _                  => Future.successful(Seq[NewsFeedResponse]())
+          }
+        case _ => Future.successful(Seq[NewsFeedResponse]())
+      }
 
       val response = for {
         r <- result.map { seq =>

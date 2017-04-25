@@ -2,7 +2,7 @@ package commons.models.advertisement
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
-import play.api.libs.json.{ Reads, JsPath, Writes }
+import play.api.libs.json.{ JsPath, Reads, Writes }
 
 /**
  * Created by zhangshl on 16/9/9.
@@ -19,7 +19,8 @@ case class RequestParams(cid: Long,
                          t: Option[Int] = None,
                          s: Option[Int] = None,
                          v: Option[Int] = None,
-                         nid: Option[Long] = None)
+                         nid: Option[Long] = None,
+                         ads: Option[Int] = None)
 
 object RequestParams {
   implicit val RequestParamsWrites: Writes[RequestParams] = (
@@ -34,7 +35,8 @@ object RequestParams {
     (JsPath \ "t").writeNullable[Int] ~
     (JsPath \ "s").writeNullable[Int] ~
     (JsPath \ "v").writeNullable[Int] ~
-    (JsPath \ "nid").writeNullable[Long]
+    (JsPath \ "nid").writeNullable[Long] ~
+    (JsPath \ "ads").writeNullable[Int]
   )(unlift(RequestParams.unapply))
 
   implicit val RequestParamsReads: Reads[RequestParams] = (
@@ -49,7 +51,8 @@ object RequestParams {
     (JsPath \ "t").readNullable[Int] ~
     (JsPath \ "s").readNullable[Int] ~
     (JsPath \ "v").readNullable[Int] ~
-    (JsPath \ "nid").readNullable[Long]
+    (JsPath \ "nid").readNullable[Long] ~
+    (JsPath \ "ads").readNullable[Int]
   )(RequestParams.apply _)
 }
 
@@ -74,7 +77,7 @@ object RequestAdvertiseParams {
   )(RequestAdvertiseParams.apply _)
 }
 
-case class RequestASearchParams(nid: Long, b: Option[String] = None, s: Option[Int] = None, p: Option[Long] = None, c: Option[Long] = None)
+case class RequestASearchParams(nid: Long, b: Option[String] = None, s: Option[Int] = None, p: Option[Long] = None, c: Option[Long] = None, ads: Option[Int])
 
 object RequestASearchParams {
   implicit val RequestAdvertiseParamsWrites: Writes[RequestASearchParams] = (
@@ -82,7 +85,8 @@ object RequestASearchParams {
     (JsPath \ "b").writeNullable[String] ~
     (JsPath \ "s").writeNullable[Int] ~
     (JsPath \ "p").writeNullable[Long] ~
-    (JsPath \ "c").writeNullable[Long]
+    (JsPath \ "c").writeNullable[Long] ~
+    (JsPath \ "ads").writeNullable[Int]
   )(unlift(RequestASearchParams.unapply))
 
   implicit val RequestAdvertiseParamsReads: Reads[RequestASearchParams] = (
@@ -90,7 +94,8 @@ object RequestASearchParams {
     (JsPath \ "b").readNullable[String] ~
     (JsPath \ "s").readNullable[Int] ~
     (JsPath \ "p").readNullable[Long] ~
-    (JsPath \ "c").readNullable[Long]
+    (JsPath \ "c").readNullable[Long] ~
+    (JsPath \ "ads").readNullable[Int]
   )(RequestASearchParams.apply _)
 }
 
