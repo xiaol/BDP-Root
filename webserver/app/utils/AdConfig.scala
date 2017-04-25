@@ -26,5 +26,7 @@ object AdConfig extends AdConfig {
   val adposition = config.getConfig("adsource").getConfig("displayPosition")
   val feedAdPos = adposition.getInt("feedAdPos")
   val relatedAdPos = adposition.getInt("relatedAdPos")
+  val feedVideoAdPos = adposition.getInt("feedVideoAdPos")
+  val relatedVideoAdPos = adposition.getInt("relatedVideoAdPos")
 
 }

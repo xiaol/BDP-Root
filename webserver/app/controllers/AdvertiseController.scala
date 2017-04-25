@@ -36,9 +36,9 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
       case JsSuccess(requestParams, _) =>
         val uid = requestParams.uid % 10
         uid match {
-          case i if i < lieyingapiWeight                                => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1))
-          case i if i - lieyingapiWeight < gdtsdkWeight                 => Future.successful(AdSourceResponse.ServerSucced(1, feedAdPos, relatedAdPos))
-          case i if i - lieyingapiWeight - gdtsdkWeight < yifuapiWeight => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1))
+          case i if i < lieyingapiWeight                                => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1, -1, -1))
+          case i if i - lieyingapiWeight < gdtsdkWeight                 => Future.successful(AdSourceResponse.ServerSucced(2, feedAdPos, relatedAdPos, feedVideoAdPos, relatedVideoAdPos))
+          case i if i - lieyingapiWeight - gdtsdkWeight < yifuapiWeight => Future.successful(AdSourceResponse.ServerSucced(3, -1, -1, -1, -1))
         }
     }
 
