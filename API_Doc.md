@@ -2105,6 +2105,8 @@ Content-Type: application/json
   "data": 1   --广告来源:猎鹰广告api:1,广点通sdk:2 ,亦复广告api:3
   "feedAdPos":6 --非gdtsdk 来源则返回-1
   "relatedAdPos":4 --非gdtsdk 来源则返回-1
+  "feedVideoAdPos": 4, --同上
+  "relatedVideoAdPos": 1 --同上
 }
 ```
 
