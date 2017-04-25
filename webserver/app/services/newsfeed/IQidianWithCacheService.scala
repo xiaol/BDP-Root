@@ -30,8 +30,9 @@ import scala.util.control.NonFatal
 
 @ImplementedBy(classOf[QidianWithCacheService])
 trait IQidianWithCacheService {
-  def refreshQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
-  def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]]
+  def refreshQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[NewsFeedResponse]]
+
+  def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[NewsFeedResponse]]
 }
 
 class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, val newsResponseDao: NewsResponseDao, val topicListDAO: TopicListDAO, val adResponseService: AdResponseService,
@@ -239,7 +240,9 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       //专题
       val topicsFO: Future[Seq[TopicList]] = t match {
         case 1 => topicListDAO.topicShow(uid).map(_.take(level4.toInt))
-        case _ => Future.successful { Seq[TopicList]() }
+        case _ => Future.successful {
+          Seq[TopicList]()
+        }
       }
 
       //不感兴趣新闻,获取来源和频道
@@ -391,7 +394,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     }
   }
 
-  def refreshQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def refreshQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
@@ -405,10 +408,16 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         }
       }
 
-      //广告
-      val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
-        case _                  => Future.successful(Seq[NewsFeedResponse]())
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adbody match {
+            case Some(body: String) =>
+              adResponseService.getAdNewsFeedResponse(body, remoteAddress)
+            case _ =>
+              Future.successful(Seq[NewsFeedResponse]())
+          }
+        case _ => Future.successful(Seq[NewsFeedResponse]())
       }
 
       val returnDataWithAD: Future[Seq[NewsFeedResponse]] = for {
@@ -518,17 +527,22 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     }
   }
 
-  def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String]): Future[Seq[NewsFeedResponse]] = {
+  def loadQidian(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
       //rtype类型:0普通、1热点、2推送、3广告、4专题、5图片新闻、6视频、7本地
       val r: Future[(Seq[NewsFeedResponse], Int)] = getFeedData(uid: Long, page: Long, count: Long, timeCursor: Long, t: Int, v: Option[Int], adbody: Option[String], remoteAddress: Option[String])
       val returnData: Future[Seq[NewsFeedResponse]] = r.map { seq => getReturnData(count: Long, t: Int, v: Option[Int], seq._1: Seq[NewsFeedResponse]) }
-      //广告
-      val adFO: Future[Seq[NewsFeedResponse]] = adbody match {
-        case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
-        case _                  => Future.successful(Seq[NewsFeedResponse]())
+
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adbody match {
+            case Some(body: String) => adResponseService.getAdNewsFeedResponse(body, remoteAddress)
+            case _                  => Future.successful(Seq[NewsFeedResponse]())
+          }
+        case _ => Future.successful(Seq[NewsFeedResponse]())
       }
 
       val returnDataWithAD: Future[Seq[NewsFeedResponse]] = for {

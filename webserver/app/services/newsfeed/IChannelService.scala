@@ -28,8 +28,8 @@ import scala.util.control.NonFatal
 @ImplementedBy(classOf[FeedChannelService])
 trait IFeedChannelService {
   //带广告频道新闻
-  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
-  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]]
+  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]]
+  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]]
 
   //不带广告频道新闻
   def refreshFeedByChannel(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, nid: Option[Long]): Future[Seq[NewsFeedResponse]]
@@ -41,7 +41,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
 
   import JodaOderingImplicits.LocalDateTimeReverseOrdering
 
-  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+  def refreshFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
       val date = new Date(timeCursor)
@@ -57,7 +57,12 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+        case _ => Future.successful(Seq[NewsFeedResponse]())
+      }
 
       val response = for {
         r <- result.map { seq =>
@@ -139,7 +144,7 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
     }.sortBy(_.ptime)
   }
 
-  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long]): Future[Seq[NewsFeedResponse]] = {
+  def loadFeedByChannelWithAd(uid: Long, chid: Long, sechidOpt: Option[Long], page: Long, count: Long, timeCursor: Long, adbody: String, remoteAddress: Option[String], nid: Option[Long], ads: Int): Future[Seq[NewsFeedResponse]] = {
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
       val result = sechidOpt match {
@@ -151,7 +156,12 @@ class FeedChannelService @Inject() (val adResponseService: AdResponseService, va
       //不感兴趣新闻,获取来源和频道
       val hateNews: Future[Seq[NewsRow]] = hateNewsDAO.getNewsByUid(uid)
 
-      val adFO: Future[Seq[NewsFeedResponse]] = adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+      //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
+      val adFO: Future[Seq[NewsFeedResponse]] = ads match {
+        case 1 =>
+          adResponseService.getAdNewsFeedResponse(adbody, remoteAddress)
+        case _ => Future.successful(Seq[NewsFeedResponse]())
+      }
 
       val response = for {
         r <- result.map { seq =>
