@@ -20,11 +20,10 @@ import scala.language.postfixOps
 class UpdateController @Inject() (val updateVersionService: UpdateVersionService, val userService: UserService)(implicit ec: ExecutionContext)
     extends Controller with AuthElement with AuthConfigImpl {
 
-  def compare(uid: Long, channelId: Int, ptype: Int, version: String, version_code: Int) = Action.async { implicit request =>
-    updateVersionService.compare(uid: Long, channelId: Int, ptype: Int, version: String, version_code: Int).map {
-      case Some(result) if result.updateLog.getOrElse("") != "nonUpdate" => ServerSucced(result)
-      case Some(result)                                                  => ServerSucced("no Update！")
-      case _                                                             => DataEmptyError(s"$channelId, $ptype, $version, $version_code")
+  def query(uid: Option[Long], ctype: Int, ptype: Int) = Action.async { implicit request =>
+    updateVersionService.query(ctype: Int, ptype: Int).map {
+      case Some(result) => ServerSucced(result)
+      case _            => DataEmptyError(s"$ctype, $ptype")
     }
   }
 

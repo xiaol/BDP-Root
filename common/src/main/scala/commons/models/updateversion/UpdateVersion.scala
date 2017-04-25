@@ -8,7 +8,7 @@ import play.api.libs.json._
  * Created by zhangshl on 2017/4/24.
  */
 
-case class UpdateVersion(channelId: Int,
+case class UpdateVersion(ctype: Int,
                          ptype: Int,
                          version: String,
                          version_code: Int,
@@ -18,7 +18,7 @@ case class UpdateVersion(channelId: Int,
 
 object UpdateVersion {
   implicit val UpdateVersionRowWrites: Writes[UpdateVersion] = (
-    (JsPath \ "channelId").write[Int] ~
+    (JsPath \ "ctype").write[Int] ~
     (JsPath \ "ptype").write[Int] ~
     (JsPath \ "version").write[String] ~
     (JsPath \ "version_code").write[Int] ~
@@ -28,7 +28,7 @@ object UpdateVersion {
   )(unlift(UpdateVersion.unapply))
 
   implicit val UpdateVersionRowReads: Reads[UpdateVersion] = (
-    (JsPath \ "channelId").read[Int] ~
+    (JsPath \ "ctype").read[Int] ~
     (JsPath \ "ptype").read[Int] ~
     (JsPath \ "version").read[String] ~
     (JsPath \ "version_code").read[Int] ~

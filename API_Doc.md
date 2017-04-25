@@ -1,10 +1,13 @@
-# 数据平台接口文档_V3.11
+# 数据平台接口文档_V3.13
 
 # 目录
 [TOC]
 
 ----
 ## 更新日志
+*V3.13:*
+1. 版本更新接口：/v2/version/query
+
 *V3.12:*
 1. 爬虫上传热点新闻接口:/v2/hot/crawler/news
 2. 爬虫上传热词接口:/v2/hot/crawler/words
@@ -2189,5 +2192,40 @@ Content-Type: application/json
     },
 	....
     ]
+}
+```
+
+### 14 版本更新接口
+
+#### 14.1 版本更新接口
+
+_Request_
+
+```json
+GET /v2/version/query
+Host: bdp.deeporiginalx.com
+```
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| ctype  | Int   | 是        | 渠道类型, 1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌  |
+| ptype    | Int | 是         | 平台类型，1：IOS，2：安卓，3：网页，4：无法识别|
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+{
+  "code": 2000,
+  "data": {
+    "ctype": 1,
+    "ptype": 2,
+    "version": "1.1.2",
+    "version_code": 2,
+    "updateLog": "更新日志",
+    "downloadLink": "http://qidianapkstatic.oss-cn-beijing.aliyuncs.com/qidian_official_v3.6.3_20170303.apk",
+    "forceUpdate": false
+  }
 }
 ```

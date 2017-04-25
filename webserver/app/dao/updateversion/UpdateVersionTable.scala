@@ -18,7 +18,7 @@ trait UpdateVersionTable { self: HasDatabaseConfig[MyPostgresDriver] =>
 
   class UpdateVersionTable(tag: Tag) extends Table[UpdateVersion](tag, "update_version") {
 
-    def channelId = column[Int]("channelid")
+    def ctype = column[Int]("ctype")
     def ptype = column[Int]("ptype")
     def version = column[String]("version")
     def version_code = column[Int]("version_code")
@@ -26,7 +26,7 @@ trait UpdateVersionTable { self: HasDatabaseConfig[MyPostgresDriver] =>
     def downloadLink = column[String]("downloadlink")
     def forceUpdate = column[Boolean]("forceupdate")
 
-    def * = (channelId, ptype, version, version_code, updateLog, downloadLink, forceUpdate) <> ((UpdateVersion.apply _).tupled, UpdateVersion.unapply)
+    def * = (ctype, ptype, version, version_code, updateLog, downloadLink, forceUpdate) <> ((UpdateVersion.apply _).tupled, UpdateVersion.unapply)
   }
 }
 
@@ -36,16 +36,16 @@ class UpdateVersionDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
 
   val updateVersionList = TableQuery[UpdateVersionTable]
 
-  def findUpdateVersion(channelId: Int, ptype: Int): Future[Option[UpdateVersion]] = {
-    db.run(updateVersionList.filter(_.channelId === channelId).filter(_.ptype === ptype).result.map(_.headOption))
+  def findUpdateVersion(ctype: Int, ptype: Int): Future[Option[UpdateVersion]] = {
+    db.run(updateVersionList.filter(_.ctype === ctype).filter(_.ptype === ptype).result.map(_.headOption))
   }
 
   def insert(updateVersion: UpdateVersion): Future[Int] = {
-    db.run(updateVersionList returning updateVersionList.map(_.channelId) += updateVersion)
+    db.run(updateVersionList returning updateVersionList.map(_.ctype) += updateVersion)
   }
 
   def update(updateVersion: UpdateVersion): Future[Option[UpdateVersion]] = {
-    db.run(updateVersionList.filter(_.channelId === updateVersion.channelId).filter(_.ptype === updateVersion.ptype).update(updateVersion).map {
+    db.run(updateVersionList.filter(_.ctype === updateVersion.ctype).filter(_.ptype === updateVersion.ptype).update(updateVersion).map {
       case 0 => None
       case _ => Some(updateVersion)
     })
