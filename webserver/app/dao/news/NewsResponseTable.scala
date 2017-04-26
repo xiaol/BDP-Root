@@ -53,9 +53,15 @@ class NewsResponseDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPro
     db.run(action)
   }
 
-  def video(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
+  def video(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long, chid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val action = sql" #$select , 6 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.ctime>#$dayWindow3  and nv.rtype=6 limit $limit ".as[NewsFeedRow]
+    val action = sql" #$select , 6 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.ctime>#$dayWindow3 and nv.chid=$chid and nv.state=0 limit $limit ".as[NewsFeedRow]
+    db.run(action)
+  }
+
+  def videoBySeChannel(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long, chid: Long, sechid: Long): Future[Seq[NewsFeedRow]] = {
+    val tablename: String = "newsrecommendread_" + uid % 100
+    val action = sql" #$select , 6 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow3) and nv.chid=$chid and nv.sechid=$sechid and nv.ctime>#$dayWindow3 and nv.chid=$chid and nv.sechid=$sechid and nv.state=0 offset $offset limit $limit ".as[NewsFeedRow]
     db.run(action)
   }
 
