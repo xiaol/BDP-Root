@@ -81,7 +81,7 @@ class UserProfileController @Inject() (val channelService: ChannelService, val c
 
   def addCommends(cid: Long, uid: Long) = Action.async { implicit request =>
     commentService.findById(cid).flatMap {
-      case Some(CommentRow(_, _, _, _, ouid, _, _, _, _, _, _)) if ouid.isDefined && ouid.get == uid => Future.successful(DataInvalidError("Can not commend your own comment"))
+      //      case Some(CommentRow(_, _, _, _, ouid, _, _, _, _, _, _)) if ouid.isDefined && ouid.get == uid => Future.successful(DataInvalidError("Can not commend your own comment"))
       case Some(_) => profileService.addCommend(cid, uid).map {
         case Some(c) => ServerSucced(c)
         case _       => DataCreateError(s"$cid, $uid")
