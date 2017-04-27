@@ -3,10 +3,9 @@ package utils
 import commons.utils.{ NotFound, _ }
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Writes._
-import play.api.libs.json._
-import play.api.libs.json.JsError
-import play.api.mvc.Results._
+import play.api.libs.json.{ JsError, _ }
 import play.api.mvc.Result
+import play.api.mvc.Results._
 
 /**
  * Created by zhange on 2016-04-24.
@@ -42,6 +41,10 @@ object Response {
 
   def ServerSucced[T](data: T, token: Option[String] = None)(implicit writes: Writes[T]): Result = {
     Ok(Json.toJson(Response(SERVER_SUCCED_CODE, data, token)))
+  }
+
+  def ServerSucceedWithNoCode[T](data: T)(implicit writes: Writes[T]): Result = {
+    Ok(Json.toJson(data))
   }
 
   def ServerFailure(message: ExceptionMessage): Result = message match {

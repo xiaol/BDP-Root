@@ -6,19 +6,19 @@ import commons.models.hottopic.HotNews
 import org.joda.time.LocalDateTime
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller}
-import services.hottopic.{HotTopicService, HotWordsCacheService}
+import play.api.mvc.{ Action, Controller }
+import services.hottopic.{ HotTopicService, HotWordsCacheService }
 import services.news.NewsEsService
 import utils.Response._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.parsing.json.{JSONArray, JSONObject}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.parsing.json.{ JSONArray, JSONObject }
 
 /**
-  * Created by fengjigang on 17/4/19.
-  * 热点新闻和热词控制器
-  */
-class HotTopicController @Inject()(val esService: NewsEsService, val hotTopicService: HotTopicService, val hotWordsCacheService: HotWordsCacheService)(implicit ec: ExecutionContext) extends Controller {
+ * Created by fengjigang on 17/4/19.
+ * 热点新闻和热词控制器
+ */
+class HotTopicController @Inject() (val esService: NewsEsService, val hotTopicService: HotTopicService, val hotWordsCacheService: HotWordsCacheService)(implicit ec: ExecutionContext) extends Controller {
 
   def processHotNews = Action.async(parse.tolerantFormUrlEncoded) {
     request =>
@@ -47,7 +47,7 @@ class HotTopicController @Inject()(val esService: NewsEsService, val hotTopicSer
       case Some(ContentTypes.FORM) =>
         request.body.get("words") match {
           case Some(params: Seq[String]) if params.size > 0 =>
-            var wordsJson = params.map { title => JSONObject(Map("title" -> title)) }
+            var wordsJson = params.map { title => JSONObject(Map("title" -> title, "baiduHotWord" -> new JSONArray(List()), "news_url" -> "")) }
             hotWordsCacheService.setHotWordsCache(new JSONArray(wordsJson.toList).toString())
             Future.successful(ServerSucced("Upload Hot Words Success"))
           case _ => Future.successful(ParamsInvalidError())
@@ -58,7 +58,7 @@ class HotTopicController @Inject()(val esService: NewsEsService, val hotTopicSer
 
   def getHotWords = Action.async { request =>
     hotWordsCacheService.getHotWordsCache().map {
-      t => ServerSucced(Json.parse(t.getOrElse("[]")))
+      t => ServerSucceedWithNoCode(Json.parse(t.getOrElse("[]")))
     }
   }
 

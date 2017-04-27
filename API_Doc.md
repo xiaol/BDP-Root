@@ -2201,8 +2201,7 @@ Content-Type: application/json
 _Request_
 
 ```json
-POST /v2/hot/words
-Content-Type:  application/json
+GET /v2/hot/words
 Host: bdp.deeporiginalx.com
 ```
 
