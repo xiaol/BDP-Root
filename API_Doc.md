@@ -2212,21 +2212,24 @@ _Response_
 HTTP/1.1 200 OK
 Content-Type: application/json
 
-{
-	"code": 2000,
-    "data": [
-    {
-      "title": "十九大前夕习近平基层听民声问计于民"
-    },
-    {
-      "title": "贵州选举党的十九大代表习近平全票当选"
-    },
-    {
-      "title": "武汉房地产市场整治加码"
-    },
-	....
-    ]
-}
+[
+  {
+    "title": "习近平:金融活经济活金融稳经济稳",
+    "baiduHotWord": [],
+    "news_url": ""
+  },
+  {
+    "title": "最新型枭龙战机首飞成功",
+    "baiduHotWord": [],
+    "news_url": ""
+  },
+  {
+    "title": "西安交大召开警示大会",
+    "baiduHotWord": [],
+    "news_url": ""
+  }
+  ...
+]
 ```
 
 ### 14 版本更新接口
