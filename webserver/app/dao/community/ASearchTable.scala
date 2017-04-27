@@ -46,7 +46,7 @@ class ASearchDAO @Inject() (protected val dbConfigProvider: DatabaseConfigProvid
   val asearchList = TableQuery[ASearchTable]
 
   def listByRefer(refer: String, offset: Long, limit: Long): Future[Seq[ASearchRow]] = {
-    db.run(asearchList.filter(_.refer === refer).sortBy(_.ptime.desc).drop(offset).take(limit).result)
+    db.run(asearchList.filter(_.refer === refer).filter(_.nid.nonEmpty).sortBy(_.ptime.desc).drop(offset).take(limit).result)
   }
 
   def deleteByRefer(refer: String): Future[Option[String]] = {

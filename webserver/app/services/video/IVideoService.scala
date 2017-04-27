@@ -35,8 +35,11 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     {
       val newTimeCursor: LocalDateTime = createTimeCursor4Refresh(timeCursor)
 
-      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid)
-      //val result: Future[Seq[VideoRow]] = videoDAO.refreshVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
+      //val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid)
+      val result = sechidOpt match {
+        case Some(sechid) => newsResponseDao.videoBySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+        case None         => newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid, chid)
+      }
 
       //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3
       val adFO: Future[Seq[NewsFeedResponse]] = ads match {
@@ -91,7 +94,10 @@ class VideoService @Inject() (val videoDAO: VideoDAO, val newsResponseDao: NewsR
     {
       val newTimeCursor: LocalDateTime = msecondsToDatetime(timeCursor)
 
-      val result = newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid)
+      val result = sechidOpt match {
+        case Some(sechid) => newsResponseDao.videoBySeChannel((page - 1) * count, count, newTimeCursor, uid, chid, sechid)
+        case None         => newsResponseDao.video((page - 1) * count, count, newTimeCursor, uid, chid)
+      }
       //videoDAO.loadVideoByChannel(uid, chid, (page - 1) * count, count, newTimeCursor, nid)
 
       //广告,根据ads的类型来获取广告,猎鹰广告api:1 ,广点通sdk:2(服务端不需要返回任何广告) ,亦复广告api:3

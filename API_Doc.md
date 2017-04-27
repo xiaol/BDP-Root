@@ -1,10 +1,13 @@
-# 数据平台接口文档_V3.13
+# 数据平台接口文档_V3.14
 
 # 目录
 [TOC]
 
 ----
 ## 更新日志
+*V3.14:*
+1. 列表页刷新（广告）/v2/ns/fed/ra、列表页加载（广告）/v2/ns/fed/la：添加二级频道查询功能
+
 *V3.13:*
 1. 版本更新接口：/v2/version/query
 
@@ -379,6 +382,7 @@ HTTP/1.1 200 OK
 Content-Type: application/json
 Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
 
+新闻：
 {
   "code": 2000,
   "data": [
@@ -406,10 +410,91 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
     ...
   ]
 }
+
+视频：
+{
+      "nid": 16741197,
+      "docid": "http://www.meipai.com/media/734827978",
+      "title": "#王者荣耀激情解说##王者荣耀#阿珂：五星推荐！友情提示很难操作哦😝#游戏##搞笑#@痞子嫂💅 果哒哒你以后别用阿珂啦，你太坑啦😭",
+      "ptime": "2017-04-26 04:26:53",
+      "pname": "痞子范",
+      "purl": "http://www.meipai.com/media/734827978",
+      "channel": 44,
+      "concern": 0,  --点赞次数
+      "un_concern": 0,  --踩次数
+      "comment": 0,
+      "style": 6,
+      "rtype": 6,
+      "icon": "http://pro-pic.deeporiginalx.com/6a877e08c29c84816ce9a3d687393f70e07841a8fe63c1ee032c94367b8d0651.jpg",
+      "videourl": "http://mvvideo1.meitudata.com/58ff345c3fc993011.mp4",  --视频播放地址
+      "thumbnail": "http://mvimg10.meitudata.com/58ff30a74061e2412.jpg",  --视频显示图片
+      "duration": 75,  --视频时长
+      "logtype": 6,
+      "logchid": 44,
+      "extendData": {
+        "nid": 16741197,
+        "clicktimes": 0  --播放次数
+      }
+    }
 ```
 
 ----
-#### 2.2 列表页刷新
+#### 2.2 列表页刷新（广告）
+
+_Request_
+
+```json
+POST /v2/ns/fed/ra
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | Long | 是        | 频道ID：推荐频道1，视频：44                 |
+| scid  | Long | 否        | 二级频道ID                 |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最大新闻ID                                |
+| ads  | Int | 是        | 广告来源(adsource):猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |
+
+
+----
+#### 2.3 列表页加载（广告）
+
+_Request_
+
+```json
+POST /v2/ns/fed/la
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| cid  | Long | 是        | 频道ID                                |
+| scid  | Long | 否        | 二级频道ID                 |
+| tcr  | Long | 是        | 起始时间，13位时间戳                         |
+| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
+| p    | Long | 否(默认 1)  | 页数                                  |
+| c    | Long | 否(默认 20) | 条数                                  |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
+| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
+| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
+| nid  | Long | 否        | 最小新闻ID                                |
+
+
+----
+#### 2.4 列表页刷新
 
 _Request_
 
@@ -431,7 +516,7 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
 
 
 ----
-#### 2.3 列表页加载
+#### 2.5 列表页加载
 
 _Request_
 
@@ -450,59 +535,6 @@ Host: bdp.deeporiginalx.com
 | c    | String | 否(默认 20) | 条数                                  |
 | uid  | Long   | 是        | 用户ID                                |
 | t    | Int    | 是        | 显示专题  是(1)否(0)                              |
-
-----
-#### 2.4 列表页刷新（广告）
-
-_Request_
-
-```json
-POST /v2/ns/fed/ra
-Host: bdp.deeporiginalx.com
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| ---- | :----- | :------- | :---------------------------------- |
-| cid  | Long | 是        | 频道ID：推荐频道1，视频：44                 |
-| tcr  | Long | 是        | 起始时间，13位时间戳                         |
-| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | Long | 否(默认 1)  | 页数                                  |
-| c    | Long | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是        | 用户ID                                |
-| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
-| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
-| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
-| nid  | Long | 否        | 最大新闻ID                                |
-| ads  | Int | 是        | 广告来源(adsource):猎鹰广告api:1 ,广点通sdk:2 ,亦复广告api:3                              |
-
-
-----
-#### 2.5 列表页加载（广告）
-
-_Request_
-
-```json
-POST /v2/ns/fed/la
-Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
-Host: bdp.deeporiginalx.com
-```
-
-| Key  | 参数类型   | 是否必须     | 参数解释                                |
-| ---- | :----- | :------- | :---------------------------------- |
-| cid  | Long | 是        | 频道ID                                |
-| tcr  | Long | 是        | 起始时间，13位时间戳                         |
-| tmk  | Int | 否(默认 1)  | 是(1)否(0)模拟实时发布时间(部分新闻的发布时间修改为5分钟以内) |
-| p    | Long | 否(默认 1)  | 页数                                  |
-| c    | Long | 否(默认 20) | 条数                                  |
-| uid  | Long   | 是        | 用户ID                                |
-| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
-| t    | Int    | 否(默认 0)        | 显示专题  是(1)否(0)                              |
-| s    | Int    | 否(默认 0)        | 显示https图片地址  是(1)否(0)                      |
-| v    | Int    | 否(默认 0)        | 显示视频  是(1)否(0)                              |
-| nid  | Long | 否        | 最小新闻ID                                |
-
 
 ----
 

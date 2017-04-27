@@ -44,11 +44,11 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
               case _                                            => DataEmptyError(s"$requestParams")
             }
             //视频
-            case 44L => videoService.refreshFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
+            case 44L => videoService.refreshFeedWithAd(requestParams.uid, requestParams.cid, requestParams.scid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
               case _                                            => DataEmptyError(s"$requestParams")
             }
-            case _ => feedChannelService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
+            case _ => feedChannelService.refreshFeedByChannelWithAd(requestParams.uid, requestParams.cid, requestParams.scid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
               case _                                            => DataEmptyError(s"$requestParams")
             }
@@ -84,11 +84,11 @@ class NewsResponseController @Inject() (val qidianService: QidianWithCacheServic
               case _                                            => DataEmptyError(s"$requestParams")
             }
             //视频
-            case 44L => videoService.loadFeedWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
+            case 44L => videoService.loadFeedWithAd(requestParams.uid, requestParams.cid, requestParams.scid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(news) else news)
               case _                                            => DataEmptyError(s"$requestParams")
             }
-            case _ => feedChannelService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, None, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
+            case _ => feedChannelService.loadFeedByChannelWithAd(requestParams.uid, requestParams.cid, requestParams.scid, requestParams.p.getOrElse(1), newcount, requestParams.tcr, decodeBase64(requestParams.b), request.headers.get("X-Real-IP"), requestParams.nid, requestParams.ads.getOrElse(1)).map {
               case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (1 == requestParams.tmk.getOrElse(1)) mockRealTime(removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news)) else removeOnePicChin26(if (requestParams.s.getOrElse(0) == 1) https(news) else news))
               case _                                            => DataEmptyError(s"$requestParams")
             }
