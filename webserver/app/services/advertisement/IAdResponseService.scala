@@ -44,7 +44,9 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
                 case creative: Creative =>
                   NewsFeedResponse.from(creative).copy(adresponse = Some(adResponse))
               }
-              seq
+              //浏览器方前端有问题，为了适配他们，加上此限制
+              seq.filter(_.title.nonEmpty).filter(_.imgs.nonEmpty).filter(_.pname.nonEmpty)
+              //seq
             } else {
               Seq[NewsFeedResponse]()
             }
