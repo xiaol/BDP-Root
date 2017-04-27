@@ -190,6 +190,7 @@ case class NewsDetailsResponse(
   collect: Int,
   concern: Int,
   comment: Int,
+  icon: Option[String] = None,
   colFlag: Option[Int],
   conFlag: Option[Int],
   conPubFlag: Option[Int],
@@ -212,6 +213,7 @@ object NewsDetailsResponse {
     (JsPath \ "collect").write[Int] ~
     (JsPath \ "concern").write[Int] ~
     (JsPath \ "comment").write[Int] ~
+    (JsPath \ "icon").writeNullable[String] ~
     (JsPath \ "colflag").writeNullable[Int] ~
     (JsPath \ "conflag").writeNullable[Int] ~
     (JsPath \ "conpubflag").writeNullable[Int] ~
@@ -234,6 +236,7 @@ object NewsDetailsResponse {
     (JsPath \ "collect").read[Int] ~
     (JsPath \ "concern").read[Int] ~
     (JsPath \ "comment").read[Int] ~
+    (JsPath \ "icon").readNullable[String] ~
     (JsPath \ "colflag").readNullable[Int] ~
     (JsPath \ "conflag").readNullable[Int] ~
     (JsPath \ "conpubflag").readNullable[Int] ~
@@ -260,17 +263,17 @@ object NewsDetailsResponse {
 
         val detailbase = detailRow.video.get.base
         val detailsyst = detailRow.video.get.syst
-        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(incr.inum), detailbase.tags, None, detailbase.content, incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag, syst.videourl, syst.thumbnail)
+        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(incr.inum), detailbase.tags, None, detailbase.content, incr.collect, incr.concern, commentnum, syst.icon, colFlag, conFlag, conPubFlag, syst.videourl, syst.thumbnail)
 
       case Some(rtype) if rtype == 8 =>
         val detailbase = detailRow.joke.get.base
         val detailsyst = detailRow.joke.get.syst
-        NewsDetailsResponse(base.nid.get, base.docid, "", syst.ctime, base.pname, base.purl, syst.chid, None, None, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+        NewsDetailsResponse(base.nid.get, base.docid, "", syst.ctime, base.pname, base.purl, syst.chid, None, None, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, syst.icon, colFlag, conFlag, conPubFlag)
 
       case _ =>
         val detailbase = detailRow.news.get.base
         val detailsyst = detailRow.news.get.syst
-        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(detailsyst.inum), detailbase.tags, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, colFlag, conFlag, conPubFlag)
+        NewsDetailsResponse(base.nid.get, base.docid, base.title, syst.ctime, base.pname, base.purl, syst.chid, Some(detailsyst.inum), detailbase.tags, None, Some(detailbase.content), incr.collect, incr.concern, commentnum, syst.icon, colFlag, conFlag, conPubFlag)
     }
     newsDetailRow
   }

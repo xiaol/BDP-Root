@@ -6,19 +6,19 @@ import commons.models.hottopic.HotNews
 import org.joda.time.LocalDateTime
 import play.api.http.ContentTypes
 import play.api.libs.json.Json
-import play.api.mvc.{Action, Controller}
-import services.hottopic.{HotTopicService, HotWordsCacheService}
+import play.api.mvc.{ Action, Controller }
+import services.hottopic.{ HotTopicService, HotWordsCacheService }
 import services.news.NewsEsService
 import utils.Response._
 
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.parsing.json.{JSONArray, JSONObject}
+import scala.concurrent.{ ExecutionContext, Future }
+import scala.util.parsing.json.{ JSONArray, JSONObject }
 
 /**
-  * Created by fengjigang on 17/4/19.
-  * 热点新闻和热词控制器
-  */
-class HotTopicController @Inject()(val esService: NewsEsService, val hotTopicService: HotTopicService, val hotWordsCacheService: HotWordsCacheService)(implicit ec: ExecutionContext) extends Controller {
+ * Created by fengjigang on 17/4/19.
+ * 热点新闻和热词控制器
+ */
+class HotTopicController @Inject() (val esService: NewsEsService, val hotTopicService: HotTopicService, val hotWordsCacheService: HotWordsCacheService)(implicit ec: ExecutionContext) extends Controller {
 
   def processHotNews = Action.async(parse.tolerantFormUrlEncoded) {
     request =>

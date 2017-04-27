@@ -387,25 +387,24 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
   "code": 2000,
   "data": [
     {
-      "nid": 6695,                                            - 新闻ID
-      "docid": "http://toutiao.com",                          - 用于获取评论的 docid
-      "title": "日媒：欧洲能源多元化 俄天然气外交走向终结",
-      "ptime": "2016-05-22 01:20:46",
-      "pname": "参考消息",
-      "purl": "http://m.cankaoxiaoxi.com//20160522/1166670.shtml",
-      "descr": "俄天然气外交走向终结...",                        - 新闻内容摘要
-      "tags": ["欧洲", "多元化"]								  - 关键字
-      "channel": 9,
-      "collect": 0,                                           - 收藏数
-      "concern": 0,                                           - 关心数
-      "comment": 4,                                           - 评论数
-      "style": 1,                                             - 列表图格式，新闻:0无图、1图、2、3图、11第一张大图、12第二张大图、13第三张大图；4起点号；视频样式:6小图、7、8大图, 广告样式:(广点通SDK50小图、51大图)
-      "imgs": [                                               - 该字段会有对应style数值的图片
-        "http://bdp-pic.deeporiginalx.com/W0JAMjM4Mjc4ZDE.png"
+      "nid": 16395988,     --新闻ID
+      "docid": "http://mini.eastday.com/a/170421170924766.html", --用于获取评论的 docid
+      "title": "61岁小卖部的最后时光 至今仍用算盘结算满满的沧桑感",  --新闻标题
+      "ptime": "2017-04-26 03:10:56",  --发布时间
+      "pname": "网易新闻",  --来源
+      "channel": 2,        --频道
+      "concern": 0,        --关心数
+      "comment": 1,        --评论数
+      "style": 11,         --列表图格式，新闻:0无图、1图、2、3图、11第一张大图、12第二张大图、13第三张大图；4起点号；视频样式:6小图、7、8大图, 广告样式:(广点通SDK50小图、51大图)
+      "imgs": [
+        "http://pro-pic.deeporiginalx.com/20170421172034b088cc388204a43060c926228dfe8f7dfa7706ec7d361969814cdcc74acf64d1_690X496.jpg",
+        "http://pro-pic.deeporiginalx.com/6b9b8c0c69ecb6e5d801363e9501d376cc42b70c9c5fb8469b1a4123a3905e81.jpg",
+        "http://pro-pic.deeporiginalx.com/88bbc6c047df9600f12f2b9ea470fd028070e75add3d2b55f1c35c3eb2884508.jpg"
       ],
-      "province": "山东",
-      "city": "青岛",
-      "district": "山东"
+      "rtype": 2,          --rtype类型:0普通新闻、1热点新闻、2推送新闻、3广告、4专题、5图片新闻、6视频、7本地新闻、8段子
+      "icon": "https://oss-cn-hangzhou.aliyuncs.com/bdp-images/wangyixinwen163",  --新闻来源图片
+      "logtype": 25,
+      "logchid": 1
     },
     ...
   ]
