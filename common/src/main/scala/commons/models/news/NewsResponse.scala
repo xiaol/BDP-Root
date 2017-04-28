@@ -141,9 +141,9 @@ object NewsFeedResponse {
 
   def from(creative: Creative): NewsFeedResponse = {
     val event = creative.event.get.head
-    val ad_native = creative.ad_native.get
-    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get) ++: ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get)).toOption
-    val icon: Option[String] = Try(ad_native.filter(_.required_field.get == 2).filter(_.index_value.get == "icon").map(_.required_value.get).head).toOption
+    val ad_native = Try(creative.ad_native.get).toOption
+    val imgs: Option[List[String]] = Try(ad_native.get.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get) ++: ad_native.get.filter(_.required_field.get == 2).filter(_.index_value.get == "image").map(_.required_value.get)).toOption
+    val icon: Option[String] = Try(ad_native.get.filter(_.required_field.get == 2).filter(_.index_value.get == "icon").map(_.required_value.get).head).toOption
 
     //    val imgs: Option[List[String]] = Try(ad_native.filter(_.required_field.get == 2).map(_.required_value.get)).toOption
     val number: Option[Int] = imgs.map(_.size).map { num =>
@@ -154,8 +154,8 @@ object NewsFeedResponse {
       else
         num
     }
-    val title: String = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "description").head.required_value.get).toOption.getOrElse("")
-    val pname: Option[String] = Try(ad_native.filter(_.required_field.get == 1).filter(_.index_value.get == "title").head.required_value.get).toOption
+    val title: String = Try(ad_native.get.filter(_.required_field.get == 1).filter(_.index_value.get == "description").head.required_value.get).toOption.getOrElse("")
+    val pname: Option[String] = Try(ad_native.get.filter(_.required_field.get == 1).filter(_.index_value.get == "title").head.required_value.get).toOption
     val style = Random.nextInt(2) match {
       case 1 => 1
       case _ => 11

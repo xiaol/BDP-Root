@@ -182,6 +182,8 @@ GET     /v2/sl/ins                  controllers.UserProfilesAppController.insert
 
 #详情页广告
 POST     /v2/ns/ad                  controllers.AdvertiseController.getAd()
+#广点通原始广告数据
+POST     /v2/ns/oad                  controllers.AdvertiseController.getOriginalAd()
 
 #统计报表
 GET     /v2/re/top                  controllers.ReportController.topClickNews(ctype: Int, ptype: Int, page: Long ?= 1, count: Long ?= 100)

@@ -2141,6 +2141,25 @@ Content-Type: application/json
 }
 ```
 
+#### 12.2 广点通广告原始数据
+
+_Request_
+
+```json
+POST /v2/ns/oad
+Host: bdp.deeporiginalx.com
+Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG40M2l1NDZlYXE3MXcyYV94KDBwNA
+```
+
+| Key  | 参数类型   | 是否必须     | 参数解释                                |
+| ---- | :----- | :------- | :---------------------------------- |
+| uid  | Long   | 是        | 用户ID                                |
+| b    | String(base64编码) | 是         | 广告调用传的规格参数,具体见广告调用pdf,用base64编码处理|
+
+```json
+返回结果，以广告pdf文档为准
+```
+
 ### 13 热点
 
 #### 13.1 爬虫上传热点新闻

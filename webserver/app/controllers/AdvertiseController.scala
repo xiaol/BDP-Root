@@ -2,7 +2,7 @@ package controllers
 
 import javax.inject.Inject
 
-import commons.models.advertisement.{ RequestAdSourceParams, RequestAdvertiseParams }
+import commons.models.advertisement.{ AdResponse, RequestAdSourceParams, RequestAdvertiseParams }
 import commons.models.news._
 import commons.utils.Base64Utils.decodeBase64
 import jp.t2v.lab.play2.auth.AuthElement
@@ -52,6 +52,18 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
         adResponseService.getAdNewsFeedResponse(decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
           case news: Seq[NewsFeedResponse] if news.nonEmpty => ServerSucced(if (requestParams.s.getOrElse(0) == 1) https(news) else news)
           case _                                            => DataEmptyError(s"$requestParams")
+        }
+    }
+  }
+
+  def getOriginalAd = Action.async(parse.json) { request =>
+    request.body.validate[RequestAdvertiseParams] match {
+      case err @ JsError(_) => Future.successful(JsonInvalidError(err))
+      case JsSuccess(requestParams, _) =>
+        pvdetailService.insert(PvDetail(requestParams.uid, "AdvertiseController.getAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+        adResponseService.getAdResponse(decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
+          case Some(news: AdResponse) => ServerSucced(news)
+          case _                      => DataEmptyError(s"$requestParams")
         }
     }
   }
