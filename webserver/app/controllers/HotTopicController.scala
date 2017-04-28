@@ -56,7 +56,13 @@ class HotTopicController @Inject() (val esService: NewsEsService, val hotTopicSe
     }
   }
 
-  def getHotWords = Action.async { request =>
+  def getHotWords4Get = Action.async { request =>
+    hotWordsCacheService.getHotWordsCache().map {
+      t => ServerSucceedWithNoCode(Json.parse(t.getOrElse("[]")))
+    }
+  }
+
+  def getHotWords4Post = Action.async { request =>
     hotWordsCacheService.getHotWordsCache().map {
       t => ServerSucceedWithNoCode(Json.parse(t.getOrElse("[]")))
     }
