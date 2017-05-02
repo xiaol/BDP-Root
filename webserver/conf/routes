@@ -29,6 +29,7 @@ GET     /v2/au/common               controllers.Application.listCommon()
 # News
 GET     /v2/ns/chs                  controllers.NewsController.listChannel(s:Int ?= 1, sech:Int ?= 0)
 GET     /v2/ns/srcs                 controllers.NewsController.listSource(p:Long ?= 1, c:Long ?= 20)
+GET     /v2/ns/ch/cho               controllers.ChannelController.listByChannel(channel: Int)
 
 GET     /v2/ns/con                  controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0, rtype: Option[Int])
 GET     /v2/ns/con/:nid             controllers.NewsController.getDetails(nid:Long, uid:Option[Long], s:Int ?= 0, rtype: Option[Int])

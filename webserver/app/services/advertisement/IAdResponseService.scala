@@ -90,11 +90,7 @@ class AdResponseService @Inject() (val userDeviceDAO: UserDeviceDAO) extends IAd
       asyncHttpClient.close()
       val adResponse: AdResponse = Json.parse(response).as[AdResponse]
       Future {
-        if (adResponse.data.nonEmpty && adResponse.data.get.adspace.nonEmpty && adResponse.data.get.adspace.get.head.creative.nonEmpty) {
-          Some(adResponse)
-        } else {
-          None
-        }
+        Some(adResponse)
       }
     } catch {
       case ex: Exception =>

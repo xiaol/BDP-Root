@@ -7,6 +7,7 @@
 ## 更新日志
 *V3.14:*
 1. 列表页刷新（广告）/v2/ns/fed/ra、列表页加载（广告）/v2/ns/fed/la：添加二级频道查询功能
+2. 添加分渠道获取频道顺序接口：/v2/ns/ch/cho
 
 *V3.13:*
 1. 版本更新接口：/v2/version/query
@@ -1888,6 +1889,47 @@ Authorization: Basic X29pZH5jeDYyMmNvKXhuNzU2NmVuMXNzJy5yaXg0aWphZWUpaTc0M2JjbG4
       ...
     ]
   }
+}
+```
+----
+#### 10.4 分渠道控制频道顺序
+
+_Request_
+
+```json
+GET /v2/ns/ch/cho
+Host: bdp.deeporiginalx.com
+```
+
+| Key  | 参数类型   | 是否必须    | 参数解释                  |
+| ---- | :----- | :------ | :-------------------- |
+| channel | Int | 是 | 渠道号            |
+
+_Response_
+
+```json
+HTTP/1.1 200 OK
+Content-Type: application/json
+
+{
+  "code": 2000,
+  "data": [
+    {
+      "id": 1,  --频道id
+      "cname": "奇点",  --频道名称
+      "state": 1,  --上线状态
+      "channel": 1,  --渠道号，1：奇点资讯， 2：黄历天气，3：纹字锁屏，4：猎鹰浏览器，5：白牌 6.纹字主题 7.应用汇
+      "order_num": 1  --序号
+    },
+    {
+      "id": 2,
+      "cname": "社会",
+      "state": 1,
+      "channel": 1,
+      "order_num": 2
+    },
+    ......
+  ]
 }
 ```
 

@@ -60,7 +60,7 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
     request.body.validate[RequestAdvertiseParams] match {
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
-        pvdetailService.insert(PvDetail(requestParams.uid, "AdvertiseController.getAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
+        pvdetailService.insert(PvDetail(requestParams.uid, "AdvertiseController.getOriginalAd", LocalDateTime.now(), request.headers.get("X-Real-IP")))
         adResponseService.getAdResponse(decodeBase64(requestParams.b), request.headers.get("X-Real-IP")).map {
           case Some(news: AdResponse) => ServerSucced(news)
           case _                      => DataEmptyError(s"$requestParams")
