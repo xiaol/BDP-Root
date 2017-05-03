@@ -70,7 +70,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
             Await.result(userdata, Duration(3000, TimeUnit.MILLISECONDS))
             userdata.map { seq =>
               //获取本次要返回的数据
-              val returndata = getReturnData(count, t, v, seq)
+              val returndata = getReturnData(count, t, v, seq).take(count.toInt)
 
               //过滤出剩下的数据, 将剩下的数据存入用户缓存
               Future {
@@ -217,8 +217,8 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
       val level4 = count / 9 * times
 
       //----热点部分----
-      //百度热词 和 有评论
-      val refreshHotFO = newsUnionFeedDao.hot((page - 1) * count, level3, newTimeCursor, uid)
+      //热点新闻，算法推荐没有时，出6条热点，
+      val refreshHotFO = newsUnionFeedDao.hot((page - 1) * count, 6 * times, newTimeCursor, uid)
 
       //----推荐部分----
       //模型LDA 和 Kmeans推荐 和 CF基于用户LDA的协同过滤
@@ -299,7 +299,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
         hatePnameWithChid <- hateNews
 
       } yield {
-        ((bigimg5 ++: topics ++: lDAandKmeans.take(level1.toInt) ++: hots.take(level3.toInt) ++: video ++: peopleRecommendWithClick.take(level2.toInt)).take((count.toInt - 1) * times)
+        ((bigimg5 ++: topics ++: lDAandKmeans.take(level1.toInt) ++: video ++: hots.take(6 * times) ++: peopleRecommendWithClick.take(level2.toInt)).take((count.toInt - 1) * times)
           ++: commons).filter { feed =>
             var flag = true
             hatePnameWithChid.foreach { news =>
@@ -327,14 +327,16 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
     val level4 = count / 9
 
     //----热点部分----
-    //百度热词 和 有评论
-    val refreshHotFO = alldata.filter(_.rtype.getOrElse(0) == 1).take(level2.toInt)
+    //热点新闻
+    val refreshHotFO = alldata.filter(_.rtype.getOrElse(0) == 1).take(6)
 
     //----推荐部分----
     //模型LDA 和 Kmeans推荐
     val refreshLDAFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 21).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
     val refreshKmeansFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 22).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
     val refreshCFFO = alldata.filter(_.rtype.getOrElse(0) == 21).filter(_.logtype.getOrElse(0) == 27).take((level1 / 3).toInt).map(news => news.copy(rtype = Some(2)))
+
+    val recomAndHot = (refreshLDAFO ++: refreshKmeansFO ++: refreshCFFO ++: refreshHotFO).take(8)
 
     //根据用户偏好从人工选取 和 人工推荐(没有偏好数据时使用)
     val refreshByPeopleRecommendWithClickFO = alldata.filter(_.rtype.getOrElse(0) == 2).take(level2.toInt)
@@ -353,7 +355,7 @@ class QidianWithCacheService @Inject() (val newsUnionFeedDao: NewsUnionFeedDao, 
 
     val adFO = alldata.filter(_.rtype.getOrElse(0) == 3).take(level4.toInt)
 
-    (adFO ++: refreshBigImageAndVideo ++: topicsFO ++: refreshLDAFO ++: refreshKmeansFO ++: refreshCFFO ++: refreshHotFO ++: refreshByPeopleRecommendWithClickFO ++: refreshCommonFO)
+    (adFO ++: refreshBigImageAndVideo ++: topicsFO ++: recomAndHot ++: refreshByPeopleRecommendWithClickFO ++: refreshCommonFO)
   }
 
   private def updateCacheData(uid: Long, read: Future[Seq[NewsFeedResponse]], alldata: Future[Seq[NewsFeedResponse]]): Future[Boolean] = {

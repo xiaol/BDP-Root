@@ -51,9 +51,8 @@ class NewsUnionFeedDao @Inject() (@NamedDatabase("pg2") protected val dbConfigPr
 
   def hot(offset: Long, limit: Long, timeCursor: LocalDateTime, uid: Long): Future[Seq[NewsFeedRow]] = {
     val tablename: String = "newsrecommendread_" + uid % 100
-    val limitbaidu = limit / 2
     //val action = sql"select * from (#$select , 1 as rtype, 11 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2) and nv.nid in (select nid from newsrecommendhot where ctime>#$dayWindow2) and nv.ctime>#$dayWindow2 #$condition limit $limitbaidu )baiduhot union all select * from (#$select , 1 as rtype, 12 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow1) and nv.ctime>#$dayWindow1 #$condition and nv.imgs is not null and nv.comment>20 limit $limit)hot ".as[NewsFeedRow]
-    val action = sql" #$select , 1 as rtype, 11 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2) and nv.nid in (select nid from newsrecommendhot where ctime>#$dayWindow2) and nv.ctime>#$dayWindow2 #$condition limit $limitbaidu ".as[NewsFeedRow]
+    val action = sql" #$select , 1 as rtype, 11 as logtype from newslist_v2 nv where  not exists (select 1 from #$tablename nr where nv.nid=nr.nid and nr.uid=$uid and nr.readtime>#$dayWindow2) and nv.nid in (select nid from newsrecommendhot where ctime>#$dayWindow2) and nv.ctime>#$dayWindow2 #$condition limit $limit ".as[NewsFeedRow]
     db.run(action)
   }
 

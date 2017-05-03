@@ -17,8 +17,8 @@ trait Config {
   val tryPassword = redisConfig.getString("password")
   val redisPassword: Option[String] = if (tryPassword.nonEmpty) Some(tryPassword) else None
 
-  val clusterConfig = config.getConfig("cluster")
-  val dispatcherPathConfig = clusterConfig.getString("DispatcherPath")
+  //  val clusterConfig = config.getConfig("cluster")
+  //  val dispatcherPathConfig = clusterConfig.getString("DispatcherPath")
 
   val elasticConfig = config.getConfig("elasticsearch")
   val elasticClusterUrl = elasticConfig.getString("cluster")
