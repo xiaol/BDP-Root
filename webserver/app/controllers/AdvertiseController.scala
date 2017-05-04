@@ -2,20 +2,20 @@ package controllers
 
 import javax.inject.Inject
 
-import commons.models.advertisement.{ AdResponse, RequestAdSourceParams, RequestAdvertiseParams }
+import com.typesafe.config.Config
+import commons.models.advertisement._
 import commons.models.news._
 import commons.utils.Base64Utils.decodeBase64
 import jp.t2v.lab.play2.auth.AuthElement
 import org.joda.time.LocalDateTime
 import play.api.libs.json._
-import play.api.mvc.Results.Ok
 import play.api.mvc._
 import security.auth.AuthConfigImpl
 import services.advertisement.AdResponseService
 import services.news.PvdetailService
 import services.users.UserService
 import utils.AdConfig._
-import utils.{ AdSourceResponse, Response }
+import utils.AdSourceResponse
 import utils.Response.{ ServerSucced, _ }
 
 import scala.concurrent.{ ExecutionContext, Future }
@@ -35,13 +35,57 @@ class AdvertiseController @Inject() (val userService: UserService, val adRespons
       case err @ JsError(_) => Future.successful(JsonInvalidError(err))
       case JsSuccess(requestParams, _) =>
         val uid = requestParams.uid % 10
-        uid match {
-          case i if i < lieyingapiWeight                                => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1, -1, -1))
-          case i if i - lieyingapiWeight < gdtsdkWeight                 => Future.successful(AdSourceResponse.ServerSucced(2, feedAdPos, relatedAdPos, feedVideoAdPos, relatedVideoAdPos))
-          case i if i - lieyingapiWeight - gdtsdkWeight < yifuapiWeight => Future.successful(AdSourceResponse.ServerSucced(3, -1, -1, -1, -1))
+        val channel = requestParams.ctype
+        //1：奇点资讯， 2：黄历天气，3：纹字锁频，4：猎鹰浏览器，5：白牌 7:白牌应用汇
+        val platform = requestParams.ptype //1.ios 2 android
+        platform match {
+          case 1 => channel match {
+            case 1 =>
+              obtainAdSource(adQDZX_I, platform, uid)
+            case 2 =>
+              obtainAdSource(adHLTQ_I, platform, uid)
+            case 4 =>
+              obtainAdSource(adLYLLQ_I, platform, uid)
+            case _ => Future.successful(ParamsInvalidError(channel.toString))
+
+          }
+
+          case 2 => channel match {
+            case 1 =>
+              obtainAdSource(adQDZX_A, platform, uid)
+            case 3 =>
+              obtainAdSource(adWZSP_A, platform, uid)
+            case 4 =>
+              obtainAdSource(adLYLLQ_A, platform, uid)
+            case 5 =>
+              obtainAdSource(adBPYZ_A, platform, uid)
+            case 7 =>
+              obtainAdSource(adBPYYH_A, platform, uid)
+            case _ => Future.successful(ParamsInvalidError(channel.toString))
+          }
+          case _ => Future.successful(ParamsInvalidError(platform.toString))
         }
     }
 
+  }
+
+  def obtainAdSource(config: Config, pType: Int, uid: Long): Future[Result] = {
+    val adWeightType = if (pType == 1) adIosWeight else adAndroidWeight
+    val adDisplayPosType = if (pType == 1) adIosPos else adAndroidPos
+    val ad_weight = if (config.getConfig("weight").isEmpty) adWeightType else config.getConfig("weight")
+    val ad_pos = if (config.getConfig("displayPosition").isEmpty) adDisplayPosType else config.getConfig("displayPosition")
+    val lieyingapi = ad_weight.getInt("lieyingapi")
+    val gdtsdk = ad_weight.getInt("gdtsdk")
+    val yifuapi = ad_weight.getInt("yifuapi")
+    val feedAdPos = ad_pos.getInt("feedAdPos")
+    val relatedAdPos = ad_pos.getInt("relatedAdPos")
+    val feedVideoAdPos = ad_pos.getInt("feedVideoAdPos")
+    val relatedVideoAdPos = ad_pos.getInt("relatedVideoAdPos")
+    uid match {
+      case i if i < lieyingapi                    => Future.successful(AdSourceResponse.ServerSucced(1, -1, -1, -1, -1))
+      case i if i - lieyingapi < gdtsdk           => Future.successful(AdSourceResponse.ServerSucced(2, feedAdPos, relatedAdPos, feedVideoAdPos, relatedVideoAdPos))
+      case i if i - lieyingapi - gdtsdk < yifuapi => Future.successful(AdSourceResponse.ServerSucced(3, -1, -1, -1, -1))
+    }
   }
 
   def getAd = Action.async(parse.json) { request =>

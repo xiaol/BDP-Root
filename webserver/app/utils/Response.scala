@@ -89,4 +89,8 @@ object Response {
   def ParamsInvalidError(): Result = {
     Ok(Json.toJson(Response(JSON_INVALID_CODE, s"ParamsInvalid")))
   }
+
+  def ParamsInvalidError(data: String): Result = {
+    Ok(Json.toJson(Response(JSON_INVALID_CODE, s"ParamsInvalid $data")))
+  }
 }
