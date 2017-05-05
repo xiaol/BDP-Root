@@ -204,7 +204,7 @@ class NewsRecommendDAO @Inject() (protected val dbConfigProvider: DatabaseConfig
     //有uid,则查询用用户是否关联了订阅号
     if (uid.isDefined) {
       val joinQuery = (for {
-        (np, cp) <- publisherList.filter(_.name like "%" + keywords + "%").joinLeft(concernPubList.filter(_.uid === uid).filter(_.pname like "%" + keywords + "%")).on(_.name === _.pname).sortBy(_._1.concern.desc)
+        (np, cp) <- publisherList.filter(_.name like "%" + keywords + "%").joinLeft(concernPubList.filter(_.uid === uid).filter(_.pname like "%" + keywords + "%")).on(_.name === _.pname).sortBy(_._1.concern.desc).take(20)
       } yield (np, cp.map(_.id))).map {
         case (np, cp) =>
           (np, cp.getOrElse(0L))
