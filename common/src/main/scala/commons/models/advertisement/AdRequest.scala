@@ -34,8 +34,8 @@ object AdRequest {
 }
 
 case class Impression(aid: String,
-                      width: String,
-                      height: String,
+                      width: Option[String] = None,
+                      height: Option[String] = None,
                       keywords: Option[String] = None,
                       page_index: Option[String] = None,
                       page_size: Option[String] = None)
@@ -43,8 +43,8 @@ case class Impression(aid: String,
 object Impression {
   implicit val ImpressionWrites: Writes[Impression] = (
     (JsPath \ "aid").write[String] ~
-    (JsPath \ "width").write[String] ~
-    (JsPath \ "height").write[String] ~
+    (JsPath \ "width").writeNullable[String] ~
+    (JsPath \ "height").writeNullable[String] ~
     (JsPath \ "keywords").writeNullable[String] ~
     (JsPath \ "page_index").writeNullable[String] ~
     (JsPath \ "page_size").writeNullable[String]
@@ -52,8 +52,8 @@ object Impression {
 
   implicit val ImpressionReads: Reads[Impression] = (
     (JsPath \ "aid").read[String] ~
-    (JsPath \ "width").read[String] ~
-    (JsPath \ "height").read[String] ~
+    (JsPath \ "width").readNullable[String] ~
+    (JsPath \ "height").readNullable[String] ~
     (JsPath \ "keywords").readNullable[String] ~
     (JsPath \ "page_index").readNullable[String] ~
     (JsPath \ "page_size").readNullable[String]
